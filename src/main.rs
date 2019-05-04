@@ -71,7 +71,7 @@ fn main() {
         Ok(v) => v,
         Err(e) => panic!("Could not get credentials: {}", e),
     };
-    info!(log, "starting server on localhost:8080");
+    info!(log, "starting server on localhost:8000");
     server::new(move || {
         App::with_state(AppState {
             log: log.clone(),
