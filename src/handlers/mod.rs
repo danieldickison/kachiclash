@@ -1,3 +1,5 @@
+extern crate askama;
+
 // use super::data::{
 //     ActivitiesResponse, ActivityRequest, ActivityResponse, EditActivityRequest, ErrorListResponse,
 // };
@@ -6,6 +8,7 @@ use super::data;
 use super::AppState;
 use actix_web::{error, Error, HttpRequest, HttpResponse, Json, Path, Responder};
 use failure::Fail;
+use askama::Template;
 
 #[derive(Fail, Debug)]
 pub enum KachiClashError {
@@ -28,6 +31,18 @@ impl error::ResponseError for KachiClashError {
     }
 }
 
+#[derive(Template)]
+#[template(path = "index.html")]
+struct IndexTemplate {
+    leaders: Vec<data::Player>,
+}
+
+pub fn index(req: &HttpRequest<AppState>) -> impl Responder {
+    IndexTemplate {
+        leaders: data::list_players(&req.state().db)
+    }
+}
+
 pub fn list_players(req: &HttpRequest<AppState>) -> impl Responder {
     data::list_players(&req.state().db)
         .iter()
@@ -47,7 +62,9 @@ pub fn name(req: &HttpRequest<AppState>) -> impl Responder {
         })
 }
 
-pub fn health(_: &HttpRequest<AppState>) -> impl Responder {
+pub fn health(req: &HttpRequest<AppState>) -> impl Responder {
+    let log = &req.state().log;
+    debug!(log, "health hit");
     "OK".to_string()
 }
 

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <style>
+        .leaderboard-heading {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .leaderboard {
+            background: #eee;
+            border: 1px solid #ccc;
+        }
+    </style>
+{% endblock %}
+
+{% block main %}
+    <h2 class="leaderboard-heading">Leaderboard</h2>
+    <ol class="leaderboard">
+    {% for player in leaders %}
+        <li class="leaderboard__item">
+            {{player.name}}
+            joined {{player.join_date}}
+        </li>
+    {% endfor %}
+    </ol>
+{% endblock %}

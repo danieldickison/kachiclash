@@ -76,6 +76,9 @@ fn main() {
             log: log.clone(),
             db: data::init_database(),
         })
+        .resource("/", |r| {
+            r.get().f(handlers::index)
+        })
         .scope("/db", |db_scope|{
             db_scope.nested("/player", |player_scope| {
                 player_scope

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% block title %}Kachi Clash{% endblock %}</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            height: 100%;
+        }
+
+        body {
+            font-family: "Helvetica Neue", sans-serif;
+            color: #333;
+            background: #eee;
+            height: 100%;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            width: 100%;
+            margin: 0;
+            padding: 10px;
+            background: #99cafa;
+            border-bottom: solid 1px #ccc;
+        }
+        .header__title {
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+
+        .main {
+            max-width: 1024px;
+            flex-grow: 1;
+            margin: 0 auto;
+            padding: 10px;
+            background: white;
+            border-left: solid 1px #ccc;
+            border-right: solid 1px #ccc;
+        }
+
+        .footer {
+            width: 100%;
+            margin: 0;
+            padding: 10px;
+            background: #662045;
+            border-top: solid 1px #33002a;
+            color: #ccc;
+        }
+        .footer-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .footer-list__item {
+            display: inline-block;
+        }
+        .footer-list__link {
+            color: inherit;
+        }
+    </style>
+
+    {% block head %}
+    {% endblock %}
+</head>
+<body>
+    <header class="header">
+        <h1 class="header__title">Kachi Clash</h1>
+    </header>
+    <main class="main">
+        {% block main %}
+        {% endblock %}
+    </main>
+    <footer class="footer">
+        <ul class="footer-list">
+            <li class="footer-list__item">
+                <a class="footer-list__link" href="https://github.com/danieldickison/kachiclash" target="_blank">Source on Github</a>
+            </li>
+            <li class="footer-list__item">
+                <a class="footer-list__link" href="https://discordapp.com/channels/398418331738177546/528265190912032769" target="_blank">Discord Channel</a>
+            </li>
+        </ul>
+    </footer>
+</body>
+</html>
