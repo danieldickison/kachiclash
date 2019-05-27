@@ -7,7 +7,6 @@ extern crate actix_web;
 #[macro_use]
 extern crate failure;
 extern crate reqwest;
-#[macro_use]
 extern crate serde_derive;
 extern crate serde;
 extern crate serde_json;
@@ -67,7 +66,7 @@ fn main() {
         Ok(v) => v,
         Err(e) => panic!("Could not read config from environment: {}", e),
     };
-    let (api_key, api_secret) = match get_credentials(&config) {
+    let (_api_key, _api_secret) = match get_credentials(&config) {
         Ok(v) => v,
         Err(e) => panic!("Could not get credentials: {}", e),
     };
@@ -76,6 +75,14 @@ fn main() {
         App::with_state(AppState {
             log: log.clone(),
             db: data::init_database(),
+        })
+        .scope("/db", |db_scope|{
+            db_scope.nested("/player", |player_scope| {
+                player_scope
+                    .resource("", |r| {
+                        r.method(http::Method::GET).f(handlers::list_players)
+                    })
+            })
         })
         // .scope("/rest/v1", |v1_scope| {
         //     v1_scope.nested("/activities", |activities_scope| {

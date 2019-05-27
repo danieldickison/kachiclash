@@ -1,9 +1,9 @@
 extern crate rusqlite;
 
 use std::sync::Mutex;
-use rusqlite::types::ToSql;
+use rusqlite::types::{FromSql, FromSqlResult, ValueRef};
 use rusqlite::{params, Connection, Error, NO_PARAMS};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{SystemTime, Duration, UNIX_EPOCH};
 
 pub type DbConn = Mutex<Connection>;
 
@@ -87,4 +87,35 @@ pub fn get_name(db_conn: &DbConn) -> Result<String, Error>  {
         .query_row("SELECT name FROM player WHERE id = 1",
                    NO_PARAMS,
                    |row| row.get(0))
+}
+
+struct Time(SystemTime);
+
+impl FromSql for Time {
+    fn column_result(value: ValueRef) -> FromSqlResult<Self> {
+        Ok(Time(SystemTime::UNIX_EPOCH + Duration::from_secs(value.as_i64()? as u64)))
+    }
+}
+
+#[derive(Debug)]
+pub struct Player {
+    pub id: i64,
+    pub name: String,
+    pub join_date: SystemTime
+}
+
+pub fn list_players(db_conn: &DbConn) -> Vec<Player> {
+    db_conn.lock().unwrap()
+        .prepare("SELECT id, name, join_date FROM player").unwrap()
+        .query_map(NO_PARAMS, |row| {
+            let date: Time = row.get(2)?;
+            Ok(Player {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                join_date: date.0
+            })
+        })
+        .and_then(|mapped_rows| {
+            Ok(mapped_rows.map(|r| r.unwrap()).collect::<Vec<Player>>())
+        }).unwrap()
 }
