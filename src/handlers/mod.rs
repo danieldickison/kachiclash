@@ -29,11 +29,10 @@ impl error::ResponseError for KachiClashError {
 }
 
 pub fn list_players(req: &HttpRequest<AppState>) -> impl Responder {
-    let log = &req.state().log;
     data::list_players(&req.state().db)
         .iter()
         .map(|p| {
-            format!("{}: {} joined {:?}", p.id, p.name, p.join_date)
+            format!("{}: {} joined {}", p.id, p.name, p.join_date)
         })
         .collect::<Vec<String>>()
         .join("\n")
@@ -44,7 +43,7 @@ pub fn name(req: &HttpRequest<AppState>) -> impl Responder {
     data::get_name(&req.state().db)
         .map_err(|err| {
             error!(log, "db error: {}", err);
-            KachiClashError::ExternalServiceError
+            KachiClashError::DatabaseError
         })
 }
 

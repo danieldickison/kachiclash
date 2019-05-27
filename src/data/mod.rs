@@ -1,9 +1,10 @@
 extern crate rusqlite;
+extern crate chrono;
 
 use std::sync::Mutex;
-use rusqlite::types::{FromSql, FromSqlResult, ValueRef};
+//use rusqlite::types::{FromSql, FromSqlResult, ValueRef};
 use rusqlite::{params, Connection, Error, NO_PARAMS};
-use std::time::{SystemTime, Duration, UNIX_EPOCH};
+use chrono::{DateTime, Utc};
 
 pub type DbConn = Mutex<Connection>;
 
@@ -14,7 +15,7 @@ pub fn init_database() -> DbConn {
     conn.execute("
         CREATE TABLE basho (
             id              INTEGER PRIMARY KEY AUTOINCREMENT,
-            start_date      INTEGER NOT NULL,
+            start_date      TEXT NOT NULL,
             venue           TEXT NOT NULL
         )", NO_PARAMS)
         .expect("create basho table");
@@ -55,7 +56,7 @@ pub fn init_database() -> DbConn {
     conn.execute("
         CREATE TABLE player (
             id              INTEGER PRIMARY KEY AUTOINCREMENT,
-            join_date       INTEGER NOT NULL,
+            join_date       TEXT NOT NULL,
             name            TEXT NOT NULL
         )", NO_PARAMS)
         .expect("create player table");
@@ -73,7 +74,7 @@ pub fn init_database() -> DbConn {
     conn.execute("CREATE INDEX basho_id ON pick (basho_id)", NO_PARAMS)
         .expect("create pick.basho_id index");
 
-    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64;
+    let now = Utc::now();
     conn.execute("INSERT INTO player (join_date, name) VALUES ($1, $2)",
             params![now, "Kachi Clasher"])
         .expect("insert single entry into entries table");
@@ -89,30 +90,21 @@ pub fn get_name(db_conn: &DbConn) -> Result<String, Error>  {
                    |row| row.get(0))
 }
 
-struct Time(SystemTime);
-
-impl FromSql for Time {
-    fn column_result(value: ValueRef) -> FromSqlResult<Self> {
-        Ok(Time(SystemTime::UNIX_EPOCH + Duration::from_secs(value.as_i64()? as u64)))
-    }
-}
-
 #[derive(Debug)]
 pub struct Player {
     pub id: i64,
     pub name: String,
-    pub join_date: SystemTime
+    pub join_date: DateTime<Utc>
 }
 
 pub fn list_players(db_conn: &DbConn) -> Vec<Player> {
     db_conn.lock().unwrap()
         .prepare("SELECT id, name, join_date FROM player").unwrap()
         .query_map(NO_PARAMS, |row| {
-            let date: Time = row.get(2)?;
             Ok(Player {
                 id: row.get(0)?,
                 name: row.get(1)?,
-                join_date: date.0
+                join_date: row.get(2)?
             })
         })
         .and_then(|mapped_rows| {
