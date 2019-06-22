@@ -7,6 +7,7 @@ use super::data;
 // use super::external;
 use super::AppState;
 use actix_web::{error, Error, HttpRequest, HttpResponse, Json, Path, Responder};
+use actix_web::middleware::session::RequestSession;
 use failure::Fail;
 use askama::Template;
 
@@ -38,6 +39,19 @@ struct IndexTemplate {
 }
 
 pub fn index(req: &HttpRequest<AppState>) -> impl Responder {
+    let log = &req.state().log;
+    if let Some(count) = req.session().get::<i32>("counter").unwrap_or(None) {
+        debug!(log, "SESSION counter: {}", count);
+        if let Err(e) = req.session().set("counter", count+1) {
+            warn!(log, "could not increment counter: {:?}", e);
+        }
+    } else {
+        debug!(log, "SESSION init counter to 0");
+        if let Err(e) = req.session().set("counter", 1) {
+            warn!(log, "could not initialize counter: {:?}", e);
+        }
+    }
+
     IndexTemplate {
         leaders: data::list_players(&req.state().db)
     }
