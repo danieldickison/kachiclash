@@ -8,7 +8,7 @@ use chrono::{DateTime, Utc};
 
 pub type DbConn = Mutex<Connection>;
 
-pub fn init_database() -> DbConn {
+pub fn init_database(db_path: String) -> DbConn {
     // Open a new in-memory SQLite database.
     let conn = Connection::open_in_memory().expect("in memory db");
 

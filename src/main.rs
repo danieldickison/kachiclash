@@ -35,6 +35,9 @@ pub struct Config {
     #[envconfig(from = "KACHI_ENV", default = "dev")]
     pub env: String,
 
+    #[envconfig(from = "KACHI_DB_PATH", default = "kachi.db")]
+    pub db_path: String,
+
     #[envconfig(from = "API_KEY", default = "")]
     pub api_key: String,
 
@@ -86,10 +89,7 @@ fn main() {
     std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
 
-    let config = match Config::init() {
-        Ok(v) => v,
-        Err(e) => panic!("Could not read config from environment: {}", e),
-    };
+    let config = Config::init().expect("Could not read config from environment");
     let is_dev = config.env == "dev";
     let (_api_key, _api_secret, session_key) = match get_credentials(&config) {
         Ok(v) => v,
@@ -99,7 +99,7 @@ fn main() {
     server::new(move || {
         App::with_state(AppState {
             log: log.clone(),
-            db: data::init_database(),
+            db: data::init_database(config.db_path),
         })
         .middleware(Logger::default())
         .middleware(
