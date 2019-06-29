@@ -1,14 +1,18 @@
 extern crate rusqlite;
 extern crate chrono;
 
+use std::path::Path;
 use std::sync::Mutex;
 //use rusqlite::types::{FromSql, FromSqlResult, ValueRef};
 use rusqlite::{Connection, Error, NO_PARAMS};
 use chrono::{DateTime, Utc};
 
-pub mod schema;
-
 pub type DbConn = Mutex<Connection>;
+
+pub fn make_conn(path: &Path) -> DbConn {
+    let conn = Connection::open(path).expect("sqlite db");
+    Mutex::new(conn)
+}
 
 pub fn get_name(db_conn: &DbConn) -> Result<String, Error>  {
     db_conn.lock()

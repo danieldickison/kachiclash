@@ -1,17 +1,30 @@
+#[macro_use]
+extern crate envconfig_derive;
+extern crate envconfig;
 
-use crate::data::DbConn;
 use rusqlite::{params, Connection, NO_PARAMS};
-use slog::Logger;
 use std::path::Path;
-use std::sync::Mutex;
-use chrono::{DateTime, Utc};
+use chrono::Utc;
+use std::path::PathBuf;
+use envconfig::Envconfig;
 
-pub fn init_database(log: &Logger, path: &Path) -> DbConn {
-    debug!(log, "initializing db at {:?}", path);
+#[derive(Envconfig)]
+#[derive(Clone)]
+pub struct Config {
+    #[envconfig(from = "KACHI_ENV", default = "dev")]
+    pub env: String,
+
+    #[envconfig(from = "KACHI_DB_PATH", default = "kachi.db")]
+    pub db_path: PathBuf,
+}
+
+
+fn init_database(path: &Path) {
+    println!("initializing db at {:?}", path);
     let conn = Connection::open(path).expect("sqlite db");
 
     conn.execute("
-        CREATE TABLE IF NOT EXISTS basho (
+        CREATE TABLE basho (
             id              INTEGER PRIMARY KEY AUTOINCREMENT,
             start_date      TEXT NOT NULL,
             venue           TEXT NOT NULL
@@ -19,13 +32,13 @@ pub fn init_database(log: &Logger, path: &Path) -> DbConn {
         .expect("create basho table");
 
     conn.execute("
-        CREATE TABLE IF NOT EXISTS rikishi (
+        CREATE TABLE rikishi (
             id              INTEGER PRIMARY KEY AUTOINCREMENT
         )", NO_PARAMS)
         .expect("create rikishi table");
 
     conn.execute("
-        CREATE TABLE IF NOT EXISTS rikishi_basho (
+        CREATE TABLE rikishi_basho (
             rikishi_id      INTEGER NOT NULL REFERENCES rikishi(id),
             basho_id        INTEGER NOT NULL REFERENCES basho(id),
             family_name     TEXT NOT NULL,
@@ -37,7 +50,7 @@ pub fn init_database(log: &Logger, path: &Path) -> DbConn {
         .expect("create rikishi_basho table");
 
     conn.execute("
-        CREATE TABLE IF NOT EXISTS torikumi (
+        CREATE TABLE torikumi (
             basho_id        INTEGER NOT NULL REFERENCES basho(id),
             day             INTEGER NOT NULL,
             seq             INTEGER NOT NULL,
@@ -52,7 +65,7 @@ pub fn init_database(log: &Logger, path: &Path) -> DbConn {
         .expect("create torikumi table");
 
     conn.execute("
-        CREATE TABLE IF NOT EXISTS player (
+        CREATE TABLE player (
             id              INTEGER PRIMARY KEY AUTOINCREMENT,
             join_date       TEXT NOT NULL,
             name            TEXT NOT NULL
@@ -60,7 +73,7 @@ pub fn init_database(log: &Logger, path: &Path) -> DbConn {
         .expect("create player table");
 
     conn.execute("
-        CREATE TABLE IF NOT EXISTS pick (
+        CREATE TABLE pick (
             player_id       INTEGER NOT NULL,
             basho_id        INTEGER NOT NULL,
             rikishi_id      INTEGER NOT NULL,
@@ -69,13 +82,16 @@ pub fn init_database(log: &Logger, path: &Path) -> DbConn {
         )", NO_PARAMS)
         .expect("create pick table");
 
-    conn.execute("CREATE INDEX IF NOT EXISTS basho_id ON pick (basho_id)", NO_PARAMS)
+    conn.execute("CREATE INDEX basho_id ON pick (basho_id)", NO_PARAMS)
         .expect("create pick.basho_id index");
 
     let now = Utc::now();
     conn.execute("INSERT INTO player (join_date, name) VALUES ($1, $2)",
             params![now, "Kachi Clasher"])
         .expect("insert single entry into entries table");
+}
 
-    Mutex::new(conn)
+fn main() {
+    let config = Config::init().expect("Could not read config from environment");
+    init_database(&config.db_path);
 }

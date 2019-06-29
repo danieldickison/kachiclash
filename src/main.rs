@@ -59,7 +59,7 @@ fn main() -> std::io::Result<()> {
     HttpServer::new(move || App::new()
         .data(AppState {
             log: log.clone(),
-            db: data::schema::init_database(&log, &config.db_path),
+            db: data::make_conn(&config.db_path),
         })
         .wrap(Logger::default())
         .wrap(CookieSession::signed(&session_secret).secure(config.env != "dev"))
