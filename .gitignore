@@ -1,3 +1,4 @@
 /target
 *.sublime-workspace
 .DS_Store
+/var/kachiclash.sqlite

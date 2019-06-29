@@ -14,7 +14,7 @@ pub struct Config {
     #[envconfig(from = "KACHI_ENV", default = "dev")]
     pub env: String,
 
-    #[envconfig(from = "KACHI_DB_PATH", default = "kachi.db")]
+    #[envconfig(from = "KACHI_DB_PATH", default = "var/kachiclash.sqlite")]
     pub db_path: PathBuf,
 }
 
