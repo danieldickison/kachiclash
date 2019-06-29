@@ -43,7 +43,7 @@ pub struct AppState {
     db: data::DbConn,
 }
 
-fn main() -> std::io::Result<()> {
+pub fn run_server() -> std::io::Result<()> {
     let log = logging::setup_logging();
 
     std::env::set_var("RUST_LOG", "actix_web=info");
