@@ -6,8 +6,9 @@ extern crate askama;
 use super::data;
 // use super::external;
 use super::AppState;
-use actix_web::{error, Error, HttpRequest, HttpResponse, Json, Path, Responder};
-use actix_web::middleware::session::RequestSession;
+use actix_web::{error, HttpRequest, HttpResponse, Responder};
+use actix_web::web::Data;
+use actix_session::Session;
 use failure::Fail;
 use askama::Template;
 
@@ -38,27 +39,28 @@ struct IndexTemplate {
     leaders: Vec<data::Player>,
 }
 
-pub fn index(req: &HttpRequest<AppState>) -> impl Responder {
-    let log = &req.state().log;
-    if let Some(count) = req.session().get::<i32>("counter").unwrap_or(None) {
+pub fn index(state: Data<AppState>, session: Session) -> impl Responder {
+    let log = &state.log;
+    if let Some(count) = session.get::<i32>("counter").unwrap_or(None) {
         debug!(log, "SESSION counter: {}", count);
-        if let Err(e) = req.session().set("counter", count+1) {
+        if let Err(e) = session.set("counter", count+1) {
             warn!(log, "could not increment counter: {:?}", e);
         }
     } else {
         debug!(log, "SESSION init counter to 0");
-        if let Err(e) = req.session().set("counter", 1) {
+        if let Err(e) = session.set("counter", 1) {
             warn!(log, "could not initialize counter: {:?}", e);
         }
     }
 
-    IndexTemplate {
-        leaders: data::list_players(&req.state().db)
-    }
+    let s = IndexTemplate {
+        leaders: data::list_players(&state.db)
+    }.render().unwrap();
+    HttpResponse::Ok().content_type("text/html").body(s)
 }
 
-pub fn list_players(req: &HttpRequest<AppState>) -> impl Responder {
-    data::list_players(&req.state().db)
+pub fn list_players(state: Data<AppState>) -> impl Responder {
+    data::list_players(&state.db)
         .iter()
         .map(|p| {
             format!("{}: {} joined {}", p.id, p.name, p.join_date)
@@ -67,27 +69,21 @@ pub fn list_players(req: &HttpRequest<AppState>) -> impl Responder {
         .join("\n")
 }
 
-pub fn name(req: &HttpRequest<AppState>) -> impl Responder {
-    let log = &req.state().log;
-    data::get_name(&req.state().db)
+pub fn name(state: Data<AppState>) -> impl Responder {
+    let log = &state.log;
+    data::get_name(&state.db)
         .map_err(|err| {
             error!(log, "db error: {}", err);
             KachiClashError::DatabaseError
         })
 }
 
-pub fn health(req: &HttpRequest<AppState>) -> impl Responder {
-    let log = &req.state().log;
-    debug!(log, "health hit");
-    "OK".to_string()
-}
-
-pub fn json_error_handler(err: error::JsonPayloadError, _: &HttpRequest<AppState>) -> Error {
-    error::InternalError::from_response(
-        "",
-        HttpResponse::BadRequest()
-            .content_type("application/json")
-            .body(format!(r#"{{"error":"json error: {}"}}"#, err)),
-    )
-    .into()
-}
+// pub fn json_error_handler(err: error::JsonPayloadError, _: &HttpRequest<AppState>) -> Error {
+//     error::InternalError::from_response(
+//         "",
+//         HttpResponse::BadRequest()
+//             .content_type("application/json")
+//             .body(format!(r#"{{"error":"json error: {}"}}"#, err)),
+//     )
+//     .into()
+// }

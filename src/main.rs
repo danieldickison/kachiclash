@@ -13,9 +13,9 @@ extern crate serde_json;
 
 use std::path::PathBuf;
 use std::convert::TryInto;
-use actix_web::{http, server, App};
+use actix_web::{web, HttpServer, App, HttpResponse};
 use actix_web::middleware::Logger;
-use actix_web::middleware::session::{SessionStorage, CookieSessionBackend};
+use actix_session::{CookieSession};
 use envconfig::Envconfig;
 
 mod data;
@@ -43,7 +43,7 @@ pub struct AppState {
     db: data::DbConn,
 }
 
-fn main() {
+fn main() -> std::io::Result<()> {
     let log = logging::setup_logging();
 
     std::env::set_var("RUST_LOG", "actix_web=info");
@@ -56,26 +56,23 @@ fn main() {
     let session_secret: [u8; 32] = config.session_secret.as_bytes().try_into().expect("session key should be 32 utf8 bytes");
     
     info!(log, "starting server on localhost:8000");
-    server::new(move || {
-        App::with_state(AppState {
+    HttpServer::new(move || App::new()
+        .data(AppState {
             log: log.clone(),
             db: data::schema::init_database(&log, &config.db_path),
         })
-        .middleware(Logger::default())
-        .middleware(
-            SessionStorage::new(CookieSessionBackend::signed(&session_secret).secure(config.env != "dev"))
+        .wrap(Logger::default())
+        .wrap(CookieSession::signed(&session_secret).secure(config.env != "dev"))
+        .service(
+            web::resource("/").route(web::get().to(handlers::index))
         )
-        .resource("/", |r| {
-            r.get().f(handlers::index)
-        })
-        .scope("/db", |db_scope|{
-            db_scope.nested("/player", |player_scope| {
-                player_scope
-                    .resource("", |r| {
-                        r.method(http::Method::GET).f(handlers::list_players)
-                    })
-            })
-        })
+        .service(
+            web::scope("/db")
+                .service(web::resource("/player").to(handlers::list_players))
+        )
+        .default_service(
+            web::route().to(|| HttpResponse::NotFound())
+        )
         // .scope("/rest/v1", |v1_scope| {
         //     v1_scope.nested("/activities", |activities_scope| {
         //         activities_scope
@@ -97,15 +94,7 @@ fn main() {
         //             })
         //     })
         // })
-        .resource("/health", |r| {
-            r.method(http::Method::GET).f(handlers::health)
-        })
-        .resource("/name", |r| {
-            r.method(http::Method::GET).f(handlers::name)
-        })
-        .finish()
-    })
-    .bind("0.0.0.0:8000")
-    .unwrap()
-    .run();
+    )
+    .bind("0.0.0.0:8000")?
+    .run()
 }
