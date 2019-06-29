@@ -5,82 +5,42 @@ extern crate envconfig;
 #[macro_use]
 extern crate slog;
 extern crate actix_web;
-#[macro_use]
 extern crate failure;
 extern crate reqwest;
 extern crate serde_derive;
 extern crate serde;
 extern crate serde_json;
 
+use std::path::PathBuf;
 use std::convert::TryInto;
 use actix_web::{http, server, App};
 use actix_web::middleware::Logger;
 use actix_web::middleware::session::{SessionStorage, CookieSessionBackend};
-use failure::Error;
-use std::fs::File;
-use std::io::prelude::*;
-use std::io::BufReader;
+use envconfig::Envconfig;
 
 mod data;
 //mod external;
 mod handlers;
 mod logging;
 
-const SECRETS_FILE: &str = "./dev.secret";
-
-use envconfig::Envconfig;
 
 #[derive(Envconfig)]
+#[derive(Clone)]
 pub struct Config {
     #[envconfig(from = "KACHI_ENV", default = "dev")]
     pub env: String,
 
     #[envconfig(from = "KACHI_DB_PATH", default = "kachi.db")]
-    pub db_path: String,
+    pub db_path: PathBuf,
 
-    #[envconfig(from = "API_KEY", default = "")]
-    pub api_key: String,
-
-    #[envconfig(from = "API_SECRET", default = "")]
-    pub api_secret: String,
-
-    #[envconfig(from = "SESSION_SECRET", default = "")]
-    pub session_key: String,
+    #[envconfig(from = "SESSION_SECRET", default = "abcdefghijklmnopqrstuvwxyz012345")]
+    pub session_secret: String,
 }
 
 #[derive(Debug)]
 pub struct AppState {
     log: slog::Logger,
     db: data::DbConn,
-}
-
-fn get_credentials(config: &Config) -> Result<(String, String, [u8; 32]), Error> {
-    if config.env != "dev" {
-        return Ok((
-            config.api_key.to_string(),
-            config.api_secret.to_string(),
-            config.session_key.as_bytes().try_into().expect("session key should be 32 utf8 bytes")
-        ));
-    }
-
-    // dev-only: read from SECRETS_FILE
-    let file = File::open(SECRETS_FILE).expect("Could not open file");
-    let buf = BufReader::new(file);
-    let lines: Vec<String> = buf
-        .lines()
-        .take(3)
-        .map(std::result::Result::unwrap_or_default)
-        .collect();
-    if lines[0].is_empty() || lines[1].is_empty() {
-        return Err(format_err!(
-            "The first line needs to be the apiKey, the second line the apiSecret"
-        ));
-    }
-    Ok((
-        lines[0].to_string(),
-        lines[1].to_string(),
-        lines[2].as_bytes().try_into().expect("session key should be 32 utf8 bytes")
-    ))
 }
 
 fn main() {
@@ -90,20 +50,20 @@ fn main() {
     env_logger::init();
 
     let config = Config::init().expect("Could not read config from environment");
-    let is_dev = config.env == "dev";
-    let (_api_key, _api_secret, session_key) = match get_credentials(&config) {
-        Ok(v) => v,
-        Err(e) => panic!("Could not get credentials: {}", e),
-    };
+    if config.env != "dev" && config.session_secret == "abcdefghijklmnopqrstuvwxyz012345" {
+        panic!("default session_secret specified for non-dev deployment");
+    }
+    let session_secret: [u8; 32] = config.session_secret.as_bytes().try_into().expect("session key should be 32 utf8 bytes");
+    
     info!(log, "starting server on localhost:8000");
     server::new(move || {
         App::with_state(AppState {
             log: log.clone(),
-            db: data::init_database(config.db_path),
+            db: data::schema::init_database(&log, &config.db_path),
         })
         .middleware(Logger::default())
         .middleware(
-            SessionStorage::new(CookieSessionBackend::signed(&session_key).secure(!is_dev))
+            SessionStorage::new(CookieSessionBackend::signed(&session_secret).secure(config.env != "dev"))
         )
         .resource("/", |r| {
             r.get().f(handlers::index)
