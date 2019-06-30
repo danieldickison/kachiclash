@@ -40,16 +40,15 @@ struct IndexTemplate {
 }
 
 pub fn index(state: Data<AppState>, session: Session) -> impl Responder {
-    let log = &state.log;
     if let Some(count) = session.get::<i32>("counter").unwrap_or(None) {
-        debug!(log, "SESSION counter: {}", count);
+        debug!("SESSION counter: {}", count);
         if let Err(e) = session.set("counter", count+1) {
-            warn!(log, "could not increment counter: {:?}", e);
+            warn!("could not increment counter: {:?}", e);
         }
     } else {
-        debug!(log, "SESSION init counter to 0");
+        debug!("SESSION init counter to 0");
         if let Err(e) = session.set("counter", 1) {
-            warn!(log, "could not initialize counter: {:?}", e);
+            warn!("could not initialize counter: {:?}", e);
         }
     }
 
@@ -70,10 +69,9 @@ pub fn list_players(state: Data<AppState>) -> impl Responder {
 }
 
 pub fn name(state: Data<AppState>) -> impl Responder {
-    let log = &state.log;
     data::get_name(&state.db)
         .map_err(|err| {
-            error!(log, "db error: {}", err);
+            error!("db error: {}", err);
             KachiClashError::DatabaseError
         })
 }

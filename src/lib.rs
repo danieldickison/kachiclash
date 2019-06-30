@@ -1,9 +1,9 @@
+#[macro_use]
+extern crate log;
 extern crate env_logger;
 #[macro_use]
 extern crate envconfig_derive;
 extern crate envconfig;
-#[macro_use]
-extern crate slog;
 extern crate actix_web;
 extern crate failure;
 extern crate reqwest;
@@ -19,9 +19,7 @@ use actix_session::{CookieSession};
 use envconfig::Envconfig;
 
 mod data;
-//mod external;
 mod handlers;
-mod logging;
 
 
 #[derive(Envconfig)]
@@ -39,13 +37,10 @@ pub struct Config {
 
 #[derive(Debug)]
 pub struct AppState {
-    log: slog::Logger,
     db: data::DbConn,
 }
 
 pub fn run_server() -> std::io::Result<()> {
-    let log = logging::setup_logging();
-
     std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
 
@@ -55,10 +50,9 @@ pub fn run_server() -> std::io::Result<()> {
     }
     let session_secret: [u8; 32] = config.session_secret.as_bytes().try_into().expect("session key should be 32 utf8 bytes");
     
-    info!(log, "starting server on localhost:8000");
+    info!("starting server on localhost:8000");
     HttpServer::new(move || App::new()
         .data(AppState {
-            log: log.clone(),
             db: data::make_conn(&config.db_path),
         })
         .wrap(Logger::default())
