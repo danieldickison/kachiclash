@@ -4,9 +4,8 @@ extern crate askama;
 //     ActivitiesResponse, ActivityRequest, ActivityResponse, EditActivityRequest, ErrorListResponse,
 // };
 use super::data;
-// use super::external;
 use super::AppState;
-use actix_web::{error, HttpRequest, HttpResponse, Responder};
+use actix_web::{error, HttpResponse, Responder};
 use actix_web::web::Data;
 use actix_session::Session;
 use failure::Fail;

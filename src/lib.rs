@@ -58,7 +58,7 @@ pub fn run_server() -> std::io::Result<()> {
         .wrap(Logger::default())
         .wrap(CookieSession::signed(&session_secret).secure(config.env != "dev"))
         .service(
-            web::resource("/").route(web::get().to(handlers::index))
+            web::resource("/").to(handlers::index)
         )
         .service(
             web::scope("/db")
