@@ -47,11 +47,13 @@ pub fn basho(path: web::Path<u32>, state: web::Data<AppState>, _session: Session
 }
 
 fn fetch_leaders(db: &Connection, basho_id: u32) -> Vec<BashoPlayerResults> {
+    debug!("fetching leadings for basho {}", basho_id);
     db
         .prepare("
             SELECT
                 player.id,
                 player.name,
+                torikumi.day,
                 SUM(torikumi.win) AS wins
             FROM player
             JOIN pick ON pick.player_id = player.id AND pick.basho_id = :basho_id
@@ -65,19 +67,21 @@ fn fetch_leaders(db: &Connection, basho_id: u32) -> Vec<BashoPlayerResults> {
                 ORDER BY SUM(torikumi.win) DESC
                 LIMIT 10
             )
+            GROUP BY player.id, torikumi.day
             ORDER BY player.id, torikumi.day
         ").unwrap()
         .query_map_named(
             named_params!{
                 ":basho_id": basho_id
             },
-            |row| -> Result<(u32, String, u8), _> { Ok((
+            |row| -> Result<(u32, String, u8, u8), _> { Ok((
                 row.get(0)?,
                 row.get(1)?,
                 row.get(2)?,
+                row.get(3)?,
             ))}
         )
-        .and_then(|mapped_rows| mapped_rows.collect::<Result<Vec<(u32, String, u8)>, _>>())
+        .and_then(|mapped_rows| mapped_rows.collect::<Result<Vec<(u32, String, u8, u8)>, _>>())
         .unwrap_or_else(|e| {
             warn!("failed to fetch leaderboard: {:?}", e);
             vec![]
@@ -90,8 +94,8 @@ fn fetch_leaders(db: &Connection, basho_id: u32) -> Vec<BashoPlayerResults> {
             let name = rows.peek().unwrap().1.to_string();
             let mut days: [Option<u8>; 15] = [None; 15];
             let mut total = 0;
-            for (i, (_, _, wins)) in rows.enumerate() {
-                days[i] = Some(wins);
+            for (_, _, day, wins) in rows {
+                days[day as usize - 1] = Some(wins);
                 total += wins;
             }
             BashoPlayerResults {
