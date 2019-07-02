@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block main_id %}p-basho{% endblock %}
+
+{% block head %}
+    <style>
+        #p-basho #leaderboard {
+            background: #e8faff;
+        }
+        #p-basho #banzuke {
+            background: #fff8e8;
+        }
+    </style>
+{% endblock %}
+
+{% block main %}
+    <section id="leaderboard">
+        <h2>Leaderboard</h2>
+        <table>
+            <thead>
+                <th>Player</th>
+                {% for day in 1..15 %}
+                    <th>{{day}}</th>
+                {% endfor %}
+                <th>Total</th>
+            </thead>
+            <tbody>
+            {% for player in leaders %}
+                <tr>
+                    <td>{{player.name}}</td>
+                    {% for wins in player.days %}
+                        <td>
+                        {% match wins %}
+                            {% when Some with (num) %}{{num}}
+                            {% when None %}-
+                        {% endmatch %}
+                        </td>
+                    {% endfor %}
+                    <td>{{player.total}}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    <section id="banzuke">
+        <h2>Banzuke</h2>
+        <table>
+            <thead>
+                <th colspan="2">East</th>
+                <th>Rank</th>
+                <th colspan="2">West</th>
+            </thead>
+            <tbody>
+            {% for rr in rikishi_by_rank %}
+                <tr>
+                    <td>{{rr.east_name}}</td>
+                    <td>
+                    {% for day in rr.east_results %}
+                        {% match day %}
+                            {% when Some with (true) %}⚪️
+                            {% when Some with (false) %}⚫️
+                            {% when None %}-
+                        {% endmatch %}
+                    {% endfor %}
+                    </td>
+                    <td>{{rr.rank}}</td>
+                    <td>{{rr.west_name}}</td>
+                    <td>
+                    {% for day in rr.west_results %}
+                        {% match day %}
+                            {% when Some with (true) %}⚪️
+                            {% when Some with (false) %}⚫️
+                            {% when None %}-
+                        {% endmatch %}
+                    {% endfor %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </section>
+{% endblock %}

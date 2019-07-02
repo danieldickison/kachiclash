@@ -10,6 +10,8 @@ extern crate reqwest;
 extern crate serde_derive;
 extern crate serde;
 extern crate serde_json;
+#[macro_use]
+extern crate rusqlite;
 
 use std::path::PathBuf;
 use std::convert::TryInto;
@@ -41,7 +43,8 @@ pub struct AppState {
 }
 
 pub fn run_server() -> std::io::Result<()> {
-    std::env::set_var("RUST_LOG", "actix_web=info");
+    //std::env::set_var("RUST_LOG", "actix_web=info");
+    std::env::set_var("RUST_LOG", "debug");
     env_logger::init();
 
     let config = Config::init().expect("Could not read config from environment");
@@ -50,7 +53,7 @@ pub fn run_server() -> std::io::Result<()> {
     }
     let session_secret: [u8; 32] = config.session_secret.as_bytes().try_into().expect("session key should be 32 utf8 bytes");
     
-    info!("starting server on localhost:8000");
+    println!("starting server on localhost:8000");
     HttpServer::new(move || App::new()
         .data(AppState {
             db: data::make_conn(&config.db_path),
@@ -59,6 +62,9 @@ pub fn run_server() -> std::io::Result<()> {
         .wrap(CookieSession::signed(&session_secret).secure(config.env != "dev"))
         .service(
             web::resource("/").to(handlers::index)
+        )
+        .service(
+            web::resource("/basho/{basho_id}").to(handlers::basho::basho)
         )
         .service(
             web::scope("/db")

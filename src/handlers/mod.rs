@@ -11,6 +11,8 @@ use actix_session::Session;
 use failure::Fail;
 use askama::Template;
 
+pub mod basho;
+
 #[derive(Fail, Debug)]
 pub enum KachiClashError {
     #[fail(display = "External Service Error")]

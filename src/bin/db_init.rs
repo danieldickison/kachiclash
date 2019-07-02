@@ -23,9 +23,10 @@ fn init_database(path: &Path) {
     println!("initializing db at {:?}", path);
     let conn = Connection::open(path).expect("sqlite db");
 
+    // id is yearmonth
     conn.execute("
         CREATE TABLE basho (
-            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            id              INTEGER PRIMARY KEY,
             start_date      TEXT NOT NULL,
             venue           TEXT NOT NULL
         )", NO_PARAMS)
@@ -54,13 +55,12 @@ fn init_database(path: &Path) {
             basho_id        INTEGER NOT NULL REFERENCES basho(id),
             day             INTEGER NOT NULL,
             seq             INTEGER NOT NULL,
-            east_rikishi_id INTEGER NOT NULL,
-            west_rikishi_id INTEGER NOT NULL,
-            winner          INTEGER,
+            side            TEXT NOT NULL,
+            rikishi_id      INTEGER NOT NULL,
+            win             INTEGER,
 
-            PRIMARY KEY (basho_id, day, seq),
-            FOREIGN KEY (east_rikishi_id, basho_id) REFERENCES rikishi_basho(rikishi_id, basho_id),
-            FOREIGN KEY (west_rikishi_id, basho_id) REFERENCES rikishi_basho(rikishi_id, basho_id)
+            PRIMARY KEY (basho_id, day, seq, side),
+            FOREIGN KEY (rikishi_id, basho_id) REFERENCES rikishi_basho(rikishi_id, basho_id)
         )", NO_PARAMS)
         .expect("create torikumi table");
 

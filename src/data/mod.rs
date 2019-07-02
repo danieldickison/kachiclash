@@ -1,4 +1,3 @@
-extern crate rusqlite;
 extern crate chrono;
 
 use std::path::Path;
