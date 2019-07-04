@@ -25,7 +25,7 @@ impl Into<FromSqlError> for RankError {
     }
 }
 
-#[derive(Debug, PartialEq, PartialOrd, Eq, Ord)]
+#[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Copy, Clone)]
 pub enum RankName {
     Yokozuna,
     Ozeki,
@@ -60,7 +60,7 @@ impl TryFrom<char> for RankName {
     }
 }
 
-#[derive(Debug, PartialEq, PartialOrd, Eq, Ord)]
+#[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Copy, Clone)]
 pub enum RankSide {
     East,
     West,
@@ -86,7 +86,7 @@ impl TryFrom<char> for RankSide {
     }
 }
 
-#[derive(Debug, PartialEq, PartialOrd, Eq, Ord)]
+#[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Copy, Clone)]
 pub struct Rank {
     pub name: RankName,
     pub number: u8,
@@ -103,7 +103,7 @@ impl FromSql for Rank {
     fn column_result(value: ValueRef) -> FromSqlResult<Self> {
         let parse = |mut chars: Chars| -> Result<Rank, RankError> {
             let name_char = chars.next().ok_or_else(|| RankError::MissingChar.into())?;
-            let side_char = chars.next().ok_or_else(|| RankError::MissingChar.into())?;
+            let side_char = chars.next_back().ok_or_else(|| RankError::MissingChar.into())?;
             Ok(Rank {
                 name: RankName::try_from(name_char)?,
                 side: RankSide::try_from(side_char)?,

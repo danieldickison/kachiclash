@@ -11,7 +11,7 @@ use actix_session::Session;
 use askama::Template;
 
 #[derive(Template)]
-#[template(path = "basho.html")]
+#[template(path = "basho.html", print = "code")]
 struct BashoTemplate {
     leaders: Vec<BashoPlayerResults>,
     rikishi_by_rank: Vec<BashoRikishiByRank>,
@@ -25,9 +25,11 @@ struct BashoPlayerResults {
 
 struct BashoRikishiByRank {
     rank: String,
-    east_name: Option<String>,
+    has_east: bool,
+    east_name: String,
     east_results: [Option<bool>; 15],
-    west_name: Option<String>,
+    has_west: bool,
+    west_name: String,
     west_results: [Option<bool>; 15],
 }
 
@@ -78,7 +80,7 @@ fn fetch_leaders(db: &Connection, basho_id: u32) -> Vec<BashoPlayerResults> {
         )
         .and_then(|mapped_rows| mapped_rows.collect::<Result<Vec<(u32, String, u8, u8)>, _>>())
         .unwrap_or_else(|e| {
-            warn!("failed to fetch leaderboard: {:?}", e);
+            error!("failed to fetch leaderboard: {:?}", e);
             vec![]
         })
         .into_iter()
@@ -130,7 +132,7 @@ fn fetch_rikishi(db: &Connection, basho_id: u32) -> Vec<BashoRikishiByRank> {
         )
         .and_then(|mapped_rows| mapped_rows.collect::<Result<Vec<(Rank, u32, String, u8, Option<bool>)>, _>>())
         .unwrap_or_else(|e| {
-            warn!("failed to fetch rikishi: {:?}", e);
+            error!("failed to fetch rikishi: {:?}", e);
             vec![]
         })
         .into_iter()
@@ -139,9 +141,11 @@ fn fetch_rikishi(db: &Connection, basho_id: u32) -> Vec<BashoRikishiByRank> {
         .map(|(rank, pair)| {
             let mut out = BashoRikishiByRank {
                 rank: format!("{:}{}", rank.0, rank.1),
-                east_name: None,
+                has_east: false,
+                east_name: "".to_string(),
                 east_results: [None; 15],
-                west_name: None,
+                has_west: false,
+                west_name: "".to_string(),
                 west_results: [None; 15],
             };
             for (_, rows) in &pair.into_iter().group_by(|row| row.0) {
@@ -157,10 +161,12 @@ fn fetch_rikishi(db: &Connection, basho_id: u32) -> Vec<BashoRikishiByRank> {
                 // todo tally results
                 match arow.0.side {
                     RankSide::East => {
-                        out.east_name = Some(name)
+                        out.has_east = true;
+                        out.east_name = name;
                     }
                     RankSide::West => {
-                        out.west_name = Some(name)
+                        out.has_west = true;
+                        out.west_name = name;
                     }
                 }
             }
