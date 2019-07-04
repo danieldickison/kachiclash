@@ -40,7 +40,7 @@ pub fn basho(path: web::Path<u32>, state: web::Data<AppState>, _session: Session
         leaders: fetch_leaders(&db, basho_id),
         rikishi_by_rank: fetch_rikishi(&db, basho_id),
     }.render().unwrap();
-    HttpResponse::Ok().content_type("text/html").body(s)
+    HttpResponse::Ok().content_type("text/html; charset=utf-8").body(s)
 }
 
 fn fetch_leaders(db: &Connection, basho_id: u32) -> Vec<BashoPlayerResults> {
