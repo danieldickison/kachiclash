@@ -11,7 +11,7 @@ use actix_session::Session;
 use askama::Template;
 
 #[derive(Template)]
-#[template(path = "basho.html", print = "code")]
+#[template(path = "basho.html")]
 struct BashoTemplate {
     leaders: Vec<BashoPlayerResults>,
     rikishi_by_rank: Vec<BashoRikishiByRank>,
@@ -163,10 +163,16 @@ fn fetch_rikishi(db: &Connection, basho_id: u32) -> Vec<BashoRikishiByRank> {
                     RankSide::East => {
                         out.has_east = true;
                         out.east_name = name;
+                        for (_, _, _, day, win) in rows {
+                            out.east_results[day as usize - 1] = win
+                        }
                     }
                     RankSide::West => {
                         out.has_west = true;
                         out.west_name = name;
+                        for (_, _, _, day, win) in rows {
+                            out.west_results[day as usize - 1] = win
+                        }
                     }
                 }
             }
