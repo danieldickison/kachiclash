@@ -19,6 +19,11 @@ pub struct Config {
 }
 
 
+fn main() {
+    let config = Config::init().expect("Could not read config from environment");
+    init_database(&config.db_path);
+}
+
 fn init_database(path: &Path) {
     println!("initializing db at {:?}", path);
     let conn = Connection::open(path).expect("sqlite db");
@@ -85,13 +90,56 @@ fn init_database(path: &Path) {
     conn.execute("CREATE INDEX basho_id ON pick (basho_id)", NO_PARAMS)
         .expect("create pick.basho_id index");
 
-    let now = Utc::now();
-    conn.execute("INSERT INTO player (join_date, name) VALUES ($1, $2)",
-            params![now, "Kachi Clasher"])
-        .expect("insert single entry into entries table");
+    populate_dummy_data(&conn);
 }
 
-fn main() {
-    let config = Config::init().expect("Could not read config from environment");
-    init_database(&config.db_path);
+fn populate_dummy_data(conn: &Connection) {
+    let now = Utc::now();
+
+    let basho_id = 201907;
+    conn.execute("INSERT INTO basho (id, start_date, venue) VALUES (?, ?, ?)",
+        params![basho_id, now, "Osaka"]).unwrap();
+
+    conn.execute("INSERT INTO rikishi DEFAULT VALUES", NO_PARAMS).unwrap();
+    let rikishi1_id = conn.last_insert_rowid();
+    conn.execute("INSERT INTO rikishi DEFAULT VALUES", NO_PARAMS).unwrap();
+    let rikishi2_id = conn.last_insert_rowid();
+    conn.execute("INSERT INTO rikishi DEFAULT VALUES", NO_PARAMS).unwrap();
+    let rikishi3_id = conn.last_insert_rowid();
+    conn.execute("INSERT INTO rikishi DEFAULT VALUES", NO_PARAMS).unwrap();
+    let rikishi4_id = conn.last_insert_rowid();
+
+    conn.execute("INSERT INTO rikishi_basho (rikishi_id, basho_id, family_name, given_name, rank)
+        VALUES (?, ?, ?, ?, ?), (?, ?, ?, ?, ?), (?, ?, ?, ?, ?), (?, ?, ?, ?, ?)",
+        params![
+            rikishi1_id, basho_id, "Hakuho", "Sho", "Y1E",
+            rikishi2_id, basho_id, "Kakuryu", "Rikisaburo", "Y1W",
+            rikishi3_id, basho_id, "Takakeisho", "Mitsunobu", "O1E",
+            rikishi4_id, basho_id, "Mitakeumi", "Hisashi", "S1E"]).unwrap();
+
+    conn.execute("INSERT INTO torikumi (basho_id, day, seq, side, rikishi_id, win)
+        VALUES
+            (?, 1, 1, 'E', ?, ?), (?, 1, 1, 'W', ?, ?), (?, 1, 2, 'E', ?, ?), (?, 1, 2, 'W', ?, ?),
+            (?, 2, 1, 'E', ?, ?), (?, 2, 1, 'W', ?, ?), (?, 2, 2, 'E', ?, ?), (?, 2, 2, 'W', ?, ?)",
+        params![
+            basho_id, rikishi1_id, 1,
+            basho_id, rikishi2_id, 0,
+            basho_id, rikishi3_id, 1,
+            basho_id, rikishi4_id, 0,
+            basho_id, rikishi2_id, 1,
+            basho_id, rikishi4_id, 0,
+            basho_id, rikishi1_id, 0,
+            basho_id, rikishi3_id, 1]).unwrap();
+
+    conn.execute(
+        "INSERT INTO player (join_date, name) VALUES (?, ?)",
+        params![now, "Daniel"]
+    ).unwrap();
+    let player_id = conn.last_insert_rowid();
+
+    conn.execute(
+        "INSERT INTO pick (player_id, basho_id, rikishi_id) VALUES ($1, $2, $3), ($1, $2, $4)",
+        params![player_id, basho_id, rikishi1_id, rikishi4_id]
+    ).unwrap();
 }
+
