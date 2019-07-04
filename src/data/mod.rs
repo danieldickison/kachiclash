@@ -6,7 +6,11 @@ use std::sync::Mutex;
 use rusqlite::{Connection, Error, NO_PARAMS};
 use chrono::{DateTime, Utc};
 
+mod rank;
+pub use rank::{Rank, RankName, RankSide};
+
 pub type DbConn = Mutex<Connection>;
+
 
 pub fn make_conn(path: &Path) -> DbConn {
     let conn = Connection::open(path).expect("sqlite db");

@@ -4,6 +4,7 @@ use itertools::Itertools;
 use rusqlite::{Connection};
 
 use super::AppState;
+use super::data::{Rank, RankSide};
 
 use actix_web::{web, HttpResponse, Responder};
 use actix_session::Session;
@@ -24,9 +25,9 @@ struct BashoPlayerResults {
 
 struct BashoRikishiByRank {
     rank: String,
-    east_name: String,
+    east_name: Option<String>,
     east_results: [Option<bool>; 15],
-    west_name: String,
+    west_name: Option<String>,
     west_results: [Option<bool>; 15],
 }
 
@@ -35,13 +36,7 @@ pub fn basho(path: web::Path<u32>, state: web::Data<AppState>, _session: Session
     let db = state.db.lock().unwrap();
     let s = BashoTemplate {
         leaders: fetch_leaders(&db, basho_id),
-        rikishi_by_rank: vec![BashoRikishiByRank {
-            rank: "M1".to_string(),
-            east_name: "foo".to_string(),
-            east_results: [None; 15],
-            west_name: "bar".to_string(),
-            west_results: [Some(true); 15],
-        }]
+        rikishi_by_rank: fetch_rikishi(&db, basho_id),
     }.render().unwrap();
     HttpResponse::Ok().content_type("text/html").body(s)
 }
@@ -104,5 +99,72 @@ fn fetch_leaders(db: &Connection, basho_id: u32) -> Vec<BashoPlayerResults> {
                 days: days
             }
         })
-        .collect::<Vec<BashoPlayerResults>>()
+        .collect()
+}
+
+fn fetch_rikishi(db: &Connection, basho_id: u32) -> Vec<BashoRikishiByRank> {
+    debug!("fetching rikishi results for basho {}", basho_id);
+    db
+        .prepare("
+            SELECT
+                rikishi_basho.rank,
+                rikishi_basho.rikishi_id,
+                rikishi_basho.family_name,
+                torikumi.day,
+                torikumi.win
+            FROM rikishi_basho
+            NATURAL JOIN torikumi
+            WHERE
+                rikishi_basho.basho_id = ?
+            ORDER BY rikishi_basho.rank, torikumi.day
+        ").unwrap()
+        .query_map(
+            params![basho_id],
+            |row| -> Result<(Rank, u32, String, u8, Option<bool>), _> { Ok((
+                row.get(0)?,
+                row.get(1)?,
+                row.get(2)?,
+                row.get(3)?,
+                row.get(4)?,
+            ))}
+        )
+        .and_then(|mapped_rows| mapped_rows.collect::<Result<Vec<(Rank, u32, String, u8, Option<bool>)>, _>>())
+        .unwrap_or_else(|e| {
+            warn!("failed to fetch rikishi: {:?}", e);
+            vec![]
+        })
+        .into_iter()
+        .group_by(|row| (row.0.name, row.0.number)) // rank name and number but group east/west together
+        .into_iter()
+        .map(|(rank, pair)| {
+            let mut out = BashoRikishiByRank {
+                rank: format!("{:}{}", rank.0, rank.1),
+                east_name: None,
+                east_results: [None; 15],
+                west_name: None,
+                west_results: [None; 15],
+            };
+            for (_, rows) in &pair.into_iter().group_by(|row| row.0) {
+                let mut rows = rows.peekable();
+                let arow = rows.peek().unwrap();
+                let name = arow.2.to_string();
+
+                // let mut total = 0;
+                // for (_, _, day, wins) in rows {
+                //     days[day as usize - 1] = Some(wins);
+                //     total += wins;
+                // }
+                // todo tally results
+                match arow.0.side {
+                    RankSide::East => {
+                        out.east_name = Some(name)
+                    }
+                    RankSide::West => {
+                        out.west_name = Some(name)
+                    }
+                }
+            }
+            out
+        })
+        .collect()
 }

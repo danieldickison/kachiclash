@@ -54,7 +54,7 @@
             <tbody>
             {% for rr in rikishi_by_rank %}
                 <tr>
-                    <td>{{rr.east_name}}</td>
+                    <td>{{rr.east_name.unwrap()}}</td>
                     <td>
                     {% for day in rr.east_results %}
                         {% match day %}
@@ -65,7 +65,7 @@
                     {% endfor %}
                     </td>
                     <td>{{rr.rank}}</td>
-                    <td>{{rr.west_name}}</td>
+                    <td>{{rr.west_name.unwrap()}}</td>
                     <td>
                     {% for day in rr.west_results %}
                         {% match day %}
