@@ -69,14 +69,6 @@ pub fn list_players(state: Data<AppState>) -> impl Responder {
         .join("\n")
 }
 
-pub fn name(state: Data<AppState>) -> impl Responder {
-    data::get_name(&state.db)
-        .map_err(|err| {
-            error!("db error: {}", err);
-            KachiClashError::DatabaseError
-        })
-}
-
 // pub fn json_error_handler(err: error::JsonPayloadError, _: &HttpRequest<AppState>) -> Error {
 //     error::InternalError::from_response(
 //         "",
