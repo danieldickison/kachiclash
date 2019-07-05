@@ -10,6 +10,10 @@ use actix_web::{web, HttpResponse, Responder};
 use actix_session::Session;
 use askama::Template;
 
+pub fn basho_list(state: web::Data<AppState>) -> impl Responder {
+    
+}
+
 #[derive(Template)]
 #[template(path = "basho.html")]
 struct BashoTemplate {
@@ -106,8 +110,7 @@ fn fetch_leaders(db: &Connection, basho_id: u32) -> Vec<BashoPlayerResults> {
 
 fn fetch_rikishi(db: &Connection, basho_id: u32) -> Vec<BashoRikishiByRank> {
     debug!("fetching rikishi results for basho {}", basho_id);
-    db
-        .prepare("
+    db.prepare("
             SELECT
                 rikishi_basho.rank,
                 rikishi_basho.rikishi_id,
@@ -118,7 +121,7 @@ fn fetch_rikishi(db: &Connection, basho_id: u32) -> Vec<BashoRikishiByRank> {
             NATURAL JOIN torikumi
             WHERE
                 rikishi_basho.basho_id = ?
-            ORDER BY rikishi_basho.rank, torikumi.day
+            ORDER BY rikishi_basho.rikishi_id, torikumi.day
         ").unwrap()
         .query_map(
             params![basho_id],
@@ -137,6 +140,8 @@ fn fetch_rikishi(db: &Connection, basho_id: u32) -> Vec<BashoRikishiByRank> {
         })
         .into_iter()
         .group_by(|row| (row.0.name, row.0.number)) // rank name and number but group east/west together
+        .into_iter()
+        .sorted_by(|(rank1, _), (rank2, _)| rank1.cmp(rank2))
         .into_iter()
         .map(|(rank, pair)| {
             let mut out = BashoRikishiByRank {
