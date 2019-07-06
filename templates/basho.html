@@ -19,26 +19,26 @@
         <table>
             <thead>
                 <th>Player</th>
-                {% for day in 1..16 %}
+                {% for day in 1..16 -%}
                     <th>{{day}}</th>
-                {% endfor %}
+                {% endfor -%}
                 <th>Total</th>
             </thead>
             <tbody>
-            {% for player in leaders %}
+            {% for player in leaders -%}
                 <tr>
                     <td>{{player.name}}</td>
-                    {% for wins in player.days %}
+                    {%- for wins in player.days -%}
                         <td>
-                        {% match wins %}
-                            {% when Some with (num) %}{{num}}
-                            {% when None %}-
-                        {% endmatch %}
+                        {%- match wins -%}
+                            {%- when Some with (num) %}{{num}}
+                            {%- when None %}-
+                        {%- endmatch -%}
                         </td>
-                    {% endfor %}
+                    {% endfor -%}
                     <td>{{player.total}}</td>
                 </tr>
-            {% endfor %}
+            {%- endfor %}
             </tbody>
         </table>
     </section>
@@ -52,35 +52,35 @@
                 <th colspan="2">West</th>
             </thead>
             <tbody>
-            {% for rr in rikishi_by_rank %}
+            {% for rr in rikishi_by_rank -%}
                 <tr>
                     <td>{{rr.east_name}}</td>
                     <td>
-                    {% if rr.has_east %}
-                        {% for day in rr.east_results %}
-                            {% match day %}
-                                {% when Some with (true) %}⚪️
-                                {% when Some with (false) %}⚫️
-                                {% when None %}—
-                            {% endmatch %}
-                        {% endfor %}
-                    {% endif %}
+                    {%- if rr.has_east -%}
+                        {%- for day in rr.east_results -%}
+                            {%- match day -%}
+                                {%- when Some with (true) %}⚪️
+                                {%- when Some with (false) %}⚫️
+                                {%- when None %}—
+                            {%- endmatch -%}
+                        {%- endfor -%}
+                    {%- endif -%}
                     </td>
                     <td>{{rr.rank}}</td>
                     <td>{{rr.west_name}}</td>
                     <td>
-                    {% if rr.has_west %}
-                        {% for day in rr.west_results %}
-                            {% match day %}
-                                {% when Some with (true) %}⚪️
-                                {% when Some with (false) %}⚫️
-                                {% when None %}—
-                            {% endmatch %}
-                        {% endfor %}
-                    {% endif %}
+                    {%- if rr.has_west -%}
+                        {%- for day in rr.west_results -%}
+                            {%- match day -%}
+                                {%- when Some with (true) %}⚪️
+                                {%- when Some with (false) %}⚫️
+                                {%- when None %}—
+                            {%- endmatch -%}
+                        {%- endfor -%}
+                    {%- endif -%}
                     </td>
                 </tr>
-            {% endfor %}
+            {% endfor -%}
             </tbody>
         </table>
     </section>
