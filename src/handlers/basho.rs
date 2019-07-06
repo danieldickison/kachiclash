@@ -7,11 +7,10 @@ use super::AppState;
 use super::data::{Rank, RankSide};
 
 use actix_web::{web, HttpResponse, Responder};
-use actix_session::Session;
 use askama::Template;
 
 pub fn basho_list(state: web::Data<AppState>) -> impl Responder {
-    
+
 }
 
 #[derive(Template)]
@@ -37,7 +36,7 @@ struct BashoRikishiByRank {
     west_results: [Option<bool>; 15],
 }
 
-pub fn basho(path: web::Path<u32>, state: web::Data<AppState>, _session: Session) -> impl Responder {
+pub fn basho(path: web::Path<u32>, state: web::Data<AppState>) -> impl Responder {
     let basho_id = path.into_inner();
     let db = state.db.lock().unwrap();
     let s = BashoTemplate {

@@ -1,17 +1,15 @@
 extern crate askama;
 
-// use super::data::{
-//     ActivitiesResponse, ActivityRequest, ActivityResponse, EditActivityRequest, ErrorListResponse,
-// };
 use super::data;
 use super::AppState;
 use actix_web::{error, HttpResponse, Responder};
 use actix_web::web::Data;
-use actix_session::Session;
+use actix_identity::Identity;
 use failure::Fail;
 use askama::Template;
 
 pub mod basho;
+pub mod login;
 
 #[derive(Fail, Debug)]
 pub enum KachiClashError {
@@ -40,18 +38,8 @@ struct IndexTemplate {
     leaders: Vec<data::Player>,
 }
 
-pub fn index(state: Data<AppState>, session: Session) -> impl Responder {
-    if let Some(count) = session.get::<i32>("counter").unwrap_or(None) {
-        debug!("SESSION counter: {}", count);
-        if let Err(e) = session.set("counter", count+1) {
-            warn!("could not increment counter: {:?}", e);
-        }
-    } else {
-        debug!("SESSION init counter to 0");
-        if let Err(e) = session.set("counter", 1) {
-            warn!("could not initialize counter: {:?}", e);
-        }
-    }
+pub fn index(state: Data<AppState>, identity: Identity) -> impl Responder {
+    debug!("Identity: {:?}", identity.identity());
 
     let s = IndexTemplate {
         leaders: data::list_players(&state.db)
