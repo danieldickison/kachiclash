@@ -34,9 +34,9 @@ impl Player {
         })
     }
 
-    pub fn small_thumb(&self) -> String {
+    pub fn tiny_thumb(&self) -> String {
         match &self.discord_info {
-            Some(info) => discord::avatar_url(&info, discord::ImageExt::PNG, discord::ImageSize::SMALL).to_string(),
+            Some(info) => discord::avatar_url(&info, discord::ImageExt::PNG, discord::ImageSize::TINY).to_string(),
             None => "/static/default_avatar.png".to_string(),
         }
     }

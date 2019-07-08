@@ -43,16 +43,15 @@ pub fn basho(path: web::Path<u32>, state: web::Data<AppState>, identity: Identit
     let db = state.db.lock().unwrap();
     let s = BashoTemplate {
         base: base,
-        leaders: fetch_leaders(&db, basho_id),
-        rikishi_by_rank: fetch_rikishi(&db, basho_id),
-    }.render().unwrap();
+        leaders: fetch_leaders(&db, basho_id)?,
+        rikishi_by_rank: fetch_rikishi(&db, basho_id)?,
+    }.render()?;
     Ok(HttpResponse::Ok().content_type("text/html; charset=utf-8").body(s))
 }
 
-fn fetch_leaders(db: &Connection, basho_id: u32) -> Vec<BashoPlayerResults> {
-    debug!("fetching leadings for basho {}", basho_id);
-    db
-        .prepare("
+fn fetch_leaders(db: &Connection, basho_id: u32) -> Result<Vec<BashoPlayerResults>> {
+    debug!("fetching leaders for basho {}", basho_id);
+    Ok(db.prepare("
             SELECT
                 player.id,
                 player.name,
@@ -77,18 +76,16 @@ fn fetch_leaders(db: &Connection, basho_id: u32) -> Vec<BashoPlayerResults> {
             named_params!{
                 ":basho_id": basho_id
             },
-            |row| -> SqlResult<(u32, String, u8, u8)> { Ok((
-                row.get(0)?,
-                row.get(1)?,
-                row.get(2)?,
-                row.get(3)?,
-            ))}
-        )
-        .and_then(|mapped_rows| mapped_rows.collect::<SqlResult<Vec<(u32, String, u8, u8)>>>())
-        .unwrap_or_else(|e| {
-            error!("failed to fetch leaderboard: {:?}", e);
-            vec![]
-        })
+            |row| -> SqlResult<(u32, String, u8, u8)> {
+                Ok((
+                    row.get("id")?,
+                    row.get("name")?,
+                    row.get("day")?,
+                    row.get("wins")?,
+                ))
+            }
+        )?
+        .collect::<SqlResult<Vec<(u32, String, u8, u8)>>>()?
         .into_iter()
         .group_by(|row| row.0)
         .into_iter()
@@ -107,12 +104,15 @@ fn fetch_leaders(db: &Connection, basho_id: u32) -> Vec<BashoPlayerResults> {
                 days: days
             }
         })
+        .into_iter()
+        .sorted_by_key(|result| result.total)
         .collect()
+    )
 }
 
-fn fetch_rikishi(db: &Connection, basho_id: u32) -> Vec<BashoRikishiByRank> {
+fn fetch_rikishi(db: &Connection, basho_id: u32) -> Result<Vec<BashoRikishiByRank>> {
     debug!("fetching rikishi results for basho {}", basho_id);
-    db.prepare("
+    Ok(db.prepare("
             SELECT
                 rikishi_basho.rank,
                 rikishi_basho.rikishi_id,
@@ -127,19 +127,17 @@ fn fetch_rikishi(db: &Connection, basho_id: u32) -> Vec<BashoRikishiByRank> {
         ").unwrap()
         .query_map(
             params![basho_id],
-            |row| -> SqlResult<(Rank, u32, String, u8, Option<bool>)> { Ok((
-                row.get(0)?,
-                row.get(1)?,
-                row.get(2)?,
-                row.get(3)?,
-                row.get(4)?,
-            ))}
-        )
-        .and_then(|mapped_rows| mapped_rows.collect::<SqlResult<Vec<(Rank, u32, String, u8, Option<bool>)>>>())
-        .unwrap_or_else(|e| {
-            error!("failed to fetch rikishi: {:?}", e);
-            vec![]
-        })
+            |row| -> SqlResult<(Rank, u32, String, u8, Option<bool>)> {
+                Ok((
+                    row.get("rank")?,
+                    row.get("rikishi_id")?,
+                    row.get("family_name")?,
+                    row.get("day")?,
+                    row.get("win")?,
+                ))
+            }
+        )?
+        .collect::<SqlResult<Vec<(Rank, u32, String, u8, Option<bool>)>>>()?
         .into_iter()
         .group_by(|row| (row.0.name, row.0.number)) // rank name and number but group east/west together
         .into_iter()
@@ -179,4 +177,5 @@ fn fetch_rikishi(db: &Connection, basho_id: u32) -> Vec<BashoRikishiByRank> {
             out
         })
         .collect()
+    )
 }

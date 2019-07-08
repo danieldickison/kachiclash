@@ -38,23 +38,23 @@ fn url(path: &str) -> Url {
 
 pub enum ImageExt {
     PNG,
-    JPEG,
+    // JPEG,
 }
 
 impl fmt::Display for ImageExt {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", match self {
             ImageExt::PNG => "png",
-            ImageExt::JPEG => "jpg",
+            // ImageExt::JPEG => "jpg",
         })
     }
 }
 
 pub enum ImageSize {
     TINY    = 64,
-    SMALL   = 128,
-    MEDIUM  = 512,
-    LARGE   = 1024,
+    // SMALL   = 128,
+    // MEDIUM  = 512,
+    // LARGE   = 1024,
 }
 
 pub fn avatar_url(user_info: &UserInfo, ext: ImageExt, size: ImageSize) -> Url {
