@@ -16,29 +16,29 @@ use oauth2::basic::BasicClient;
 
 use url::Url;
 
-
-use crate::{AppState, Config};
-use actix_web::Responder;
+use actix_web::{Responder, Error};
 use actix_web::{web, http};
 use actix_identity::Identity;
+use actix_session::Session;
 
 use askama::Template;
+
+use super::KachiClashError;
+use crate::{AppState, Config};
+use crate::data::player;
+use crate::external::discord;
 
 #[derive(Template)]
 #[template(path = "login.html")]
 struct LoginTemplate {
-    discord_authorize_url: String
 }
 
-pub fn login() -> impl Responder {
-    let s = LoginTemplate {
-        discord_authorize_url: "".to_string()
-    }.render().unwrap();
+pub fn index() -> impl Responder {
+    let s = LoginTemplate {}.render().unwrap();
     web::HttpResponse::Ok().content_type("text/html").body(s)
-
 }
 
-pub fn login_with_discord(state: web::Data<AppState>) -> impl Responder {
+pub fn discord(state: web::Data<AppState>, session: Session) -> impl Responder {
     let config = &state.config;
     let client = make_discord_oauth_client(&config);
 
@@ -47,15 +47,52 @@ pub fn login_with_discord(state: web::Data<AppState>) -> impl Responder {
         .add_scope(Scope::new("identify".to_string()))
         .url();
 
+    session.set("discord_csrf", csrf_token)
+        .expect("could not set discord_csrf session value");
+
     web::HttpResponse::SeeOther()
         .set_header(http::header::LOCATION, auth_url.to_string())
         .finish()
 }
 
-pub fn logged_in_with_discord(state: web::Data<AppState>) -> impl Responder {
-    web::HttpResponse::SeeOther()
-        .set_header(http::header::LOCATION, "/")
-        .finish()
+
+#[derive(Deserialize)]
+pub struct OAuthRedirectQuery {
+   code: String,
+   state: String,
+}
+
+pub fn discord_redirect(query: web::Query<OAuthRedirectQuery>, state: web::Data<AppState>, session: Session, id: Identity) -> Result<impl Responder, Error> {
+
+    match session.get::<String>("discord_csrf")? {
+        Some(ref session_csrf) if *session_csrf == query.state => {
+            let oauth_client = make_discord_oauth_client(&state.config);
+            let auth_code = AuthorizationCode::new(query.code.to_owned());
+            let token_res = oauth_client.exchange_code(auth_code)
+                .request(oauth2::reqwest::http_client)
+                .map_err(|e| {
+                    warn!("error exchanging auth code: {:?}", e);
+                    KachiClashError::ExternalServiceError
+                })?;
+            let user_info = discord::get_logged_in_user_info(token_res.access_token())
+                .map_err(|e| {
+                    warn!("error getting logged in user info from discord: {:?}", e);
+                    KachiClashError::ExternalServiceError
+                })?;
+            let player_id = player::player_for_discord_user(&state.db, user_info)
+                .map_err(|err| {
+                    warn!("error creating player for discord login: {:?}", err);
+                    KachiClashError::DatabaseError
+                })?;
+
+            id.remember(player_id.to_string());
+
+            Ok(web::HttpResponse::SeeOther()
+                .set_header(http::header::LOCATION, "/")
+                .finish())
+        },
+        Some(_) | None => Err(KachiClashError::CSRFError.into())
+    }
 }
 
 pub fn logout(id: Identity) -> impl Responder {

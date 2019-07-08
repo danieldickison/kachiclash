@@ -6,6 +6,7 @@ use std::convert::TryInto;
 use actix_web::{web, HttpServer, App, HttpResponse};
 use actix_web::middleware::Logger;
 use actix_identity::{CookieIdentityPolicy, IdentityService};
+use actix_session::{CookieSession};
 
 
 pub fn run(config: Config) -> std::io::Result<()> {
@@ -20,13 +21,14 @@ pub fn run(config: Config) -> std::io::Result<()> {
         })
         .wrap(Logger::default())
         .wrap(IdentityService::new(
-            CookieIdentityPolicy::new(&[0; 32])
+            CookieIdentityPolicy::new(&session_secret)
               .name("auth-cookie")
               .secure(config.env != "dev")))
+        .wrap(CookieSession::signed(&session_secret).secure(config.env != "dev"))
         .service(web::resource("/").to(handlers::index))
-        .service(web::resource("/login").to(handlers::login::login))
-        .service(web::resource("/login/discord").to(handlers::login::login_with_discord))
-        .service(web::resource("/login/discord_redirect").to(handlers::login::logged_in_with_discord))
+        .service(web::resource("/login").to(handlers::login::index))
+        .service(web::resource("/login/discord").to(handlers::login::discord))
+        .service(web::resource("/login/discord_redirect").to(handlers::login::discord_redirect))
         .service(web::resource("/basho").to(handlers::basho::basho_list))
         .service(web::resource("/basho/{basho_id}").to(handlers::basho::basho))
         .service(

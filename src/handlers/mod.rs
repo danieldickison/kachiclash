@@ -15,8 +15,12 @@ pub mod login;
 pub enum KachiClashError {
     #[fail(display = "External Service Error")]
     ExternalServiceError,
+    
     #[fail(display = "Database Error")]
     DatabaseError,
+
+    #[fail(display = "CSRF Error")]
+    CSRFError,
 }
 
 impl error::ResponseError for KachiClashError {
@@ -24,10 +28,13 @@ impl error::ResponseError for KachiClashError {
         match *self {
             KachiClashError::ExternalServiceError => HttpResponse::InternalServerError()
                 .content_type("text/plain")
-                .body("external service error"),
+                .body(format!("{}", self)),
             KachiClashError::DatabaseError => HttpResponse::InternalServerError()
                 .content_type("text/plain")
-                .body("database error"),
+                .body(format!("{}", self)),
+            KachiClashError::CSRFError => HttpResponse::Forbidden()
+                .content_type("text/plain")
+                .body(format!("{}", self)),
         }
     }
 }
@@ -35,20 +42,20 @@ impl error::ResponseError for KachiClashError {
 #[derive(Template)]
 #[template(path = "index.html")]
 struct IndexTemplate {
-    leaders: Vec<data::Player>,
+    leaders: Vec<data::player::Player>,
 }
 
 pub fn index(state: Data<AppState>, identity: Identity) -> impl Responder {
     debug!("Identity: {:?}", identity.identity());
 
     let s = IndexTemplate {
-        leaders: data::list_players(&state.db)
+        leaders: data::player::list_players(&state.db)
     }.render().unwrap();
     HttpResponse::Ok().content_type("text/html").body(s)
 }
 
 pub fn list_players(state: Data<AppState>) -> impl Responder {
-    data::list_players(&state.db)
+    data::player::list_players(&state.db)
         .iter()
         .map(|p| {
             format!("{}: {} joined {}", p.id, p.name, p.join_date)

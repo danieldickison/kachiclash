@@ -6,8 +6,10 @@ extern crate envconfig_derive;
 extern crate envconfig;
 extern crate actix_web;
 extern crate actix_identity;
+#[macro_use]
 extern crate failure;
 extern crate reqwest;
+#[macro_use]
 extern crate serde_derive;
 extern crate serde;
 extern crate serde_json;
@@ -20,6 +22,7 @@ use envconfig::Envconfig;
 mod data;
 mod handlers;
 mod server;
+mod external;
 
 
 #[derive(Envconfig)]
