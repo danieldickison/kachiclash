@@ -34,13 +34,19 @@ pub struct Config {
     #[envconfig(from = "KACHI_DB_PATH", default = "var/kachiclash.sqlite")]
     pub db_path: PathBuf,
 
+    #[envconfig(from = "KACHI_DOMAIN", default = "kachiclash.com")]
+    pub domain: String,
+
+    #[envconfig(from = "KACHI_PORT")]
+    pub port: u16,
+
     #[envconfig(from = "SESSION_SECRET", default = "abcdefghijklmnopqrstuvwxyz012345")]
     pub session_secret: String,
 
-    #[envconfig(from = "DISCORD_CLIENT_ID", default = "560805174029844481")]
+    #[envconfig(from = "DISCORD_CLIENT_ID")]
     pub discord_client_id: String,
 
-    #[envconfig(from = "DISCORD_CLIENT_SECRET", default = "")]
+    #[envconfig(from = "DISCORD_CLIENT_SECRET")]
     pub discord_client_secret: String,
 }
 

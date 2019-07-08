@@ -11,6 +11,7 @@ use actix_session::{CookieSession};
 
 pub fn run(config: Config) -> std::io::Result<()> {
 
+    let config2 = config.clone();
     let session_secret: [u8; 32] = config.session_secret.as_bytes().try_into().expect("session key should be 32 utf8 bytes");
 
     info!("starting server on localhost:8000");
@@ -59,6 +60,6 @@ pub fn run(config: Config) -> std::io::Result<()> {
         //     })
         // })
     )
-    .bind("0.0.0.0:8000")?
+    .bind(("0.0.0.0", config2.port))?
     .run()
 }
