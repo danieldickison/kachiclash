@@ -35,8 +35,9 @@ struct LoginTemplate {
 }
 
 pub fn index(state: web::Data<AppState>, identity: Identity) -> Result<impl Responder> {
+    let db = state.db.lock().unwrap();
     let s = LoginTemplate {
-        base: BaseTemplate::new(&state, &identity)?
+        base: BaseTemplate::new(&db, &identity)?
     }.render().unwrap();
     Ok(web::HttpResponse::Ok().content_type("text/html").body(s))
 }
@@ -67,6 +68,8 @@ pub struct OAuthRedirectQuery {
 
 pub fn discord_redirect(query: web::Query<OAuthRedirectQuery>, state: web::Data<AppState>, session: Session, id: Identity) -> std::result::Result<impl Responder, actix_web::Error> {
 
+    let mut db = state.db.lock().unwrap();
+
     match session.get::<String>("discord_csrf")? {
         Some(ref session_csrf) if *session_csrf == query.state => {
             let oauth_client = make_discord_oauth_client(&state.config);
@@ -82,7 +85,7 @@ pub fn discord_redirect(query: web::Query<OAuthRedirectQuery>, state: web::Data<
                     warn!("error getting logged in user info from discord: {:?}", e);
                     KachiClashError::ExternalServiceError
                 })?;
-            let player_id = player::player_for_discord_user(&state.db, user_info)
+            let player_id = player::player_for_discord_user(&mut db, user_info)
                 .map_err(|err| {
                     warn!("error creating player for discord login: {:?}", err);
                     KachiClashError::DatabaseError
@@ -100,7 +103,9 @@ pub fn discord_redirect(query: web::Query<OAuthRedirectQuery>, state: web::Data<
 
 pub fn logout(id: Identity) -> impl Responder {
     id.forget();
-    web::HttpResponse::Ok().json(())
+    web::HttpResponse::SeeOther()
+        .set_header(http::header::LOCATION, "/")
+        .finish()
 }
 
 

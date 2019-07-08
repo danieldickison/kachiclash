@@ -38,11 +38,10 @@ struct BashoRikishiByRank {
 }
 
 pub fn basho(path: web::Path<u32>, state: web::Data<AppState>, identity: Identity) -> Result<impl Responder> {
-    let base = BaseTemplate::new(&state, &identity)?;
     let basho_id = path.into_inner();
     let db = state.db.lock().unwrap();
     let s = BashoTemplate {
-        base: base,
+        base: BaseTemplate::new(&db, &identity)?,
         leaders: fetch_leaders(&db, basho_id)?,
         rikishi_by_rank: fetch_rikishi(&db, basho_id)?,
     }.render()?;

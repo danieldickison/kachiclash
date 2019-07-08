@@ -6,6 +6,7 @@ use crate::AppState;
 use actix_web::{error, HttpResponse, Responder};
 use actix_web::web::Data;
 use actix_identity::Identity;
+use rusqlite::Connection;
 use failure::Fail;
 use askama::Template;
 
@@ -47,10 +48,12 @@ struct BaseTemplate {
 }
 
 impl BaseTemplate {
-    fn new(state: &Data<AppState>, identity: &Identity) -> Result<Self> {
+    fn new(db: &Connection, identity: &Identity) -> Result<Self> {
         Ok(Self {
             player: match identity.identity() {
-                Some(id) => Some(data::player::player_info(&state.db, id.parse()?)?),
+                Some(id) => {
+                    Some(data::player::player_info(&db, id.parse()?)?)
+                },
                 None => None
             }
         })
@@ -67,15 +70,17 @@ struct IndexTemplate {
 pub fn index(state: Data<AppState>, identity: Identity) -> Result<impl Responder> {
     debug!("Identity: {:?}", identity.identity());
 
+    let db = state.db.lock().unwrap();
+
     let s = IndexTemplate {
-        base: BaseTemplate::new(&state, &identity)?,
-        leaders: data::player::list_players(&state.db)
+        base: BaseTemplate::new(&db, &identity)?,
+        leaders: data::player::list_players(&db)
     }.render().unwrap();
     Ok(HttpResponse::Ok().content_type("text/html").body(s))
 }
 
 pub fn list_players(state: Data<AppState>) -> impl Responder {
-    data::player::list_players(&state.db)
+    data::player::list_players(&state.db.lock().unwrap())
         .iter()
         .map(|p| {
             format!("{}: {} joined {}", p.id, p.name, p.join_date)

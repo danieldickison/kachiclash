@@ -1,8 +1,7 @@
-use rusqlite::{NO_PARAMS, Row};
+use rusqlite::{NO_PARAMS, Row, Connection};
 use chrono::{DateTime, Utc};
 use failure::Error;
 
-use super::DbConn;
 use crate::external::discord;
 use crate::handlers::KachiClashError;
 
@@ -42,9 +41,8 @@ impl Player {
     }
 }
 
-pub fn player_info(db_conn: &DbConn, player_id: PlayerID) -> Result<Player, Error> {
-    db_conn.lock().unwrap()
-        .prepare("
+pub fn player_info(db: &Connection, player_id: PlayerID) -> Result<Player, Error> {
+    db.prepare("
             SELECT
                 p.id, p.name, p.join_date,
                 d.user_id, d.username, d.avatar, d.discriminator
@@ -61,9 +59,8 @@ pub fn player_info(db_conn: &DbConn, player_id: PlayerID) -> Result<Player, Erro
         })
 }
 
-pub fn list_players(db_conn: &DbConn) -> Vec<Player> {
-    db_conn.lock().unwrap()
-        .prepare("
+pub fn list_players(db: &Connection) -> Vec<Player> {
+    db.prepare("
             SELECT
                 p.id, p.name, p.join_date,
                 d.user_id, d.username, d.avatar, d.discriminator
@@ -76,9 +73,8 @@ pub fn list_players(db_conn: &DbConn) -> Vec<Player> {
         }).unwrap()
 }
 
-pub fn player_for_discord_user(db_conn: &DbConn, user_info: discord::UserInfo) -> Result<PlayerID, rusqlite::Error> {
-    let mut conn = db_conn.lock().unwrap();
-    let txn = conn.transaction().unwrap();
+pub fn player_for_discord_user(db: &mut Connection, user_info: discord::UserInfo) -> Result<PlayerID, rusqlite::Error> {
+    let txn = db.transaction()?;
     let now = Utc::now();
     let existing_row = txn
         .prepare("SELECT player_id, username FROM player_discord WHERE user_id = ?")?

@@ -34,8 +34,8 @@ pub struct Config {
     #[envconfig(from = "KACHI_DB_PATH", default = "var/kachiclash.sqlite")]
     pub db_path: PathBuf,
 
-    #[envconfig(from = "KACHI_DOMAIN", default = "kachiclash.com")]
-    pub domain: String,
+    #[envconfig(from = "KACHI_HOST", default = "kachiclash.com")]
+    pub host: String,
 
     #[envconfig(from = "KACHI_PORT")]
     pub port: u16,
