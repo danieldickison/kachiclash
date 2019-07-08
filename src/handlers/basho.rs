@@ -1,21 +1,22 @@
 extern crate itertools;
+use actix_identity::Identity;
 use itertools::Itertools;
+use rusqlite::{Connection, Result as SqlResult};
 
-use rusqlite::{Connection};
-
-use super::AppState;
+use super::{AppState, BaseTemplate, Result};
 use super::data::{Rank, RankSide};
 
 use actix_web::{web, HttpResponse, Responder};
 use askama::Template;
 
-pub fn basho_list(state: web::Data<AppState>) -> impl Responder {
+pub fn basho_list(_state: web::Data<AppState>) -> impl Responder {
 
 }
 
 #[derive(Template)]
 #[template(path = "basho.html")]
 struct BashoTemplate {
+    base: BaseTemplate,
     leaders: Vec<BashoPlayerResults>,
     rikishi_by_rank: Vec<BashoRikishiByRank>,
 }
@@ -36,14 +37,15 @@ struct BashoRikishiByRank {
     west_results: [Option<bool>; 15],
 }
 
-pub fn basho(path: web::Path<u32>, state: web::Data<AppState>) -> impl Responder {
+pub fn basho(path: web::Path<u32>, state: web::Data<AppState>, identity: Identity) -> Result<impl Responder> {
     let basho_id = path.into_inner();
     let db = state.db.lock().unwrap();
     let s = BashoTemplate {
+        base: BaseTemplate::new(&state, &identity)?,
         leaders: fetch_leaders(&db, basho_id),
         rikishi_by_rank: fetch_rikishi(&db, basho_id),
     }.render().unwrap();
-    HttpResponse::Ok().content_type("text/html; charset=utf-8").body(s)
+    Ok(HttpResponse::Ok().content_type("text/html; charset=utf-8").body(s))
 }
 
 fn fetch_leaders(db: &Connection, basho_id: u32) -> Vec<BashoPlayerResults> {
@@ -74,14 +76,14 @@ fn fetch_leaders(db: &Connection, basho_id: u32) -> Vec<BashoPlayerResults> {
             named_params!{
                 ":basho_id": basho_id
             },
-            |row| -> Result<(u32, String, u8, u8), _> { Ok((
+            |row| -> SqlResult<(u32, String, u8, u8)> { Ok((
                 row.get(0)?,
                 row.get(1)?,
                 row.get(2)?,
                 row.get(3)?,
             ))}
         )
-        .and_then(|mapped_rows| mapped_rows.collect::<Result<Vec<(u32, String, u8, u8)>, _>>())
+        .and_then(|mapped_rows| mapped_rows.collect::<SqlResult<Vec<(u32, String, u8, u8)>>>())
         .unwrap_or_else(|e| {
             error!("failed to fetch leaderboard: {:?}", e);
             vec![]
@@ -124,7 +126,7 @@ fn fetch_rikishi(db: &Connection, basho_id: u32) -> Vec<BashoRikishiByRank> {
         ").unwrap()
         .query_map(
             params![basho_id],
-            |row| -> Result<(Rank, u32, String, u8, Option<bool>), _> { Ok((
+            |row| -> SqlResult<(Rank, u32, String, u8, Option<bool>)> { Ok((
                 row.get(0)?,
                 row.get(1)?,
                 row.get(2)?,
@@ -132,7 +134,7 @@ fn fetch_rikishi(db: &Connection, basho_id: u32) -> Vec<BashoRikishiByRank> {
                 row.get(4)?,
             ))}
         )
-        .and_then(|mapped_rows| mapped_rows.collect::<Result<Vec<(Rank, u32, String, u8, Option<bool>)>, _>>())
+        .and_then(|mapped_rows| mapped_rows.collect::<SqlResult<Vec<(Rank, u32, String, u8, Option<bool>)>>>())
         .unwrap_or_else(|e| {
             error!("failed to fetch rikishi: {:?}", e);
             vec![]

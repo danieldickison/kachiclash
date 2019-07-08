@@ -22,7 +22,6 @@ pub fn run(config: Config) -> std::io::Result<()> {
         .wrap(Logger::default())
         .wrap(IdentityService::new(
             CookieIdentityPolicy::new(&session_secret)
-              .name("auth-cookie")
               .secure(config.env != "dev")))
         .wrap(CookieSession::signed(&session_secret).secure(config.env != "dev"))
         .service(web::resource("/").to(handlers::index))

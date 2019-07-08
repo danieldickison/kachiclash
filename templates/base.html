@@ -34,6 +34,9 @@
             margin: 0;
             padding: 0;
         }
+        #g-header-player {
+            float: right;
+        }
 
         body > main {
             max-width: 1024px;
@@ -73,6 +76,15 @@
 <body>
     <header id="g-header">
         <h1>Kachi Clash</h1>
+
+        <div id="g-header-player">
+            {% match base.player %}
+            {%- when Some with (player) -%}
+                {{player.name}} <a href="/logout">log out</a>
+            {%- when None -%}
+                <a href="/login">sign in</a>
+            {%- endmatch %}
+        </div>
     </header>
     <main id="{% block main_id %}{% endblock %}">
         {% block main %}

@@ -1,8 +1,10 @@
-use rusqlite::{NO_PARAMS};
+use rusqlite::{NO_PARAMS, Row};
 use chrono::{DateTime, Utc};
+use failure::Error;
 
-use crate::data::DbConn;
+use super::DbConn;
 use crate::external::discord;
+use crate::handlers::KachiClashError;
 
 pub type PlayerID = i64;
 
@@ -15,12 +17,48 @@ pub struct Player {
 }
 
 impl Player {
+    fn from_row(row: &Row) -> Result<Self, rusqlite::Error> {
+        Ok(Player {
+            id: row.get("id")?,
+            name: row.get("name")?,
+            join_date: row.get("join_date")?,
+            discord_info: match row.get("user_id")? {
+                Some(user_id) => Some(discord::UserInfo {
+                    id: user_id,
+                    username: row.get("username")?,
+                    avatar: row.get("avatar")?,
+                    discriminator: row.get("discriminator")?,
+                }),
+                None => None
+            }
+        })
+    }
+
     pub fn small_thumb(&self) -> String {
         match &self.discord_info {
             Some(info) => discord::avatar_url(&info, discord::ImageExt::PNG, discord::ImageSize::SMALL).to_string(),
             None => "/static/default_avatar.png".to_string(),
         }
     }
+}
+
+pub fn player_info(db_conn: &DbConn, player_id: PlayerID) -> Result<Player, Error> {
+    db_conn.lock().unwrap()
+        .prepare("
+            SELECT
+                p.id, p.name, p.join_date,
+                d.user_id, d.username, d.avatar, d.discriminator
+            FROM player AS p
+            LEFT JOIN player_discord AS d ON d.player_id = p.id
+            WHERE p.id = ?
+        ").unwrap()
+        .query_map(params![player_id], |row| Player::from_row(row))?
+        .next()
+        .map(|player_result| player_result.unwrap())
+        .ok_or_else(|| {
+            warn!("logged in player info not found for id: {}", player_id);
+            KachiClashError::DatabaseError.into()
+        })
 }
 
 pub fn list_players(db_conn: &DbConn) -> Vec<Player> {
@@ -32,22 +70,7 @@ pub fn list_players(db_conn: &DbConn) -> Vec<Player> {
             FROM player AS p
             LEFT JOIN player_discord AS d ON d.player_id = p.id
         ").unwrap()
-        .query_map(NO_PARAMS, |row| {
-            Ok(Player {
-                id: row.get("id")?,
-                name: row.get("name")?,
-                join_date: row.get("join_date")?,
-                discord_info: match row.get("user_id")? {
-                    Some(user_id) => Some(discord::UserInfo {
-                        id: user_id,
-                        username: row.get("username")?,
-                        avatar: row.get("avatar")?,
-                        discriminator: row.get("discriminator")?,
-                    }),
-                    None => None
-                }
-            })
-        })
+        .query_map(NO_PARAMS, |row| Player::from_row(row))
         .and_then(|mapped_rows| {
             Ok(mapped_rows.map(|r| r.unwrap()).collect::<Vec<Player>>())
         }).unwrap()

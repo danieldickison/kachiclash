@@ -16,14 +16,14 @@ use oauth2::basic::BasicClient;
 
 use url::Url;
 
-use actix_web::{Responder, Error};
+use actix_web::{Responder};
 use actix_web::{web, http};
 use actix_identity::Identity;
 use actix_session::Session;
 
 use askama::Template;
 
-use super::KachiClashError;
+use super::{KachiClashError, BaseTemplate, Result};
 use crate::{AppState, Config};
 use crate::data::player;
 use crate::external::discord;
@@ -31,11 +31,14 @@ use crate::external::discord;
 #[derive(Template)]
 #[template(path = "login.html")]
 struct LoginTemplate {
+    base: BaseTemplate
 }
 
-pub fn index() -> impl Responder {
-    let s = LoginTemplate {}.render().unwrap();
-    web::HttpResponse::Ok().content_type("text/html").body(s)
+pub fn index(state: web::Data<AppState>, identity: Identity) -> Result<impl Responder> {
+    let s = LoginTemplate {
+        base: BaseTemplate::new(&state, &identity)?
+    }.render().unwrap();
+    Ok(web::HttpResponse::Ok().content_type("text/html").body(s))
 }
 
 pub fn discord(state: web::Data<AppState>, session: Session) -> impl Responder {
@@ -62,7 +65,7 @@ pub struct OAuthRedirectQuery {
    state: String,
 }
 
-pub fn discord_redirect(query: web::Query<OAuthRedirectQuery>, state: web::Data<AppState>, session: Session, id: Identity) -> Result<impl Responder, Error> {
+pub fn discord_redirect(query: web::Query<OAuthRedirectQuery>, state: web::Data<AppState>, session: Session, id: Identity) -> std::result::Result<impl Responder, actix_web::Error> {
 
     match session.get::<String>("discord_csrf")? {
         Some(ref session_csrf) if *session_csrf == query.state => {
