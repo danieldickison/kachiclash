@@ -159,13 +159,6 @@ fn fetch_rikishi(db: &Connection, basho_id: u32) -> Vec<BashoRikishiByRank> {
                 let mut rows = rows.peekable();
                 let arow = rows.peek().unwrap();
                 let name = arow.2.to_string();
-
-                // let mut total = 0;
-                // for (_, _, day, wins) in rows {
-                //     days[day as usize - 1] = Some(wins);
-                //     total += wins;
-                // }
-                // todo tally results
                 match arow.0.side {
                     RankSide::East => {
                         out.has_east = true;
