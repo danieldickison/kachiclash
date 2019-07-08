@@ -10,17 +10,42 @@ pub type PlayerID = i64;
 pub struct Player {
     pub id: i64,
     pub name: String,
-    pub join_date: DateTime<Utc>
+    pub join_date: DateTime<Utc>,
+    pub discord_info: Option<discord::UserInfo>,
+}
+
+impl Player {
+    pub fn small_thumb(&self) -> String {
+        match &self.discord_info {
+            Some(info) => discord::avatar_url(&info, discord::ImageExt::PNG, discord::ImageSize::SMALL).to_string(),
+            None => "/static/default_avatar.png".to_string(),
+        }
+    }
 }
 
 pub fn list_players(db_conn: &DbConn) -> Vec<Player> {
     db_conn.lock().unwrap()
-        .prepare("SELECT id, name, join_date FROM player").unwrap()
+        .prepare("
+            SELECT
+                p.id, p.name, p.join_date,
+                d.user_id, d.username, d.avatar, d.discriminator
+            FROM player AS p
+            LEFT JOIN player_discord AS d ON d.player_id = p.id
+        ").unwrap()
         .query_map(NO_PARAMS, |row| {
             Ok(Player {
-                id: row.get(0)?,
-                name: row.get(1)?,
-                join_date: row.get(2)?
+                id: row.get("id")?,
+                name: row.get("name")?,
+                join_date: row.get("join_date")?,
+                discord_info: match row.get("user_id")? {
+                    Some(user_id) => Some(discord::UserInfo {
+                        id: user_id,
+                        username: row.get("username")?,
+                        avatar: row.get("avatar")?,
+                        discriminator: row.get("discriminator")?,
+                    }),
+                    None => None
+                }
             })
         })
         .and_then(|mapped_rows| {
@@ -37,7 +62,7 @@ pub fn player_for_discord_user(db_conn: &DbConn, user_info: discord::UserInfo) -
         .query_map(
             params![user_info.id],
             |row| -> Result<(i64, String), _> {
-                Ok((row.get(0)?, row.get(1)?))
+                Ok((row.get("player_id")?, row.get("username")?))
             }
         )?
         .next();
@@ -46,8 +71,8 @@ pub fn player_for_discord_user(db_conn: &DbConn, user_info: discord::UserInfo) -
             txn.execute("INSERT INTO player (join_date, name) VALUES (?, ?)",
                 params![now, user_info.username]).unwrap();
             let player_id = txn.last_insert_rowid();
-            txn.execute("INSERT INTO player_discord (player_id, user_id, username, mod_date) VALUES (?, ?, ?, ?)",
-                params![player_id, user_info.id, user_info.username, now]).unwrap();
+            txn.execute("INSERT INTO player_discord (player_id, user_id, username, avatar, discriminator, mod_date) VALUES (?, ?, ?, ?, ?, ?)",
+                params![player_id, user_info.id, user_info.username, user_info.avatar, user_info.discriminator, now]).unwrap();
             txn.commit()?;
             Ok(player_id)
         },

@@ -79,10 +79,12 @@ fn init_database(path: &Path) {
 
     conn.execute("
         CREATE TABLE player_discord (
-            player_id   INTEGER NOT NULL,
-            user_id     TEXT NOT NULL,
-            username    TEXT NOT NULL,
-            mod_date    TEXT NOT NULL,
+            player_id       INTEGER NOT NULL,
+            user_id         TEXT NOT NULL,
+            username        TEXT NOT NULL,
+            avatar          TEXT,
+            discriminator   TEXT NOT NULL,
+            mod_date        TEXT NOT NULL,
 
             FOREIGN KEY (player_id) REFERENCES player(id)
         )", NO_PARAMS)
