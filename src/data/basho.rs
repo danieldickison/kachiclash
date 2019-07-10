@@ -56,7 +56,6 @@ impl ToSql for BashoId {
         let id: u32 = format!("{:04}{:02}", self.year, self.month)
             .parse()
             .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
-        debug!("ToSql {} -> {}", self, id);
         Ok(ToSqlOutput::from(id))
     }
 }

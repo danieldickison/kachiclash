@@ -53,7 +53,8 @@ impl BaseTemplate {
             Some(id) => {
                 let player = data::player::player_info(&db, id.parse()?)?;
                 if player.is_none() {
-                    error!("identity player id {} not found; treating as logged out", id);
+                    error!("identity player id {} not found; forcing log out", id);
+                    identity.forget();
                 }
                 player
             },
