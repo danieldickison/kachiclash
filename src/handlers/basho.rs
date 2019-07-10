@@ -47,7 +47,7 @@ pub fn basho(path: web::Path<BashoId>, state: web::Data<AppState>, identity: Ide
         leaders: fetch_leaders(&db, basho_id)?,
         rikishi_by_rank: fetch_rikishi(&db, basho_id)?,
     }.render()?;
-    Ok(HttpResponse::Ok().content_type("text/html; charset=utf-8").body(s))
+    Ok(HttpResponse::Ok().body(s))
 }
 
 fn fetch_leaders(db: &Connection, basho_id: BashoId) -> Result<Vec<BashoPlayerResults>> {

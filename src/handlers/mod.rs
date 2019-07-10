@@ -82,7 +82,7 @@ pub fn index(state: Data<AppState>, identity: Identity) -> Result<impl Responder
         base: BaseTemplate::new(&db, &identity)?,
         leaders: data::player::list_players(&db)
     }.render().unwrap();
-    Ok(HttpResponse::Ok().content_type("text/html").body(s))
+    Ok(HttpResponse::Ok().body(s))
 }
 
 pub fn list_players(state: Data<AppState>) -> impl Responder {

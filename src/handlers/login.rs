@@ -29,7 +29,7 @@ pub fn index(state: web::Data<AppState>, identity: Identity) -> Result<impl Resp
     let s = LoginTemplate {
         base: BaseTemplate::new(&db, &identity)?
     }.render().unwrap();
-    Ok(web::HttpResponse::Ok().content_type("text/html").body(s))
+    Ok(web::HttpResponse::Ok().body(s))
 }
 
 pub fn discord(state: web::Data<AppState>, session: Session) -> impl Responder {

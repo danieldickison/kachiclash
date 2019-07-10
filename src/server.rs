@@ -4,7 +4,7 @@ use super::{data, handlers};
 use std::convert::TryInto;
 
 use actix_web::{web, HttpServer, App, HttpResponse};
-use actix_web::middleware::Logger;
+use actix_web::middleware;
 use actix_identity::{CookieIdentityPolicy, IdentityService};
 use actix_session::{CookieSession};
 use actix_files::Files;
@@ -21,11 +21,14 @@ pub fn run(config: Config) -> std::io::Result<()> {
             config: config.clone(),
             db: data::make_conn(&config.db_path),
         })
-        .wrap(Logger::default())
+
+        .wrap(middleware::Logger::default())
         .wrap(IdentityService::new(
             CookieIdentityPolicy::new(&session_secret)
               .secure(config.env != "dev")))
         .wrap(CookieSession::signed(&session_secret).secure(config.env != "dev"))
+        .wrap(middleware::DefaultHeaders::new().header("Content-Type", "text/html; charset=utf-8"))
+
         .service(Files::new("/static", "public"))
         .service(web::resource("/").to(handlers::index))
         .service(web::resource("/login").to(handlers::login::index))
