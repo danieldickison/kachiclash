@@ -1,9 +1,9 @@
-use rusqlite::{NO_PARAMS, Row, Connection};
+use rusqlite::{NO_PARAMS, Row, Connection, OptionalExtension};
 use chrono::{DateTime, Utc};
 use failure::Error;
 
 use crate::external::discord;
-use crate::handlers::KachiClashError;
+
 
 pub type PlayerId = i64;
 
@@ -47,28 +47,23 @@ impl Player {
     }
 }
 
-pub fn player_info(db: &Connection, player_id: PlayerId) -> Result<Player, Error> {
-    db.prepare("
+pub fn player_info(db: &Connection, player_id: PlayerId) -> Result<Option<Player>, Error> {
+    db.query_row("
             SELECT
-                p.id, p.name, p.join_date, p.admin_level
+                p.id, p.name, p.join_date, p.admin_level,
                 d.user_id, d.username, d.avatar, d.discriminator
             FROM player AS p
             LEFT JOIN player_discord AS d ON d.player_id = p.id
             WHERE p.id = ?
-        ").unwrap()
-        .query_map(params![player_id], |row| Player::from_row(row))?
-        .next()
-        .map(|player_result| player_result.unwrap())
-        .ok_or_else(|| {
-            warn!("logged in player info not found for id: {}", player_id);
-            KachiClashError::DatabaseError.into()
-        })
+        ", params![player_id], |row| Player::from_row(row))
+        .optional()
+        .map_err(|e| e.into())
 }
 
 pub fn list_players(db: &Connection) -> Vec<Player> {
     db.prepare("
             SELECT
-                p.id, p.name, p.join_date,
+                p.id, p.name, p.join_date, p.admin_level,
                 d.user_id, d.username, d.avatar, d.discriminator
             FROM player AS p
             LEFT JOIN player_discord AS d ON d.player_id = p.id

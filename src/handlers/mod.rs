@@ -49,13 +49,18 @@ struct BaseTemplate {
 
 impl BaseTemplate {
     fn new(db: &Connection, identity: &Identity) -> Result<Self> {
+        let player = match identity.identity() {
+            Some(id) => {
+                let player = data::player::player_info(&db, id.parse()?)?;
+                if player.is_none() {
+                    error!("identity player id {} not found; treating as logged out", id);
+                }
+                player
+            },
+            None => None
+        };
         Ok(Self {
-            player: match identity.identity() {
-                Some(id) => {
-                    Some(data::player::player_info(&db, id.parse()?)?)
-                },
-                None => None
-            }
+            player: player
         })
     }
 }
