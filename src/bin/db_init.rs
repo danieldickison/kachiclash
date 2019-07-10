@@ -80,18 +80,14 @@ fn init_database(path: &Path) {
 
     conn.execute("
         CREATE TABLE player_discord (
-            player_id       INTEGER NOT NULL,
-            user_id         TEXT NOT NULL,
+            player_id       INTEGER NOT NULL REFERENCES player(id),
+            user_id         TEXT NOT NULL UNIQUE,
             username        TEXT NOT NULL,
             avatar          TEXT,
             discriminator   TEXT NOT NULL,
-            mod_date        TEXT NOT NULL,
-
-            FOREIGN KEY (player_id) REFERENCES player(id)
+            mod_date        TEXT NOT NULL
         )", NO_PARAMS)
         .expect("create player_discord table");
-    conn.execute("CREATE UNIQUE INDEX user_id ON player_discord (user_id)", NO_PARAMS)
-        .expect("create player_discord.user_id index");
 
     conn.execute("
         CREATE TABLE pick (
