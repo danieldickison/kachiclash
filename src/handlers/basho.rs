@@ -4,7 +4,7 @@ use itertools::Itertools;
 use rusqlite::{Connection, Result as SqlResult};
 
 use super::{AppState, BaseTemplate, Result};
-use super::data::{Rank, RankSide};
+use super::data::{Rank, RankSide, BashoId};
 
 use actix_web::{web, HttpResponse, Responder};
 use askama::Template;
@@ -17,6 +17,7 @@ pub fn basho_list(_state: web::Data<AppState>) -> impl Responder {
 #[template(path = "basho.html")]
 struct BashoTemplate {
     base: BaseTemplate,
+    basho: BashoId,
     leaders: Vec<BashoPlayerResults>,
     rikishi_by_rank: Vec<BashoRikishiByRank>,
 }
@@ -37,10 +38,11 @@ struct BashoRikishiByRank {
     west_results: [Option<bool>; 15],
 }
 
-pub fn basho(path: web::Path<u32>, state: web::Data<AppState>, identity: Identity) -> Result<impl Responder> {
+pub fn basho(path: web::Path<BashoId>, state: web::Data<AppState>, identity: Identity) -> Result<impl Responder> {
     let basho_id = path.into_inner();
     let db = state.db.lock().unwrap();
     let s = BashoTemplate {
+        basho: basho_id,
         base: BaseTemplate::new(&db, &identity)?,
         leaders: fetch_leaders(&db, basho_id)?,
         rikishi_by_rank: fetch_rikishi(&db, basho_id)?,
@@ -48,7 +50,7 @@ pub fn basho(path: web::Path<u32>, state: web::Data<AppState>, identity: Identit
     Ok(HttpResponse::Ok().content_type("text/html; charset=utf-8").body(s))
 }
 
-fn fetch_leaders(db: &Connection, basho_id: u32) -> Result<Vec<BashoPlayerResults>> {
+fn fetch_leaders(db: &Connection, basho_id: BashoId) -> Result<Vec<BashoPlayerResults>> {
     debug!("fetching leaders for basho {}", basho_id);
     Ok(db.prepare("
             SELECT
@@ -109,7 +111,7 @@ fn fetch_leaders(db: &Connection, basho_id: u32) -> Result<Vec<BashoPlayerResult
     )
 }
 
-fn fetch_rikishi(db: &Connection, basho_id: u32) -> Result<Vec<BashoRikishiByRank>> {
+fn fetch_rikishi(db: &Connection, basho_id: BashoId) -> Result<Vec<BashoRikishiByRank>> {
     debug!("fetching rikishi results for basho {}", basho_id);
     Ok(db.prepare("
             SELECT
