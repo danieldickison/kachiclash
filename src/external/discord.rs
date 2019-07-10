@@ -1,12 +1,52 @@
+
+use crate::Config;
+
 use std::fmt;
 use failure::Error;
 use reqwest;
 use url::Url;
 
-use oauth2::{AccessToken};
+use oauth2::{
+    AccessToken,
+    AuthorizationCode,
+    AuthUrl,
+    ClientId,
+    ClientSecret,
+    CsrfToken,
+    RedirectUrl,
+    Scope,
+    TokenUrl
+};
+use oauth2::basic::{BasicClient, BasicTokenResponse};
+
 
 const URL_BASE: &str = "https://discordapp.com/api/v6/";
 const IMG_BASE: &str = "https://cdn.discordapp.com/";
+
+
+fn make_oauth_client(config: &Config) -> BasicClient {
+    BasicClient::new(
+        ClientId::new(config.discord_client_id.to_owned()),
+        Some(ClientSecret::new(config.discord_client_secret.to_owned())),
+        AuthUrl::new(Url::parse("https://discordapp.com/api/oauth2/authorize").unwrap()),
+        Some(TokenUrl::new(Url::parse("https://discordapp.com/api/oauth2/token").unwrap()))
+    )
+    .set_redirect_url(RedirectUrl::new(Url::parse("http://localhost:8000/login/discord_redirect").unwrap()))
+}
+
+pub fn authorize_url(config: &Config) -> (Url, CsrfToken) {
+    make_oauth_client(&config)
+        .authorize_url(CsrfToken::new_random)
+        .add_scope(Scope::new("identify".to_string()))
+        .url()
+}
+
+pub fn exchange_code(config: &Config, auth_code: AuthorizationCode) -> Result<BasicTokenResponse, Error> {
+    make_oauth_client(&config)
+        .exchange_code(auth_code)
+        .request(oauth2::reqwest::http_client)
+        .map_err(|e| e.into())
+}
 
 #[derive(Debug, Deserialize)]
 pub struct UserInfo {
