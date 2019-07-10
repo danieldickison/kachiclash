@@ -9,6 +9,7 @@ publish = false
 actix-web = "1.0"
 actix-identity = "0.1"
 actix-session = "0.1"
+actix-files = "0.1"
 url = "1.7"
 reqwest = "0.9.4"
 serde = "1.0"

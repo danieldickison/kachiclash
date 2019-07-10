@@ -7,6 +7,7 @@ use actix_web::{web, HttpServer, App, HttpResponse};
 use actix_web::middleware::Logger;
 use actix_identity::{CookieIdentityPolicy, IdentityService};
 use actix_session::{CookieSession};
+use actix_files::Files;
 
 
 pub fn run(config: Config) -> std::io::Result<()> {
@@ -25,6 +26,7 @@ pub fn run(config: Config) -> std::io::Result<()> {
             CookieIdentityPolicy::new(&session_secret)
               .secure(config.env != "dev")))
         .wrap(CookieSession::signed(&session_secret).secure(config.env != "dev"))
+        .service(Files::new("/static", "public"))
         .service(web::resource("/").to(handlers::index))
         .service(web::resource("/login").to(handlers::login::index))
         .service(web::resource("/logout").to(handlers::login::logout))
