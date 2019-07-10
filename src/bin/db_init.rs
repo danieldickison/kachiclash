@@ -73,7 +73,8 @@ fn init_database(path: &Path) {
         CREATE TABLE player (
             id              INTEGER PRIMARY KEY AUTOINCREMENT,
             join_date       TEXT NOT NULL,
-            name            TEXT NOT NULL
+            name            TEXT NOT NULL,
+            admin_level     INTEGER NOT NULL DEFAULT 0
         )", NO_PARAMS)
         .expect("create player table");
 
