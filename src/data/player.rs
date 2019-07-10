@@ -5,13 +5,14 @@ use failure::Error;
 use crate::external::discord;
 use crate::handlers::KachiClashError;
 
-pub type PlayerID = i64;
+pub type PlayerId = i64;
 
 #[derive(Debug)]
 pub struct Player {
     pub id: i64,
     pub name: String,
     pub join_date: DateTime<Utc>,
+    admin_level: u8,
     pub discord_info: Option<discord::UserInfo>,
 }
 
@@ -21,6 +22,7 @@ impl Player {
             id: row.get("id")?,
             name: row.get("name")?,
             join_date: row.get("join_date")?,
+            admin_level: row.get("admin_level")?,
             discord_info: match row.get("user_id")? {
                 Some(user_id) => Some(discord::UserInfo {
                     id: user_id,
@@ -33,6 +35,10 @@ impl Player {
         })
     }
 
+    pub fn is_admin(&self) -> bool {
+        self.admin_level > 0
+    }
+
     pub fn tiny_thumb(&self) -> String {
         match &self.discord_info {
             Some(info) => discord::avatar_url(&info, discord::ImageExt::PNG, discord::ImageSize::TINY).to_string(),
@@ -41,10 +47,10 @@ impl Player {
     }
 }
 
-pub fn player_info(db: &Connection, player_id: PlayerID) -> Result<Player, Error> {
+pub fn player_info(db: &Connection, player_id: PlayerId) -> Result<Player, Error> {
     db.prepare("
             SELECT
-                p.id, p.name, p.join_date,
+                p.id, p.name, p.join_date, p.admin_level
                 d.user_id, d.username, d.avatar, d.discriminator
             FROM player AS p
             LEFT JOIN player_discord AS d ON d.player_id = p.id
@@ -73,7 +79,7 @@ pub fn list_players(db: &Connection) -> Vec<Player> {
         }).unwrap()
 }
 
-pub fn player_for_discord_user(db: &mut Connection, user_info: discord::UserInfo) -> Result<PlayerID, rusqlite::Error> {
+pub fn player_for_discord_user(db: &mut Connection, user_info: discord::UserInfo) -> Result<PlayerId, rusqlite::Error> {
     let txn = db.transaction()?;
     let now = Utc::now();
     let existing_row = txn
