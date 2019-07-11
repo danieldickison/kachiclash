@@ -55,36 +55,33 @@
                 <th colspan="2">West</th>
             </thead>
             <tbody>
-            {% for rr in rikishi_by_rank -%}
-                <tr>
-                    <td>{{rr.east_name}}</td>
-                    <td>
-                    {%- if rr.has_east -%}
-                        {%- for day in rr.east_results -%}
-                            {%- match day -%}
-                                {%- when Some with (true) %}⚪️
-                                {%- when Some with (false) %}⚫️
-                                {%- when None %}—
-                            {%- endmatch -%}
-                        {%- endfor -%}
-                    {%- endif -%}
-                    </td>
-                    <td>{{rr.rank}}</td>
-                    <td>{{rr.west_name}}</td>
-                    <td>
-                    {%- if rr.has_west -%}
-                        {%- for day in rr.west_results -%}
-                            {%- match day -%}
-                                {%- when Some with (true) %}⚪️
-                                {%- when Some with (false) %}⚫️
-                                {%- when None %}—
-                            {%- endmatch -%}
-                        {%- endfor -%}
-                    {%- endif -%}
-                    </td>
-                </tr>
-            {% endfor -%}
+                {% for rr in rikishi_by_rank -%}
+                    <tr>
+                        {%- call rikishi_results(rr.east) -%}
+                        <td>{{rr.rank}}</td>
+                        {%- call rikishi_results(rr.west) -%}
+                    </tr>
+                {% endfor -%}
             </tbody>
         </table>
     </section>
 {% endblock %}
+
+{%- macro rikishi_results(rikishi) -%}
+    {%- match rikishi -%}
+    {%- when Some with (rikishi) -%}
+        <td>{{rikishi.name}}</td>
+        <td>
+        {%- for day in rikishi.results -%}
+            {%- match day -%}
+                {%- when Some with (true) -%}⚪️
+                {%- when Some with (false) -%}⚫️
+                {%- when None -%}—
+            {%- endmatch -%}
+        {%- endfor -%}
+        </td>
+    {%- when None -%}
+        <td></td>
+        <td></td>
+    {%- endmatch -%}
+{%- endmacro -%}

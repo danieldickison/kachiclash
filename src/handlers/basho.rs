@@ -28,14 +28,18 @@ struct BashoPlayerResults {
     days: [Option<u8>; 15],
 }
 
+struct BashoRikishi {
+    name: String,
+    results: [Option<bool>; 15],
+    wins: u8,
+    losses: u8,
+    is_player_pick: bool,
+}
+
 struct BashoRikishiByRank {
     rank: String,
-    has_east: bool,
-    east_name: String,
-    east_results: [Option<bool>; 15],
-    has_west: bool,
-    west_name: String,
-    west_results: [Option<bool>; 15],
+    east: Option<BashoRikishi>,
+    west: Option<BashoRikishi>,
 }
 
 pub fn basho(path: web::Path<BashoId>, state: web::Data<AppState>, identity: Identity) -> Result<impl Responder> {
@@ -147,32 +151,30 @@ fn fetch_rikishi(db: &Connection, basho_id: BashoId) -> Result<Vec<BashoRikishiB
         .map(|(rank, pair)| {
             let mut out = BashoRikishiByRank {
                 rank: format!("{:}{}", rank.0, rank.1),
-                has_east: false,
-                east_name: "".to_string(),
-                east_results: [None; 15],
-                has_west: false,
-                west_name: "".to_string(),
-                west_results: [None; 15],
+                east: None,
+                west: None,
             };
             for (_, rows) in &pair.into_iter().group_by(|row| row.0) {
                 let mut rows = rows.peekable();
-                let arow = rows.peek().unwrap();
-                let name = arow.2.to_string();
-                match arow.0.side {
-                    RankSide::East => {
-                        out.has_east = true;
-                        out.east_name = name;
-                        for (_, _, _, day, win) in rows {
-                            out.east_results[day as usize - 1] = win
-                        }
+                let side = rows.peek().unwrap().0.side;
+                let mut rikishi = BashoRikishi {
+                    name: rows.peek().unwrap().2.to_string(),
+                    results: [None; 15],
+                    wins: 0,
+                    losses: 0,
+                    is_player_pick: false,
+                };
+                for (_, _, _, day, win) in rows {
+                    match win {
+                        Some(true) => rikishi.wins += 1,
+                        Some(false) => rikishi.losses += 1,
+                        None => ()
                     }
-                    RankSide::West => {
-                        out.has_west = true;
-                        out.west_name = name;
-                        for (_, _, _, day, win) in rows {
-                            out.west_results[day as usize - 1] = win
-                        }
-                    }
+                    rikishi.results[day as usize - 1] = win
+                }
+                match side {
+                    RankSide::East => out.east = Some(rikishi),
+                    RankSide::West => out.west = Some(rikishi),
                 }
             }
             out
