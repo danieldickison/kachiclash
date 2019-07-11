@@ -9,7 +9,7 @@ pub type PlayerId = i64;
 
 #[derive(Debug)]
 pub struct Player {
-    pub id: i64,
+    pub id: PlayerId,
     pub name: String,
     pub join_date: DateTime<Utc>,
     admin_level: u8,

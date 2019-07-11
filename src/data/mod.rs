@@ -6,9 +6,12 @@ mod rank;
 pub use rank::{Rank, RankName, RankSide};
 
 pub mod player;
+pub use player::{PlayerId};
 
 pub mod basho;
 pub use basho::{BashoId};
+
+pub type RikishiId = u32;
 
 pub type DbConn = Mutex<Connection>;
 

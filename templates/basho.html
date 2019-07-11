@@ -13,6 +13,10 @@
         #p-basho #banzuke {
             background: #fff8e8;
         }
+        #p-basho #banzuke .is-player-pick {
+            color: #335599;
+            font-weight: bold;
+        }
     </style>
 {% endblock %}
 
@@ -70,7 +74,12 @@
 {%- macro rikishi_results(rikishi) -%}
     {%- match rikishi -%}
     {%- when Some with (rikishi) -%}
-        <td>{{rikishi.name}}</td>
+        <td 
+            {% if rikishi.is_player_pick -%} class="is-player-pick" {%- endif %}
+            data-rikishi-id="{{rikishi.id}}"
+        >
+            {{- rikishi.name -}}
+        </td>
         <td>
         {%- for day in rikishi.results -%}
             {%- match day -%}

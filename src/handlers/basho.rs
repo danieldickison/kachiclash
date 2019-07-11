@@ -1,10 +1,11 @@
 extern crate itertools;
+use std::collections::HashSet;
 use actix_identity::Identity;
 use itertools::Itertools;
 use rusqlite::{Connection, Result as SqlResult};
 
 use super::{AppState, BaseTemplate, Result};
-use super::data::{Rank, RankSide, BashoId};
+use super::data::{Rank, RankSide, BashoId, PlayerId, RikishiId};
 
 use actix_web::{web, HttpResponse, Responder};
 use askama::Template;
@@ -23,12 +24,14 @@ struct BashoTemplate {
 }
 
 struct BashoPlayerResults {
+    id: PlayerId,
     name: String,
-    total: u8,
-    days: [Option<u8>; 15],
+    total: i8,
+    days: [Option<i8>; 15],
 }
 
 struct BashoRikishi {
+    id: RikishiId,
     name: String,
     results: [Option<bool>; 15],
     wins: u8,
@@ -45,13 +48,38 @@ struct BashoRikishiByRank {
 pub fn basho(path: web::Path<BashoId>, state: web::Data<AppState>, identity: Identity) -> Result<impl Responder> {
     let basho_id = path.into_inner();
     let db = state.db.lock().unwrap();
+    let base = BaseTemplate::new(&db, &identity)?;
+    let player_id = base.player.as_ref().map(|p| p.id);
+    let picks = fetch_player_picks(&db, player_id, basho_id)?;
     let s = BashoTemplate {
         basho: basho_id,
-        base: BaseTemplate::new(&db, &identity)?,
+        base: base,
         leaders: fetch_leaders(&db, basho_id)?,
-        rikishi_by_rank: fetch_rikishi(&db, basho_id)?,
+        rikishi_by_rank: fetch_rikishi(&db, basho_id, picks)?,
     }.render()?;
     Ok(HttpResponse::Ok().body(s))
+}
+
+fn fetch_player_picks(db: &Connection, player_id: Option<PlayerId>, basho_id: BashoId) -> Result<HashSet<RikishiId>> {
+    let mut set = HashSet::with_capacity(5);
+    if let Some(player_id) = player_id {
+        debug!("fetching player {} picks for {}", player_id, basho_id);
+        let mut stmt = db.prepare("
+                SELECT
+                    pick.rikishi_id
+                FROM pick
+                WHERE pick.player_id = ? AND pick.basho_id = ?
+            ").unwrap();
+        let rows = stmt.query_map(
+                params![player_id, basho_id],
+                |row| row.get(0)
+            )?;
+        for pick in rows {
+            set.insert(pick?);
+        }
+    }
+    debug!("player picks: {:?}", set);
+    Ok(set)
 }
 
 fn fetch_leaders(db: &Connection, basho_id: BashoId) -> Result<Vec<BashoPlayerResults>> {
@@ -81,7 +109,7 @@ fn fetch_leaders(db: &Connection, basho_id: BashoId) -> Result<Vec<BashoPlayerRe
             named_params!{
                 ":basho_id": basho_id
             },
-            |row| -> SqlResult<(u32, String, u8, u8)> {
+            |row| -> SqlResult<(PlayerId, String, u8, i8)> {
                 Ok((
                     row.get("id")?,
                     row.get("name")?,
@@ -90,32 +118,32 @@ fn fetch_leaders(db: &Connection, basho_id: BashoId) -> Result<Vec<BashoPlayerRe
                 ))
             }
         )?
-        .collect::<SqlResult<Vec<(u32, String, u8, u8)>>>()?
+        .collect::<SqlResult<Vec<(PlayerId, String, u8, i8)>>>()?
         .into_iter()
         .group_by(|row| row.0)
         .into_iter()
         .map(|(_player_id, rows)| {
             let mut rows = rows.peekable();
-            let name = rows.peek().unwrap().1.to_string();
-            let mut days: [Option<u8>; 15] = [None; 15];
-            let mut total = 0;
+            let arow = rows.peek().unwrap();
+            let mut results = BashoPlayerResults {
+                id: arow.0,
+                name: arow.1.to_string(),
+                total: 0,
+                days: [None; 15]
+            };
             for (_, _, day, wins) in rows {
-                days[day as usize - 1] = Some(wins);
-                total += wins;
+                results.days[day as usize - 1] = Some(wins);
+                results.total += wins;
             }
-            BashoPlayerResults {
-                name: name,
-                total: total,
-                days: days
-            }
+            results
         })
         .into_iter()
-        .sorted_by_key(|result| result.total)
+        .sorted_by_key(|result| -result.total)
         .collect()
     )
 }
 
-fn fetch_rikishi(db: &Connection, basho_id: BashoId) -> Result<Vec<BashoRikishiByRank>> {
+fn fetch_rikishi(db: &Connection, basho_id: BashoId, picks: HashSet<RikishiId>) -> Result<Vec<BashoRikishiByRank>> {
     debug!("fetching rikishi results for basho {}", basho_id);
     Ok(db.prepare("
             SELECT
@@ -132,7 +160,7 @@ fn fetch_rikishi(db: &Connection, basho_id: BashoId) -> Result<Vec<BashoRikishiB
         ").unwrap()
         .query_map(
             params![basho_id],
-            |row| -> SqlResult<(Rank, u32, String, u8, Option<bool>)> {
+            |row| -> SqlResult<(Rank, RikishiId, String, u8, Option<bool>)> {
                 Ok((
                     row.get("rank")?,
                     row.get("rikishi_id")?,
@@ -142,7 +170,7 @@ fn fetch_rikishi(db: &Connection, basho_id: BashoId) -> Result<Vec<BashoRikishiB
                 ))
             }
         )?
-        .collect::<SqlResult<Vec<(Rank, u32, String, u8, Option<bool>)>>>()?
+        .collect::<SqlResult<Vec<(Rank, RikishiId, String, u8, Option<bool>)>>>()?
         .into_iter()
         .group_by(|row| (row.0.name, row.0.number)) // rank name and number but group east/west together
         .into_iter()
@@ -156,13 +184,15 @@ fn fetch_rikishi(db: &Connection, basho_id: BashoId) -> Result<Vec<BashoRikishiB
             };
             for (_, rows) in &pair.into_iter().group_by(|row| row.0) {
                 let mut rows = rows.peekable();
-                let side = rows.peek().unwrap().0.side;
+                let arow = rows.peek().unwrap();
+                let side = arow.0.side;
                 let mut rikishi = BashoRikishi {
-                    name: rows.peek().unwrap().2.to_string(),
+                    id: arow.1,
+                    name: arow.2.to_string(),
                     results: [None; 15],
                     wins: 0,
                     losses: 0,
-                    is_player_pick: false,
+                    is_player_pick: picks.contains(&arow.1),
                 };
                 for (_, _, _, day, win) in rows {
                     match win {
