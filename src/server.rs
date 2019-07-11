@@ -4,11 +4,12 @@ use super::{data, handlers};
 use std::convert::TryInto;
 use std::process::Command;
 
-use actix_web::{web, HttpServer, App, HttpResponse};
-use actix_web::middleware;
+use actix_web::{web, middleware, HttpServer, App, HttpResponse};
+use actix_web::cookie::SameSite;
 use actix_identity::{CookieIdentityPolicy, IdentityService};
 use actix_session::{CookieSession};
 use actix_files::Files;
+use chrono::Duration;
 
 
 pub fn run(config: Config) -> std::io::Result<()> {
@@ -36,7 +37,10 @@ pub fn run(config: Config) -> std::io::Result<()> {
         .wrap(middleware::Logger::default())
         .wrap(IdentityService::new(
             CookieIdentityPolicy::new(&session_secret)
-              .secure(config.env != "dev")))
+              .secure(!config.is_dev())
+              .same_site(SameSite::Lax)
+              .max_age_time(Duration::days(3650)))
+        )
         .wrap(CookieSession::signed(&session_secret).secure(config.env != "dev"))
         .wrap(middleware::DefaultHeaders::new().header("Content-Type", "text/html; charset=utf-8"))
 
