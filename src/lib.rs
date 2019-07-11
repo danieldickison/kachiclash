@@ -50,6 +50,12 @@ pub struct Config {
     pub discord_client_secret: String,
 }
 
+impl Config {
+    pub fn is_dev(&self) -> bool {
+        self.env == "dev"
+    }
+}
+
 #[derive(Debug)]
 pub struct AppState {
     config: Config,

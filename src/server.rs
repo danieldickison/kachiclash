@@ -2,6 +2,7 @@ use super::{AppState, Config};
 use super::{data, handlers};
 
 use std::convert::TryInto;
+use std::process::Command;
 
 use actix_web::{web, HttpServer, App, HttpResponse};
 use actix_web::middleware;
@@ -14,6 +15,16 @@ pub fn run(config: Config) -> std::io::Result<()> {
 
     let config2 = config.clone();
     let session_secret: [u8; 32] = config.session_secret.as_bytes().try_into().expect("session key should be 32 utf8 bytes");
+
+    if config.is_dev() {
+        info!("starting sass --watch scss/:public/css/");
+        // Not sure if we need to .wait on the child process or kill it manually. On my mac it seems to be unnecessary.
+        let _sass = Command::new("sass")
+            .arg("--watch")
+            .arg("scss/:public/css/")
+            .spawn()
+            .expect("run sass");
+    }
 
     info!("starting server at {}:{}", config2.host, config2.port);
     HttpServer::new(move || App::new()
