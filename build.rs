@@ -1,7 +1,7 @@
 use std::process::Command;
 use std::io::{self, Write};
 
-fn main() {
+fn main() -> Result<(), String> {
     let output = Command::new("sass")
         .arg("scss/:public/css/")
         .output()
@@ -9,6 +9,8 @@ fn main() {
     io::stdout().write_all(&output.stdout).unwrap();
     io::stderr().write_all(&output.stderr).unwrap();
     if !output.status.success() {
-        println!("warning: sass exit code {}", output.status);
+        Err(format!("sass failed with {}", output.status))
+    } else {
+        Ok(())
     }
 }
