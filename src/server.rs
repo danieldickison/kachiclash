@@ -52,6 +52,8 @@ pub fn run(config: Config) -> std::io::Result<()> {
         .service(web::resource("/login/discord_redirect").to(handlers::login::discord_redirect))
         .service(web::resource("/basho").to(handlers::basho::basho_list))
         .service(web::resource("/basho/{basho_id}").to(handlers::basho::basho))
+        .service(web::resource("/basho/{basho_id}/picks")
+                    .route(web::post().to(handlers::basho::save_picks)))
         .service(
             web::scope("/db")
                 .service(web::resource("/player").to(handlers::list_players))

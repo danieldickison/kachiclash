@@ -17,8 +17,11 @@ type Result<T> = std::result::Result<T, failure::Error>;
 
 #[derive(Fail, Debug)]
 pub enum HandlerError {
-    #[fail(display = "Not Found Error")]
+    #[fail(display = "Not Found")]
     NotFound(String),
+
+    #[fail(display = "Must be logged in")]
+    MustBeLoggedIn,
 
     #[fail(display = "External Service Error")]
     ExternalServiceError,
@@ -43,6 +46,9 @@ impl error::ResponseError for HandlerError {
                 .content_type("text/plain")
                 .body(format!("{}", self)),
             HandlerError::CSRFError => HttpResponse::Forbidden()
+                .content_type("text/plain")
+                .body(format!("{}", self)),
+            HandlerError::MustBeLoggedIn => HttpResponse::Forbidden()
                 .content_type("text/plain")
                 .body(format!("{}", self)),
         }

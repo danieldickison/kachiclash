@@ -8,6 +8,9 @@ use chrono::{DateTime, Datelike};
 use serde::Deserialize;
 use rusqlite::{Connection, OptionalExtension};
 use failure::Error;
+use itertools::Itertools;
+
+use super::{DataError, PlayerId, RikishiId, Rank, RankGroup};
 
 pub struct BashoInfo {
     pub id: BashoId,
@@ -51,6 +54,12 @@ impl BashoInfo {
 pub struct BashoId {
     pub year: i32,
     pub month: u8,
+}
+
+impl BashoId {
+    pub fn url_path(&self) -> String {
+        format!("/basho/{:04}{:02}", self.year, self.month)
+    }
 }
 
 impl fmt::Display for BashoId {
@@ -98,4 +107,47 @@ impl ToSql for BashoId {
             .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
         Ok(ToSqlOutput::from(id))
     }
+}
+
+
+pub fn save_player_picks(db: &mut Connection, player_id: PlayerId, basho_id: BashoId, picks: [Option<RikishiId>; 5]) -> Result<(), Error> {
+    let txn = db.transaction()?;
+    let start_date: DateTime<Utc> = txn.query_row("
+        SELECT start_date
+        FROM basho
+        WHERE id = ?",
+        params![basho_id],
+        |row| row.get(0))?;
+    if start_date < Utc::now() {
+        return Err(DataError::BashoHasStarted.into());
+    }
+
+    let rank_groups: Vec<RankGroup> = txn.prepare("
+        SELECT rank
+        FROM rikishi_basho
+        WHERE basho_id = ? AND rikishi_id IN (?, ?, ?, ?, ?)")?
+    .query_map(params![basho_id, picks[0], picks[1], picks[2], picks[3], picks[4]], |row| row.get(0))?
+    .map(|rank: rusqlite::Result<Rank>| rank.unwrap().group())
+    .collect();
+    debug!("rank groups {:?} for picks {:?}", rank_groups, picks);
+    if rank_groups.clone().into_iter().unique().collect::<Vec<RankGroup>>() != rank_groups {
+        return Err(DataError::InvalidPicks.into())
+    }
+
+    txn.execute("
+        DELETE FROM pick
+        WHERE player_id = ? AND basho_id = ?",
+        params![player_id, basho_id])?;
+    for rikishi_id in &picks {
+        if let Some(rikishi_id) = rikishi_id {
+            debug!("inserting player {} pick {} for {}", player_id, rikishi_id, basho_id);
+            txn.execute("
+                INSERT INTO pick (player_id, basho_id, rikishi_id)
+                VALUES (?, ?, ?)",
+                params![player_id, basho_id, rikishi_id])?;
+        }
+    }
+    txn.commit()?;
+
+    Ok(())
 }

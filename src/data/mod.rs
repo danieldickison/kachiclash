@@ -20,3 +20,12 @@ pub fn make_conn(path: &Path) -> DbConn {
         .expect("sqlite db");
     Mutex::new(conn)
 }
+
+#[derive(Fail, Debug)]
+pub enum DataError {
+    #[fail(display = "Basho has already started")]
+    BashoHasStarted,
+
+    #[fail(display = "Invalid picks")]
+    InvalidPicks,
+}

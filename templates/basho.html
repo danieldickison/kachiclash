@@ -63,23 +63,25 @@
                 <p><a href="/login">Log in or sign up</a> to play!</p>
             {%- endif -%}
         {%- endif %}
-            
-        <table>
-            <thead>
-                <th colspan="2">East</th>
-                <th class="rank">Rank</th>
-                <th colspan="2">West</th>
-            </thead>
-            <tbody>
-                {% for rr in rikishi_by_rank -%}
-                    <tr class="rank-group-{{rr.rank_group}}">
-                        {%- call rikishi_results(rr.east) -%}
-                        <td class="rank">{{rr.rank}}</td>
-                        {%- call rikishi_results(rr.west) -%}
-                    </tr>
-                {% endfor -%}
-            </tbody>
-        </table>
+        
+        <form id="banzuke-select-rikishi-form" action="{{basho.id.url_path()}}/picks">
+            <table>
+                <thead>
+                    <th colspan="2">East</th>
+                    <th class="rank">Rank</th>
+                    <th colspan="2">West</th>
+                </thead>
+                <tbody>
+                    {% for rr in rikishi_by_rank -%}
+                        <tr class="rank-group-{{rr.rank_group}}">
+                            {%- call rikishi_results(rr.east) -%}
+                            <td class="rank">{{rr.rank}}</td>
+                            {%- call rikishi_results(rr.west) -%}
+                        </tr>
+                    {% endfor -%}
+                </tbody>
+            </table>
+        </form>
     </section>
 {% endblock %}
 

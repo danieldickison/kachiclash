@@ -87,6 +87,7 @@ impl TryFrom<char> for RankSide {
     }
 }
 
+#[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Copy, Clone, Hash)]
 pub struct RankGroup(u8);
 
 impl RankGroup {

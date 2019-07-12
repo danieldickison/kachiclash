@@ -5,7 +5,7 @@ use itertools::Itertools;
 use rusqlite::{Connection, Result as SqlResult};
 
 use super::{BaseTemplate, Result, HandlerError};
-use crate::data::{Rank, RankSide, RankGroup, BashoId, BashoInfo, PlayerId, RikishiId};
+use crate::data::{self, Rank, RankSide, RankGroup, BashoId, BashoInfo, PlayerId, RikishiId};
 use crate::AppState;
 
 use actix_web::{web, HttpResponse, Responder};
@@ -216,4 +216,27 @@ fn fetch_rikishi(db: &Connection, basho_id: BashoId, picks: HashSet<RikishiId>) 
         })
         .collect()
     )
+}
+
+
+#[derive(Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub struct SavePicksFormData {
+    rank_group_1: Option<RikishiId>,
+    rank_group_2: Option<RikishiId>,
+    rank_group_3: Option<RikishiId>,
+    rank_group_4: Option<RikishiId>,
+    rank_group_5: Option<RikishiId>,
+}
+
+pub fn save_picks(path: web::Path<BashoId>, form: web::Form<SavePicksFormData>, state: web::Data<AppState>, identity: Identity)
+    -> Result<impl Responder> {
+
+    let player_id = identity
+        .identity()
+        .ok_or(HandlerError::MustBeLoggedIn)?
+        .parse()?;
+    let picks = &[form.rank_group_1, form.rank_group_2, form.rank_group_3, form.rank_group_4, form.rank_group_5];
+    let mut db = state.db.lock().unwrap();
+    data::basho::save_player_picks(&mut db, player_id, path.into_inner(), *picks)
 }
