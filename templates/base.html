@@ -2,80 +2,12 @@
 <html>
 <head>
     <title>Kachi Clash · {% block subtitle %}main{% endblock %}</title>
-
-    <style>
-        * {
-            box-sizing: border-box;
-        }
-
-        html {
-            height: 100%;
-        }
-
-        body {
-            font-family: "Helvetica Neue", sans-serif;
-            color: #333;
-            background: #eee;
-            height: 100%;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-        }
-
-        #g-header {
-            width: 100%;
-            margin: 0;
-            padding: 10px;
-            background: #99cafa;
-            border-bottom: solid 1px #ccc;
-        }
-        #g-header h1 {
-            text-align: center;
-            margin: 0;
-            padding: 0;
-        }
-        #g-header-player {
-            float: right;
-        }
-
-        body > main {
-            max-width: 1024px;
-            flex-grow: 1;
-            margin: 0 auto;
-            padding: 10px;
-            background: white;
-            border-left: solid 1px #ccc;
-            border-right: solid 1px #ccc;
-        }
-
-        #g-footer {
-            width: 100%;
-            margin: 0;
-            padding: 10px;
-            background: #662045;
-            border-top: solid 1px #33002a;
-            color: #ccc;
-        }
-        #g-footer > ul {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-        }
-        #g-footer > ul > li {
-            display: inline-block;
-            margin-right: 10px;
-        }
-        #g-footer > ul a {
-            color: inherit;
-        }
-    </style>
-
-    {% block head %}
-    {% endblock %}
+    <link rel="stylesheet" href="/static/css/base.css">
+    {% block head %}{% endblock %}
 </head>
 <body>
     <header id="g-header">
-        <div id="g-header-player">
+        <div class="player-menu">
             {% match base.player %}
             {%- when Some with (player) -%}
                 {{player.name}} |
@@ -89,12 +21,13 @@
             {%- endmatch %}
         </div>
 
-        <h1>Kachi Clash</h1>
+        <h1><a href="/">Kachi Clash</a></h1>
     </header>
+
     <main id="{% block main_id %}{% endblock %}">
-        {% block main %}
-        {% endblock %}
+        {% block main %}{% endblock %}
     </main>
+
     <footer id="g-footer">
         <ul>
             <li>
