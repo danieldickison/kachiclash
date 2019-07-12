@@ -1,3 +1,4 @@
+use std::ops::Deref;
 use std::str::Chars;
 use std::error::Error;
 use std::convert::TryFrom;
@@ -86,11 +87,47 @@ impl TryFrom<char> for RankSide {
     }
 }
 
+pub struct RankGroup(u8);
+
+impl RankGroup {
+    pub fn for_rank(name: RankName, number: u16) -> Self {
+        match name {
+            RankName::Yokozuna | RankName::Ozeki => Self(1),
+            RankName::Sekiwake | RankName::Komusubi => Self(2),
+            RankName::Maegashira => match number {
+                0..=5 => Self(3),
+                6..=10 => Self(4),
+                11..=std::u16::MAX => Self(5),
+            }
+        }
+    }
+}
+
+impl Deref for RankGroup {
+    type Target = u8;
+
+    fn deref(&self) -> &u8 {
+        &self.0
+    }
+}
+
+impl fmt::Display for RankGroup {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
 #[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Copy, Clone)]
 pub struct Rank {
     pub name: RankName,
-    pub number: u8,
+    pub number: u16,
     pub side: RankSide,
+}
+
+impl Rank {
+    pub fn group(&self) -> RankGroup {
+        RankGroup::for_rank(self.name, self.number)
+    }
 }
 
 impl fmt::Display for Rank {

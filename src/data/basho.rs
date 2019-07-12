@@ -38,6 +38,10 @@ impl BashoInfo {
             .optional()
             .map_err(|e| e.into())
     }
+
+    pub fn has_started(&self) -> bool {
+        self.start_date < Utc::now()
+    }
 }
 
 

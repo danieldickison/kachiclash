@@ -12,48 +12,69 @@
 {% block main %}
     <h2>{{basho.id}} — {{basho.venue}}</h2>
 
-    <section id="leaderboard">
-        <h2>Leaderboard</h2>
-        <table>
-            <thead>
-                <th>Player</th>
-                {% for day in 1..16 -%}
-                    <th>{{day}}</th>
-                {% endfor -%}
-                <th>Total</th>
-            </thead>
-            <tbody>
-            {% for player in leaders -%}
-                <tr>
-                    <td>{{player.name}}</td>
-                    {%- for wins in player.days -%}
-                        <td>
-                        {%- match wins -%}
-                            {%- when Some with (num) %}{{num}}
-                            {%- when None %}-
-                        {%- endmatch -%}
-                        </td>
+    {% if basho.has_started() %}
+        <section id="leaderboard">
+            <h2>Leaderboard</h2>
+            <table>
+                <thead>
+                    <th>Player</th>
+                    {% for day in 1..16 -%}
+                        <th>{{day}}</th>
                     {% endfor -%}
-                    <td>{{player.total}}</td>
-                </tr>
+                    <th>Total</th>
+                </thead>
+                <tbody>
+                {% for player in leaders -%}
+                    <tr>
+                        <td><a href="/player/{{player.id}}">{{player.name}}</a></td>
+                        {%- for wins in player.days -%}
+                            <td>
+                            {%- match wins -%}
+                                {%- when Some with (num) %}{{num}}
+                                {%- when None %}-
+                            {%- endmatch -%}
+                            </td>
+                        {% endfor -%}
+                        <td>{{player.total}}</td>
+                    </tr>
+                {%- endfor %}
+                </tbody>
+            </table>
+        </section>
+    {% else %}
+        <p>
+            {{basho.player_count}} entries:
+            {% for player in leaders %}
+                <a href="/player/{{player.id}}">{{player.name}}</a>
+                {%- if !loop.last -%},{% endif %}
             {%- endfor %}
-            </tbody>
-        </table>
-    </section>
+        </p>
+    {% endif %}
 
-    <section id="banzuke">
+    <section id="banzuke"
+        {% if !basho.has_started() && base.player.is_some() %}class="selectable"{% endif %}
+    >
         <h2>Banzuke</h2>
+
+        {% if !basho.has_started() -%}
+            {%- if base.player.is_some() -%}
+                <p>Select one rikishi from each group below below:</p>
+            {%- else -%}
+                <p><a href="/login">Log in or sign up</a> to play!</p>
+            {%- endif -%}
+        {%- endif %}
+            
         <table>
             <thead>
                 <th colspan="2">East</th>
-                <th>Rank</th>
+                <th class="rank">Rank</th>
                 <th colspan="2">West</th>
             </thead>
             <tbody>
                 {% for rr in rikishi_by_rank -%}
-                    <tr>
+                    <tr class="rank-group-{{rr.rank_group}}">
                         {%- call rikishi_results(rr.east) -%}
-                        <td>{{rr.rank}}</td>
+                        <td class="rank">{{rr.rank}}</td>
                         {%- call rikishi_results(rr.west) -%}
                     </tr>
                 {% endfor -%}
@@ -65,13 +86,19 @@
 {%- macro rikishi_results(rikishi) -%}
     {%- match rikishi -%}
     {%- when Some with (rikishi) -%}
-        <td 
-            {% if rikishi.is_player_pick -%} class="is-player-pick" {%- endif %}
+        <td class="rikishi"
             data-rikishi-id="{{rikishi.id}}"
         >
-            {{- rikishi.name -}}
+            <label {% if rikishi.is_player_pick -%} class="is-player-pick" {%- endif %}>
+                <input type="radio" class="select-radio"
+                    name="rank-group-{{rikishi.rank.group()}}"
+                    value="{{rikishi.id}}"
+                    {% if rikishi.is_player_pick -%} checked {%- endif %}
+                >
+                {{- rikishi.name -}}
+            </label>
         </td>
-        <td>
+        <td class="hoshi">
         {%- for day in rikishi.results -%}
             {%- match day -%}
                 {%- when Some with (true) -%}⚪️

@@ -5,7 +5,7 @@ use itertools::Itertools;
 use rusqlite::{Connection, Result as SqlResult};
 
 use super::{BaseTemplate, Result, HandlerError};
-use crate::data::{Rank, RankSide, BashoId, BashoInfo, PlayerId, RikishiId};
+use crate::data::{Rank, RankSide, RankGroup, BashoId, BashoInfo, PlayerId, RikishiId};
 use crate::AppState;
 
 use actix_web::{web, HttpResponse, Responder};
@@ -34,6 +34,7 @@ struct BashoPlayerResults {
 struct BashoRikishi {
     id: RikishiId,
     name: String,
+    rank: Rank,
     results: [Option<bool>; 15],
     wins: u8,
     losses: u8,
@@ -42,6 +43,7 @@ struct BashoRikishi {
 
 struct BashoRikishiByRank {
     rank: String,
+    rank_group: RankGroup,
     east: Option<BashoRikishi>,
     west: Option<BashoRikishi>,
 }
@@ -180,6 +182,7 @@ fn fetch_rikishi(db: &Connection, basho_id: BashoId, picks: HashSet<RikishiId>) 
         .map(|(rank, pair)| {
             let mut out = BashoRikishiByRank {
                 rank: format!("{:}{}", rank.0, rank.1),
+                rank_group: RankGroup::for_rank(rank.0, rank.1),
                 east: None,
                 west: None,
             };
@@ -190,6 +193,7 @@ fn fetch_rikishi(db: &Connection, basho_id: BashoId, picks: HashSet<RikishiId>) 
                 let mut rikishi = BashoRikishi {
                     id: arow.1,
                     name: arow.2.to_string(),
+                    rank: arow.0,
                     results: [None; 15],
                     wins: 0,
                     losses: 0,

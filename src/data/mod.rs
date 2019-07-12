@@ -3,7 +3,7 @@ use std::path::Path;
 use rusqlite::{Connection, OpenFlags};
 
 mod rank;
-pub use rank::{Rank, RankName, RankSide};
+pub use rank::{Rank, RankName, RankSide, RankGroup};
 
 pub mod player;
 pub use player::{PlayerId};

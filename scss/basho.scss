@@ -6,9 +6,50 @@
     #banzuke {
         background: #fff8e8;
 
-        .is-player-pick {
-            color: #335599;
-            font-weight: bold;
+        table {
+            border-spacing: 0;
+            line-height: 2;
+
+            .rank {
+                text-align: center;
+            }
+
+            td {
+                &.rikishi {
+                    font-weight: bold;
+                }
+
+                label {
+                    display: block;
+                    padding: 0 5px;
+                }
+            }
+
+            .select-radio {
+                vertical-align: middle;
+                margin-right: 5px;
+            }
+
+            .is-player-pick {
+                outline: solid 2px #ff5555;
+                outline-offset: -2px;
+            }
+
+            .rank-group-1 {
+                background: rgba(80, 150, 255, 1);
+            }
+            .rank-group-2 {
+                background: rgba(100, 150, 255, 0.75);
+            }
+            .rank-group-3 {
+                background: rgba(120, 150, 255, 0.5);
+            }
+            .rank-group-4 {
+                background: rgba(140, 150, 255, 0.25);
+            }
+            .rank-group-5 {
+                background: rgba(160, 150, 255, 0.1);
+            }
         }
     }
 }
