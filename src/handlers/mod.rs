@@ -12,6 +12,7 @@ use askama::Template;
 
 pub mod basho;
 pub mod login;
+pub mod admin;
 
 type Result<T> = std::result::Result<T, failure::Error>;
 
@@ -106,13 +107,3 @@ pub fn list_players(state: Data<AppState>) -> impl Responder {
         .collect::<Vec<String>>()
         .join("\n")
 }
-
-// pub fn json_error_handler(err: error::JsonPayloadError, _: &HttpRequest<AppState>) -> Error {
-//     error::InternalError::from_response(
-//         "",
-//         HttpResponse::BadRequest()
-//             .content_type("application/json")
-//             .body(format!(r#"{{"error":"json error: {}"}}"#, err)),
-//     )
-//     .into()
-// }

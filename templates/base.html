@@ -78,7 +78,12 @@
         <div id="g-header-player">
             {% match base.player %}
             {%- when Some with (player) -%}
-                {{player.name}} | <a href="/logout">log out</a>
+                {{player.name}} |
+                {% if player.is_admin() -%}
+                    <a href="/admin">admin</a> |
+                {%- endif %}
+                <a href="/logout">log out</a>
+
             {%- when None -%}
                 <a href="/login">sign in</a>
             {%- endmatch %}

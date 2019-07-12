@@ -54,6 +54,7 @@ pub fn run(config: Config) -> std::io::Result<()> {
         .service(web::resource("/basho/{basho_id}").to(handlers::basho::basho))
         .service(web::resource("/basho/{basho_id}/picks")
                     .route(web::post().to(handlers::basho::save_picks)))
+        .service(web::resource("/admin").to(handlers::admin::index))
         .service(
             web::scope("/db")
                 .service(web::resource("/player").to(handlers::list_players))
