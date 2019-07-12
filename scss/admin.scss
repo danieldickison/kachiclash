@@ -1,0 +1,24 @@
+#p-admin {
+    .make-basho {
+        label {
+            display: block;
+            margin-bottom: 10px;
+            
+            > input {
+                display: block;
+            }
+
+            > textarea {
+                display: block;
+                width: 100%;
+                min-height: 100px;
+            }
+        }
+
+        .footnote {
+            font-size: 0.875rem;
+            color: #999;
+            margin: 0;
+        }
+    }
+}

@@ -2,11 +2,10 @@ use crate::data;
 use crate::AppState;
 use super::{HandlerError, BaseTemplate, Result};
 
-use actix_web::{error, HttpResponse, Responder};
+use actix_web::{HttpResponse, Responder};
 use actix_web::web::Data;
 use actix_identity::Identity;
 use rusqlite::Connection;
-use failure::Fail;
 use askama::Template;
 
 
