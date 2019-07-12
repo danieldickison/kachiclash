@@ -16,7 +16,10 @@ pub mod login;
 type Result<T> = std::result::Result<T, failure::Error>;
 
 #[derive(Fail, Debug)]
-pub enum KachiClashError {
+pub enum HandlerError {
+    #[fail(display = "Not Found Error")]
+    NotFound(String),
+
     #[fail(display = "External Service Error")]
     ExternalServiceError,
     
@@ -27,16 +30,19 @@ pub enum KachiClashError {
     CSRFError,
 }
 
-impl error::ResponseError for KachiClashError {
+impl error::ResponseError for HandlerError {
     fn error_response(&self) -> HttpResponse {
-        match *self {
-            KachiClashError::ExternalServiceError => HttpResponse::InternalServerError()
+        match self {
+            HandlerError::NotFound(thing) => HttpResponse::NotFound()
+                .content_type("text/plain")
+                .body(format!("{} not found", thing)),
+            HandlerError::ExternalServiceError => HttpResponse::InternalServerError()
                 .content_type("text/plain")
                 .body(format!("{}", self)),
-            KachiClashError::DatabaseError => HttpResponse::InternalServerError()
+            HandlerError::DatabaseError => HttpResponse::InternalServerError()
                 .content_type("text/plain")
                 .body(format!("{}", self)),
-            KachiClashError::CSRFError => HttpResponse::Forbidden()
+            HandlerError::CSRFError => HttpResponse::Forbidden()
                 .content_type("text/plain")
                 .body(format!("{}", self)),
         }

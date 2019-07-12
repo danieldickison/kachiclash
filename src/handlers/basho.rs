@@ -4,8 +4,9 @@ use actix_identity::Identity;
 use itertools::Itertools;
 use rusqlite::{Connection, Result as SqlResult};
 
-use super::{AppState, BaseTemplate, Result};
-use super::data::{Rank, RankSide, BashoId, PlayerId, RikishiId};
+use super::{BaseTemplate, Result, HandlerError};
+use crate::data::{Rank, RankSide, BashoId, BashoInfo, PlayerId, RikishiId};
+use crate::AppState;
 
 use actix_web::{web, HttpResponse, Responder};
 use askama::Template;
@@ -18,7 +19,7 @@ pub fn basho_list(_state: web::Data<AppState>) -> impl Responder {
 #[template(path = "basho.html")]
 struct BashoTemplate {
     base: BaseTemplate,
-    basho: BashoId,
+    basho: BashoInfo,
     leaders: Vec<BashoPlayerResults>,
     rikishi_by_rank: Vec<BashoRikishiByRank>,
 }
@@ -52,7 +53,7 @@ pub fn basho(path: web::Path<BashoId>, state: web::Data<AppState>, identity: Ide
     let player_id = base.player.as_ref().map(|p| p.id);
     let picks = fetch_player_picks(&db, player_id, basho_id)?;
     let s = BashoTemplate {
-        basho: basho_id,
+        basho: BashoInfo::with_id(&db, basho_id)?.ok_or(HandlerError::NotFound("basho".to_string()))?,
         base: base,
         leaders: fetch_leaders(&db, basho_id)?,
         rikishi_by_rank: fetch_rikishi(&db, basho_id, picks)?,

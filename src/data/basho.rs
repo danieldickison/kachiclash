@@ -3,8 +3,44 @@ use std::convert::From;
 use std::fmt;
 use rusqlite::types::{ToSql, ToSqlOutput, ValueRef, FromSql, FromSqlResult, FromSqlError};
 use chrono::naive::NaiveDate;
-use chrono::Datelike;
+use chrono::offset::Utc;
+use chrono::{DateTime, Datelike};
 use serde::Deserialize;
+use rusqlite::{Connection, OptionalExtension};
+use failure::Error;
+
+pub struct BashoInfo {
+    pub id: BashoId,
+    pub start_date: DateTime<Utc>,
+    pub venue: String,
+    pub player_count: u32,
+}
+
+impl BashoInfo {
+    pub fn with_id(db: &Connection, id: BashoId) -> Result<Option<BashoInfo>, Error> {
+        db.query_row("
+            SELECT
+                basho.start_date,
+                basho.venue,
+                COUNT(DISTINCT pick.player_id) AS player_count
+            FROM basho
+            LEFT JOIN pick ON pick.basho_id = basho.id
+            WHERE basho.id = ?",
+            params![id],
+            |row| {
+                Ok(BashoInfo {
+                    id: id,
+                    start_date: row.get("start_date")?,
+                    venue: row.get("venue")?,
+                    player_count: row.get("player_count")?,
+                })
+            })
+            .optional()
+            .map_err(|e| e.into())
+    }
+}
+
+
 
 #[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Copy, Clone, Deserialize)]
 #[serde(from = "String")]

@@ -13,7 +13,7 @@ use actix_session::Session;
 
 use askama::Template;
 
-use super::{KachiClashError, BaseTemplate, Result};
+use super::{HandlerError, BaseTemplate, Result};
 use crate::{AppState};
 use crate::data::player;
 use crate::external::discord;
@@ -60,17 +60,17 @@ pub fn discord_redirect(query: web::Query<OAuthRedirectQuery>, state: web::Data<
             let token_res = discord::exchange_code(&state.config, auth_code)
                 .map_err(|e| {
                     warn!("error exchanging auth code for access token from discord: {:?}", e);
-                    KachiClashError::ExternalServiceError
+                    HandlerError::ExternalServiceError
                 })?;
             let user_info = discord::get_logged_in_user_info(token_res.access_token())
                 .map_err(|e| {
                     warn!("error getting logged in user info from discord: {:?}", e);
-                    KachiClashError::ExternalServiceError
+                    HandlerError::ExternalServiceError
                 })?;
             let player_id = player::player_for_discord_user(&mut db, user_info)
                 .map_err(|err| {
                     warn!("error creating player for discord login: {:?}", err);
-                    KachiClashError::DatabaseError
+                    HandlerError::DatabaseError
                 })?;
 
             id.remember(player_id.to_string());
@@ -81,7 +81,7 @@ pub fn discord_redirect(query: web::Query<OAuthRedirectQuery>, state: web::Data<
         },
         Some(_) | None => {
             warn!("bad CSRF token received in discord oauth redirect endpoint");
-            Err(KachiClashError::CSRFError.into())
+            Err(HandlerError::CSRFError.into())
         }
     }
 }

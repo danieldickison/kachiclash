@@ -2,7 +2,7 @@
 
 {% block main_id %}p-basho{% endblock %}
 
-{% block subtitle %}{{basho}}{% endblock %}
+{% block subtitle %}{{basho.id}}{% endblock %}
 
 {% block head %}
     <script src="/static/basho.js" defer></script>
@@ -10,6 +10,8 @@
 {% endblock %}
 
 {% block main %}
+    <h2>{{basho.id}} — {{basho.venue}}</h2>
+
     <section id="leaderboard">
         <h2>Leaderboard</h2>
         <table>
