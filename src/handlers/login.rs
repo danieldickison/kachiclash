@@ -74,6 +74,7 @@ pub fn discord_redirect(query: web::Query<OAuthRedirectQuery>, state: web::Data<
                 })?;
 
             id.remember(player_id.to_string());
+            session.remove("discord_csrf");
 
             Ok(web::HttpResponse::SeeOther()
                 .set_header(http::header::LOCATION, "/")
