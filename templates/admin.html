@@ -5,12 +5,12 @@
 {% block subtitle %}admin{% endblock %}
 
 {% block head %}
-    <!--script src="/static/basho.js" defer></script-->
+    <script src="/static/js/admin.js" defer></script>
     <link rel="stylesheet" href="/static/css/admin.css">
 {% endblock %}
 
 {% block main %}
-    <form class="make-basho" action="/admin/basho" method="post">
+    <form id="make-basho-form" action="/admin/basho" method="post">
         <h2>Create new basho</h2>
         <label>
             City:
@@ -26,6 +26,10 @@
             <span class="footnote">Copy and paste the "text-only" banzuke from <a href="http://sumodb.sumogames.de/Banzuke_text.aspx?b=201907">sumodb.sumogames.de</a></span>
             <textarea name="banzuke"></textarea>
         </label>
+        <table class="parsed-banzuke">
+            <thead><th>rank</th><th>name</th></thead>
+            <tbody></tbody>
+        </table>
         <input type="submit">
     </form>
 {% endblock %}
