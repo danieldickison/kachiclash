@@ -1,8 +1,9 @@
 use std::ops::Deref;
-use std::str::Chars;
+use std::str::FromStr;
 use std::error::Error;
 use std::convert::TryFrom;
 use std::fmt;
+use serde::{Deserialize, Deserializer};
 use rusqlite::types::{FromSql, ToSql, ValueRef, FromSqlResult, FromSqlError};
 
 #[derive(Debug)]
@@ -14,7 +15,7 @@ pub enum RankError {
 
 impl fmt::Display for RankError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:}", self)
+        write!(f, "{:?}", self)
     }
 }
 
@@ -70,8 +71,8 @@ pub enum RankSide {
 impl fmt::Display for RankSide {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", match self {
-            RankSide::East => 'E',
-            RankSide::West => 'W',
+            RankSide::East => 'e',
+            RankSide::West => 'w',
         })
     }
 }
@@ -80,8 +81,8 @@ impl TryFrom<char> for RankSide {
     type Error = RankError;
     fn try_from(c: char) -> Result<Self, RankError> {
         match c {
-            'E' => Ok(RankSide::East),
-            'W' => Ok(RankSide::West),
+            'E' | 'e' => Ok(RankSide::East),
+            'W' | 'w' => Ok(RankSide::West),
             _ => Err(RankError::UnknownChar(c))
         }
     }
@@ -139,16 +140,32 @@ impl fmt::Display for Rank {
 
 impl FromSql for Rank {
     fn column_result(value: ValueRef) -> FromSqlResult<Self> {
-        let parse = |mut chars: Chars| -> Result<Rank, RankError> {
-            let name_char = chars.next().ok_or_else(|| RankError::MissingChar.into())?;
-            let side_char = chars.next_back().ok_or_else(|| RankError::MissingChar.into())?;
-            Ok(Rank {
-                name: RankName::try_from(name_char)?,
-                side: RankSide::try_from(side_char)?,
-                number: chars.as_str().parse().map_err(|err| RankError::ParseIntError(err))?
-            })
-        };
         let str = value.as_str()?;
-        parse(str.chars()).map_err(|err| err.into())
+        str.parse().map_err(|err: RankError| err.into())
+    }
+}
+
+impl FromStr for Rank {
+    type Err = RankError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut chars = s.chars();
+        let name_char = chars.next().ok_or_else(|| RankError::MissingChar.into())?;
+        let side_char = chars.next_back().ok_or_else(|| RankError::MissingChar.into())?;
+        let num_str = chars.as_str();
+        debug!("parsing rank got name char {} side char {} with remaining {}", name_char, side_char, num_str);
+        Ok(Rank {
+            name: RankName::try_from(name_char)?,
+            side: RankSide::try_from(side_char)?,
+            number: num_str.parse().map_err(|err| RankError::ParseIntError(err))?
+        })
+    }
+}
+
+impl<'de> Deserialize<'de> for Rank {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where D: Deserializer<'de> {
+        let s = String::deserialize(deserializer)?;
+        debug!("parsing rank from {}", s);
+        s.parse().map_err(serde::de::Error::custom)
     }
 }

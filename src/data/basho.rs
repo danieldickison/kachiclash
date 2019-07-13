@@ -5,7 +5,7 @@ use rusqlite::types::{ToSql, ToSqlOutput, ValueRef, FromSql, FromSqlResult, From
 use chrono::naive::NaiveDate;
 use chrono::offset::Utc;
 use chrono::{DateTime, Datelike};
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 use rusqlite::{Connection, OptionalExtension};
 use failure::Error;
 use itertools::Itertools;
@@ -49,8 +49,7 @@ impl BashoInfo {
 
 
 
-#[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Copy, Clone, Deserialize)]
-#[serde(from = "String")]
+#[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Copy, Clone)]
 pub struct BashoId {
     pub year: i32,
     pub month: u8,
@@ -72,7 +71,8 @@ impl fmt::Display for BashoId {
 impl FromStr for BashoId {
     type Err = chrono::format::ParseError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        NaiveDate::parse_from_str(s, "%Y%m").map(|date|
+        let with_day = format!("{}01", s);
+        NaiveDate::parse_from_str(&with_day, "%Y%m%d").map(|date|
             Self {
                 year: date.year(),
                 month: date.month() as u8,
@@ -81,12 +81,11 @@ impl FromStr for BashoId {
     }
 }
 
-impl From<String> for BashoId {
-    fn from(s: String) -> Self {
-        s.as_str().parse().unwrap_or_else(|_| Self {
-            year: 2019,
-            month: 7,
-        })
+impl<'de> Deserialize<'de> for BashoId {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where D: Deserializer<'de> {
+        let s = String::deserialize(deserializer)?;
+        s.parse().map_err(serde::de::Error::custom)
     }
 }
 

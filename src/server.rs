@@ -46,15 +46,19 @@ pub fn run(config: Config) -> std::io::Result<()> {
 
         .service(Files::new("/static", "public"))
         .service(web::resource("/").to(handlers::index))
+        
         .service(web::resource("/login").to(handlers::login::index))
         .service(web::resource("/logout").to(handlers::login::logout))
         .service(web::resource("/login/discord").to(handlers::login::discord))
         .service(web::resource("/login/discord_redirect").to(handlers::login::discord_redirect))
+
         .service(web::resource("/basho").to(handlers::basho::basho_list))
+        .service(web::resource("/basho/new")
+                    .route(web::get().to(handlers::admin::new_basho_page))
+                    .route(web::post().to(handlers::admin::new_basho_post)))
         .service(web::resource("/basho/{basho_id}").to(handlers::basho::basho))
         .service(web::resource("/basho/{basho_id}/picks")
                     .route(web::post().to(handlers::basho::save_picks)))
-        .service(web::resource("/admin").to(handlers::admin::index))
         .service(
             web::scope("/db")
                 .service(web::resource("/player").to(handlers::list_players))

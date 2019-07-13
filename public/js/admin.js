@@ -43,21 +43,24 @@ bashoForm.addEventListener('submit', event => {
             start_date: bashoForm.elements.start_date.value,
             banzuke: parsedBanzuke,
         };
-    let url = bashoForm.action;
+    let url = '/basho/new';
     return fetch(url, {
         method: 'POST',
         body: JSON.stringify(data),
+        headers: new Headers({
+            'Content-Type': 'application/json'
+        }),
     })
     .then(response => {
         if (response.ok) {
             return response.json();
         } else {
-            throw "error saving basho";
+            return response.text().then(msg => {throw msg});
         }
     })
     .then(json => {
         console.log("json:", json);
         window.location = json.basho_url;
     })
-    .catch(err => alert(err));
+    .catch(err => alert("error saving basho: " + err));
 });
