@@ -95,11 +95,11 @@ fn fetch_leaders(db: &Connection, basho_id: BashoId) -> Result<Vec<BashoPlayerRe
                 SUM(torikumi.win) AS wins
             FROM player
             JOIN pick ON pick.player_id = player.id AND pick.basho_id = :basho_id
-            JOIN torikumi ON torikumi.rikishi_id = pick.rikishi_id AND torikumi.basho_id = pick.basho_id
+            LEFT JOIN torikumi ON torikumi.rikishi_id = pick.rikishi_id AND torikumi.basho_id = pick.basho_id
             WHERE player.id IN (
                 SELECT pick.player_id
                 FROM pick
-                JOIN torikumi ON torikumi.rikishi_id = pick.rikishi_id AND torikumi.basho_id = pick.basho_id
+                LEFT JOIN torikumi ON torikumi.rikishi_id = pick.rikishi_id AND torikumi.basho_id = pick.basho_id
                 WHERE pick.basho_id = :basho_id
                 GROUP BY pick.player_id
                 ORDER BY SUM(torikumi.win) DESC
@@ -112,7 +112,7 @@ fn fetch_leaders(db: &Connection, basho_id: BashoId) -> Result<Vec<BashoPlayerRe
             named_params!{
                 ":basho_id": basho_id
             },
-            |row| -> SqlResult<(PlayerId, String, u8, i8)> {
+            |row| -> SqlResult<(PlayerId, String, Option<u8>, Option<i8>)> {
                 Ok((
                     row.get("id")?,
                     row.get("name")?,
@@ -121,7 +121,7 @@ fn fetch_leaders(db: &Connection, basho_id: BashoId) -> Result<Vec<BashoPlayerRe
                 ))
             }
         )?
-        .collect::<SqlResult<Vec<(PlayerId, String, u8, i8)>>>()?
+        .collect::<SqlResult<Vec<(PlayerId, String, Option<u8>, Option<i8>)>>>()?
         .into_iter()
         .group_by(|row| row.0)
         .into_iter()
@@ -135,8 +135,10 @@ fn fetch_leaders(db: &Connection, basho_id: BashoId) -> Result<Vec<BashoPlayerRe
                 days: [None; 15]
             };
             for (_, _, day, wins) in rows {
-                results.days[day as usize - 1] = Some(wins);
-                results.total += wins;
+                if let Some(day) = day {
+                    results.days[day as usize - 1] = wins;
+                    results.total += wins.unwrap_or(0);
+                }
             }
             results
         })
@@ -150,20 +152,20 @@ fn fetch_rikishi(db: &Connection, basho_id: BashoId, picks: HashSet<RikishiId>) 
     debug!("fetching rikishi results for basho {}", basho_id);
     Ok(db.prepare("
             SELECT
-                rikishi_basho.rank,
-                rikishi_basho.rikishi_id,
-                rikishi_basho.family_name,
+                banzuke.rank,
+                banzuke.rikishi_id,
+                banzuke.family_name,
                 torikumi.day,
                 torikumi.win
-            FROM rikishi_basho
-            NATURAL JOIN torikumi
+            FROM banzuke
+            LEFT NATURAL JOIN torikumi
             WHERE
-                rikishi_basho.basho_id = ?
-            ORDER BY rikishi_basho.rikishi_id, torikumi.day
+                banzuke.basho_id = ?
+            ORDER BY banzuke.rikishi_id, torikumi.day
         ").unwrap()
         .query_map(
             params![basho_id],
-            |row| -> SqlResult<(Rank, RikishiId, String, u8, Option<bool>)> {
+            |row| -> SqlResult<(Rank, RikishiId, String, Option<u8>, Option<bool>)> {
                 Ok((
                     row.get("rank")?,
                     row.get("rikishi_id")?,
@@ -173,7 +175,7 @@ fn fetch_rikishi(db: &Connection, basho_id: BashoId, picks: HashSet<RikishiId>) 
                 ))
             }
         )?
-        .collect::<SqlResult<Vec<(Rank, RikishiId, String, u8, Option<bool>)>>>()?
+        .collect::<SqlResult<Vec<(Rank, RikishiId, String, Option<u8>, Option<bool>)>>>()?
         .into_iter()
         .group_by(|row| (row.0.name, row.0.number)) // rank name and number but group east/west together
         .into_iter()
@@ -205,7 +207,9 @@ fn fetch_rikishi(db: &Connection, basho_id: BashoId, picks: HashSet<RikishiId>) 
                         Some(false) => rikishi.losses += 1,
                         None => ()
                     }
-                    rikishi.results[day as usize - 1] = win
+                    if let Some(day) = day {
+                        rikishi.results[day as usize - 1] = win
+                    }
                 }
                 match side {
                     RankSide::East => out.east = Some(rikishi),
