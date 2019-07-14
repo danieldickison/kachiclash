@@ -1,7 +1,7 @@
 
 use crate::data::{self, Rank};
 use crate::AppState;
-use super::{HandlerError, BaseTemplate, Result};
+use super::{HandlerError, BaseTemplate, Result, AskamaResponder};
 
 use actix_web::{HttpResponse, Responder};
 use actix_web::web;
@@ -75,4 +75,20 @@ fn admin_base(db: &Connection, identity: &Identity) -> Result<BaseTemplate> {
     } else {
         Err(HandlerError::MustBeLoggedIn.into())
     }
+}
+
+
+///////
+
+#[derive(Template)]
+#[template(path = "torikumi.html")]
+pub struct TorikumiTemplate {
+    base: BaseTemplate,
+}
+
+pub fn torikumi_page(state: web::Data<AppState>, identity: Identity) -> Result<AskamaResponder<TorikumiTemplate>> {
+    let db = state.db.lock().unwrap();
+    Ok(TorikumiTemplate {
+        base: admin_base(&db, &identity)?,
+    }.into())
 }

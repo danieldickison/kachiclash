@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block main_id %}p-torikumi{% endblock %}
+
+{% block subtitle %}torikumi{% endblock %}
+
+{% block head %}
+    <script src="/static/js/new_basho.js" defer></script>
+    <link rel="stylesheet" href="/static/css/new_basho.css">
+{% endblock %}
+
+{% block main %}
+    <form id="make-basho-form">
+        <h2>Create new basho</h2>
+        <label>
+            City:
+            <input name="venue">
+        </label>
+        <label>
+            Start date:
+            <span class="footnote">This is the precise time when entries will be closed, in JST.</span>
+            <input name="start_date" type="datetime-local" placeholder="yyyy-mm-dd hh:mm">
+        </label>
+        <label>
+            Banzuke:
+            <span class="footnote">Copy and paste the "text-only" banzuke from <a href="http://sumodb.sumogames.de/Banzuke_text.aspx?b=201907">sumodb.sumogames.de</a></span>
+            <textarea name="banzuke"></textarea>
+        </label>
+        <table class="parsed-banzuke">
+            <thead><th>rank</th><th>name</th></thead>
+            <tbody></tbody>
+        </table>
+        <input type="submit">
+    </form>
+{% endblock %}
