@@ -39,12 +39,17 @@ fn init_database(path: &Path) {
 
     conn.execute("
         CREATE TABLE rikishi (
-            id              INTEGER PRIMARY KEY AUTOINCREMENT
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            family_name     TEXT NOT NULL,
+            given_name      TEXT NOT NULL
         )", NO_PARAMS)
         .expect("create rikishi table");
 
+    conn.execute("CREATE INDEX family_name ON rikishi (family_name)", NO_PARAMS)
+        .expect("create rikishi.family_name index");
+
     conn.execute("
-        CREATE TABLE rikishi_basho (
+        CREATE TABLE banzuke (
             rikishi_id      INTEGER NOT NULL REFERENCES rikishi(id),
             basho_id        INTEGER NOT NULL REFERENCES basho(id),
             family_name     TEXT NOT NULL,
@@ -53,7 +58,7 @@ fn init_database(path: &Path) {
 
             PRIMARY KEY (rikishi_id, basho_id)
         )", NO_PARAMS)
-        .expect("create rikishi_basho table");
+        .expect("create banzuke table");
 
     conn.execute("
         CREATE TABLE torikumi (
@@ -65,7 +70,7 @@ fn init_database(path: &Path) {
             win             INTEGER,
 
             PRIMARY KEY (basho_id, day, seq, side),
-            FOREIGN KEY (rikishi_id, basho_id) REFERENCES rikishi_basho(rikishi_id, basho_id)
+            FOREIGN KEY (rikishi_id, basho_id) REFERENCES banzuke(rikishi_id, basho_id)
         )", NO_PARAMS)
         .expect("create torikumi table");
 
@@ -108,20 +113,20 @@ fn init_database(path: &Path) {
 fn populate_dummy_data(conn: &Connection) {
     let now = Utc::now();
 
-    let basho_id = 201907;
+    let basho_id = 201905;
     conn.execute("INSERT INTO basho (id, start_date, venue) VALUES (?, ?, ?)",
         params![basho_id, now, "Osaka"]).unwrap();
 
-    conn.execute("INSERT INTO rikishi DEFAULT VALUES", NO_PARAMS).unwrap();
+    conn.execute("INSERT INTO rikishi (family_name, given_name) VALUES ('Hakuho', 'Sho')", NO_PARAMS).unwrap();
     let rikishi1_id = conn.last_insert_rowid();
-    conn.execute("INSERT INTO rikishi DEFAULT VALUES", NO_PARAMS).unwrap();
+    conn.execute("INSERT INTO rikishi (family_name, given_name) VALUES ('Kakuryu', 'Rikisaburo')", NO_PARAMS).unwrap();
     let rikishi2_id = conn.last_insert_rowid();
-    conn.execute("INSERT INTO rikishi DEFAULT VALUES", NO_PARAMS).unwrap();
+    conn.execute("INSERT INTO rikishi (family_name, given_name) VALUES ('Takakeisho', 'Mitsunobu')", NO_PARAMS).unwrap();
     let rikishi3_id = conn.last_insert_rowid();
-    conn.execute("INSERT INTO rikishi DEFAULT VALUES", NO_PARAMS).unwrap();
+    conn.execute("INSERT INTO rikishi (family_name, given_name) VALUES ('Mitakeumi', 'Hisashi')", NO_PARAMS).unwrap();
     let rikishi4_id = conn.last_insert_rowid();
 
-    conn.execute("INSERT INTO rikishi_basho (rikishi_id, basho_id, family_name, given_name, rank)
+    conn.execute("INSERT INTO banzuke (rikishi_id, basho_id, family_name, given_name, rank)
         VALUES (?, ?, ?, ?, ?), (?, ?, ?, ?, ?), (?, ?, ?, ?, ?), (?, ?, ?, ?, ?)",
         params![
             rikishi1_id, basho_id, "Hakuho", "Sho", "Y1E",

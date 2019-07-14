@@ -1,5 +1,5 @@
 
-use crate::data::{Rank};
+use crate::data::{self, Rank};
 use crate::AppState;
 use super::{HandlerError, BaseTemplate, Result};
 
@@ -48,10 +48,23 @@ struct BanzukeRikishi {
     rank: Rank,
 }
 
-pub fn new_basho_post(basho: web::Json<BashoData>, state: web::Data<AppState>, identity: Identity) -> Result<impl Responder> {
-    admin_base(&state.db.lock().unwrap(), &identity)?;
-    debug!("{:?}", basho.venue);
-    Ok("{}")
+#[derive(Debug, Serialize)]
+pub struct BanzukeResponseData {
+    basho_url: String,
+}
+
+pub fn new_basho_post(basho: web::Json<BashoData>, state: web::Data<AppState>, identity: Identity)
+-> Result<web::Json<BanzukeResponseData>> {
+    let mut db = state.db.lock().unwrap();
+    admin_base(&db, &identity)?;
+    let basho_id = data::basho::make_basho(
+        &mut db,
+        &basho.venue,
+        &basho.start_date,
+        &basho.banzuke.iter().map(|b| (b.name.to_owned(), b.rank.to_owned())).collect())?;
+    Ok(web::Json(BanzukeResponseData {
+        basho_url: basho_id.url_path()
+    }))
 }
 
 fn admin_base(db: &Connection, identity: &Identity) -> Result<BaseTemplate> {

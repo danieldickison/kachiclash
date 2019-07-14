@@ -1,8 +1,9 @@
 use std::str::FromStr;
 use std::convert::From;
+use std::collections::HashMap;
 use std::fmt;
 use rusqlite::types::{ToSql, ToSqlOutput, ValueRef, FromSql, FromSqlResult, FromSqlError};
-use chrono::naive::NaiveDate;
+use chrono::naive::{NaiveDate, NaiveDateTime};
 use chrono::offset::Utc;
 use chrono::{DateTime, Datelike};
 use serde::{Deserialize, Deserializer};
@@ -72,12 +73,16 @@ impl FromStr for BashoId {
     type Err = chrono::format::ParseError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let with_day = format!("{}01", s);
-        NaiveDate::parse_from_str(&with_day, "%Y%m%d").map(|date|
-            Self {
-                year: date.year(),
-                month: date.month() as u8,
-            }
-        )
+        NaiveDate::parse_from_str(&with_day, "%Y%m%d").map(|date| date.into())
+    }
+}
+
+impl From<NaiveDate> for BashoId {
+    fn from(date: NaiveDate) -> Self {
+        Self {
+            year: date.year(),
+            month: date.month() as u8,
+        }
     }
 }
 
@@ -123,7 +128,7 @@ pub fn save_player_picks(db: &mut Connection, player_id: PlayerId, basho_id: Bas
 
     let rank_groups: Vec<RankGroup> = txn.prepare("
         SELECT rank
-        FROM rikishi_basho
+        FROM banzuke
         WHERE basho_id = ? AND rikishi_id IN (?, ?, ?, ?, ?)")?
     .query_map(params![basho_id, picks[0], picks[1], picks[2], picks[3], picks[4]], |row| row.get(0))?
     .map(|rank: rusqlite::Result<Rank>| rank.unwrap().group())
@@ -149,4 +154,65 @@ pub fn save_player_picks(db: &mut Connection, player_id: PlayerId, basho_id: Bas
     txn.commit()?;
 
     Ok(())
+}
+
+
+pub fn make_basho(db: &mut Connection, venue: &String, start_date: &NaiveDateTime, banzuke: &Vec<(String, Rank)>) -> Result<BashoId, Error> {
+    let txn = db.transaction()?;
+    let basho_id: BashoId = start_date.date().into();
+    txn.execute("
+        INSERT INTO basho (id, start_date, venue)
+        VALUES (?, ?, ?)
+        ON CONFLICT (id) DO UPDATE SET
+            start_date = excluded.start_date,
+            venue = excluded.venue
+        ",
+        params![basho_id, start_date, venue])?;
+
+    let mut rikishi_ids = HashMap::new();
+    let mut given_names = HashMap::new();
+    let query_str = format!("
+            SELECT id, family_name, given_name
+            FROM rikishi
+            WHERE family_name IN ({})
+        ",
+        banzuke.iter().map(|(_, _)| "?").join(", ")
+    );
+    txn.prepare(query_str.as_str())?
+        .query_map(
+            banzuke.iter().map(|(name, _)| name),
+            |row| {
+                let id: i64 = row.get("id")?;
+                let family_name: String = row.get("family_name")?;
+                let given_name: String = row.get("given_name")?;
+                rikishi_ids.insert(family_name, id);
+                given_names.insert(id, given_name);
+                Ok(())
+            })?;
+    for (family_name, rank) in banzuke {
+        let rikishi_id = match rikishi_ids.get(family_name) {
+            Some(id) => id.to_owned(),
+            None => {
+                txn.execute("
+                        INSERT INTO rikishi (family_name, given_name)
+                        VALUES (?, ?)
+                    ",
+                    params![family_name, ""])?; // TODO given_name
+                txn.last_insert_rowid()
+            }
+        };
+        let given_name = given_names.get(&rikishi_id).unwrap_or(&"".to_string()).to_owned(); // TODO given_name
+        txn.execute("
+                INSERT INTO banzuke (rikishi_id, basho_id, family_name, given_name, rank)
+                VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT (rikishi_id, basho_id) DO UPDATE SET
+                    family_name = excluded.family_name,
+                    given_name = excluded.given_name,
+                    rank = excluded.rank
+            ",
+            params![rikishi_id, basho_id, family_name, given_name, rank])?;
+    }
+    txn.commit()?;
+
+    Ok(basho_id)
 }

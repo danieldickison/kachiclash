@@ -4,7 +4,7 @@ use std::error::Error;
 use std::convert::TryFrom;
 use std::fmt;
 use serde::{Deserialize, Deserializer};
-use rusqlite::types::{FromSql, ToSql, ValueRef, FromSqlResult, FromSqlError};
+use rusqlite::types::{FromSql, ToSql, ValueRef, FromSqlResult, FromSqlError, ToSqlOutput};
 
 #[derive(Debug)]
 pub enum RankError {
@@ -145,6 +145,12 @@ impl FromSql for Rank {
     }
 }
 
+impl ToSql for Rank {
+    fn to_sql(&self) -> rusqlite::Result<ToSqlOutput> {
+        Ok(ToSqlOutput::from(self.to_string()))
+    }
+}
+
 impl FromStr for Rank {
     type Err = RankError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -152,7 +158,7 @@ impl FromStr for Rank {
         let name_char = chars.next().ok_or_else(|| RankError::MissingChar.into())?;
         let side_char = chars.next_back().ok_or_else(|| RankError::MissingChar.into())?;
         let num_str = chars.as_str();
-        debug!("parsing rank got name char {} side char {} with remaining {}", name_char, side_char, num_str);
+        //debug!("parsing rank got name char {} side char {} with remaining {}", name_char, side_char, num_str);
         Ok(Rank {
             name: RankName::try_from(name_char)?,
             side: RankSide::try_from(side_char)?,
@@ -165,7 +171,6 @@ impl<'de> Deserialize<'de> for Rank {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where D: Deserializer<'de> {
         let s = String::deserialize(deserializer)?;
-        debug!("parsing rank from {}", s);
         s.parse().map_err(serde::de::Error::custom)
     }
 }
