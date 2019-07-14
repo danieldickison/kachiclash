@@ -10,6 +10,9 @@ use rusqlite::Connection;
 use failure::Fail;
 use askama::Template;
 
+mod askama_responder;
+use askama_responder::AskamaResponder;
+
 pub mod basho;
 pub mod login;
 pub mod admin;
