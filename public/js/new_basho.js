@@ -1,3 +1,4 @@
+(function () {
 'use strict';
 
 let bashoForm = document.getElementById('make-basho-form');
@@ -64,3 +65,4 @@ bashoForm.addEventListener('submit', event => {
     })
     .catch(err => alert("error saving basho: " + err));
 });
+})();
