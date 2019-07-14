@@ -28,7 +28,8 @@ pub fn run(config: Config) -> std::io::Result<()> {
     }
 
     info!("starting server at {}:{}", config2.host, config2.port);
-    HttpServer::new(move || App::new()
+    HttpServer::new(move || {
+        let mut app = App::new()
         .data(AppState {
             config: config.clone(),
             db: data::make_conn(&config.db_path),
@@ -46,7 +47,7 @@ pub fn run(config: Config) -> std::io::Result<()> {
 
         .service(Files::new("/static", "public"))
         .service(web::resource("/").to(handlers::index))
-        
+
         .service(web::resource("/login").to(handlers::login::index))
         .service(web::resource("/logout").to(handlers::login::logout))
         .service(web::resource("/login/discord").to(handlers::login::discord))
@@ -65,8 +66,12 @@ pub fn run(config: Config) -> std::io::Result<()> {
         )
         .default_service(
             web::route().to(|| HttpResponse::NotFound())
-        )
-    )
+        );
+        if config.is_dev() {
+            app = app.service(Files::new("/scss", "scss"));
+        }
+        app
+    })
     .bind(("0.0.0.0", config2.port))?
     .run()
 }
