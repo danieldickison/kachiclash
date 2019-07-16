@@ -113,7 +113,9 @@ fn init_database(path: &Path) {
 fn populate_dummy_data(conn: &Connection) {
     let now = Utc::now();
 
-    let basho_id = 201905;
+    #[allow(clippy::inconsistent_digit_grouping)]
+    let basho_id = 2019_05;
+
     conn.execute("INSERT INTO basho (id, start_date, venue) VALUES (?, ?, ?)",
         params![basho_id, now, "Osaka"]).unwrap();
 

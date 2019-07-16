@@ -77,7 +77,7 @@ impl BaseTemplate {
             None => None
         };
         Ok(Self {
-            player: player
+            player
         })
     }
 }

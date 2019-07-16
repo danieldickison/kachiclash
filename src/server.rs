@@ -73,7 +73,7 @@ pub fn run(config: Config) -> std::io::Result<()> {
                 .service(web::resource("/player").to(handlers::list_players))
         )
         .default_service(
-            web::route().to(|| HttpResponse::NotFound())
+            web::route().to(HttpResponse::NotFound)
         );
         if config.is_dev() {
             app = app.service(Files::new("/scss", "scss"));

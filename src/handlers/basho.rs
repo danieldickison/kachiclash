@@ -55,8 +55,9 @@ pub fn basho(path: web::Path<BashoId>, state: web::Data<AppState>, identity: Ide
     let player_id = base.player.as_ref().map(|p| p.id);
     let picks = fetch_player_picks(&db, player_id, basho_id)?;
     let s = BashoTemplate {
-        basho: BashoInfo::with_id(&db, basho_id)?.ok_or(HandlerError::NotFound("basho".to_string()))?,
-        base: base,
+        basho: BashoInfo::with_id(&db, basho_id)?
+            .ok_or_else(|| HandlerError::NotFound("basho".to_string()))?,
+        base,
         leaders: fetch_leaders(&db, basho_id)?,
         rikishi_by_rank: fetch_rikishi(&db, basho_id, picks)?,
     }.render()?;
@@ -142,7 +143,6 @@ fn fetch_leaders(db: &Connection, basho_id: BashoId) -> Result<Vec<BashoPlayerRe
             }
             results
         })
-        .into_iter()
         .sorted_by_key(|result| -result.total)
         .collect()
     )
@@ -180,7 +180,6 @@ fn fetch_rikishi(db: &Connection, basho_id: BashoId, picks: HashSet<RikishiId>) 
         .group_by(|row| (row.0.name, row.0.number)) // rank name and number but group east/west together
         .into_iter()
         .sorted_by(|(rank1, _), (rank2, _)| rank1.cmp(rank2))
-        .into_iter()
         .map(|(rank, pair)| {
             let mut out = BashoRikishiByRank {
                 rank: format!("{:}{}", rank.0, rank.1),
@@ -188,7 +187,7 @@ fn fetch_rikishi(db: &Connection, basho_id: BashoId, picks: HashSet<RikishiId>) 
                 east: None,
                 west: None,
             };
-            for (_, rows) in &pair.into_iter().group_by(|row| row.0) {
+            for (_, rows) in &pair.group_by(|row| row.0) {
                 let mut rows = rows.peekable();
                 let arow = rows.peek().unwrap();
                 let side = arow.0.side;

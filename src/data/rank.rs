@@ -127,7 +127,7 @@ pub struct Rank {
 }
 
 impl Rank {
-    pub fn group(&self) -> RankGroup {
+    pub fn group(self) -> RankGroup {
         RankGroup::for_rank(self.name, self.number)
     }
 }
@@ -155,14 +155,14 @@ impl FromStr for Rank {
     type Err = RankError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut chars = s.chars();
-        let name_char = chars.next().ok_or_else(|| RankError::MissingChar.into())?;
-        let side_char = chars.next_back().ok_or_else(|| RankError::MissingChar.into())?;
+        let name_char = chars.next().ok_or_else(|| RankError::MissingChar)?;
+        let side_char = chars.next_back().ok_or_else(|| RankError::MissingChar)?;
         let num_str = chars.as_str();
         //debug!("parsing rank got name char {} side char {} with remaining {}", name_char, side_char, num_str);
         Ok(Rank {
             name: RankName::try_from(name_char)?,
             side: RankSide::try_from(side_char)?,
-            number: num_str.parse().map_err(|err| RankError::ParseIntError(err))?
+            number: num_str.parse().map_err(RankError::ParseIntError)?
         })
     }
 }

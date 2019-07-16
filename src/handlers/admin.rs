@@ -22,7 +22,7 @@ pub fn new_basho_page(state: web::Data<AppState>, identity: Identity) -> Result<
     let base = admin_base(&db, &identity)?;
 
     let s = NewBashoTemplate {
-        base: base,
+        base,
     }.render().unwrap();
     Ok(HttpResponse::Ok().body(s))
 }
@@ -61,7 +61,11 @@ pub fn new_basho_post(basho: web::Json<BashoData>, state: web::Data<AppState>, i
         &mut db,
         &basho.venue,
         &basho.start_date,
-        &basho.banzuke.iter().map(|b| (b.name.to_owned(), b.rank.to_owned())).collect())?;
+        &basho.banzuke
+            .iter()
+            .map(|b| (b.name.to_owned(), b.rank.to_owned()))
+            .collect::<Vec<_>>()
+    )?;
     Ok(web::Json(BanzukeResponseData {
         basho_url: basho_id.url_path()
     }))

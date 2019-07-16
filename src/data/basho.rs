@@ -33,7 +33,7 @@ impl BashoInfo {
             params![id],
             |row| {
                 Ok(BashoInfo {
-                    id: id,
+                    id,
                     start_date: row.get("start_date")?,
                     venue: row.get("venue")?,
                     player_count: row.get("player_count")?,
@@ -57,7 +57,7 @@ pub struct BashoId {
 }
 
 impl BashoId {
-    pub fn url_path(&self) -> String {
+    pub fn url_path(self) -> String {
         format!("/basho/{:04}{:02}", self.year, self.month)
     }
 }
@@ -157,7 +157,7 @@ pub fn save_player_picks(db: &mut Connection, player_id: PlayerId, basho_id: Bas
 }
 
 
-pub fn make_basho(db: &mut Connection, venue: &String, start_date: &NaiveDateTime, banzuke: &Vec<(String, Rank)>) -> Result<BashoId, Error> {
+pub fn make_basho(db: &mut Connection, venue: &str, start_date: &NaiveDateTime, banzuke: &[(String, Rank)]) -> Result<BashoId, Error> {
     let txn = db.transaction()?;
     let basho_id: BashoId = start_date.date().into();
     txn.execute("
