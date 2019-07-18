@@ -1,5 +1,5 @@
 
-use crate::data::{self, Rank};
+use crate::data::{self, Rank, BashoId};
 use crate::AppState;
 use super::{HandlerError, BaseTemplate, Result, AskamaResponder};
 
@@ -95,4 +95,21 @@ pub fn torikumi_page(state: web::Data<AppState>, identity: Identity) -> Result<A
     Ok(TorikumiTemplate {
         base: admin_base(&db, &identity)?,
     }.into())
+}
+
+#[derive(Debug, Deserialize)]
+pub struct TorikumiData {
+    torikumi: Vec<data::basho::TorikumiMatchUpdateData>,
+}
+
+pub fn torikumi_post(path: web::Path<(BashoId, u8)>, torikumi: web::Json<TorikumiData>, state: web::Data<AppState>, identity: Identity)
+-> Result<()> {
+    let mut db = state.db.lock().unwrap();
+    admin_base(&db, &identity)?;
+    data::basho::update_torikumi(
+        &mut db,
+        &path.0,
+        &path.1,
+        &torikumi.torikumi
+    )
 }

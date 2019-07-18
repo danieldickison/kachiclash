@@ -88,6 +88,12 @@ impl TryFrom<char> for RankSide {
     }
 }
 
+impl ToSql for RankSide {
+    fn to_sql(&self) -> rusqlite::Result<ToSqlOutput> {
+        Ok(ToSqlOutput::from(self.to_string()))
+    }
+}
+
 #[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Copy, Clone, Hash)]
 pub struct RankGroup(u8);
 

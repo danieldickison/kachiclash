@@ -28,4 +28,9 @@ pub enum DataError {
 
     #[fail(display = "Invalid picks")]
     InvalidPicks,
+
+    #[fail(display = "Rikishi not found: {}", family_name)]
+    RikishiNotFound {
+        family_name: String,
+    },
 }

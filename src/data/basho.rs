@@ -11,7 +11,7 @@ use rusqlite::{Connection, OptionalExtension};
 use failure::Error;
 use itertools::Itertools;
 
-use super::{DataError, PlayerId, RikishiId, Rank, RankGroup};
+use super::{DataError, PlayerId, RikishiId, Rank, RankGroup, RankSide};
 
 pub struct BashoInfo {
     pub id: BashoId,
@@ -215,4 +215,79 @@ pub fn make_basho(db: &mut Connection, venue: &str, start_date: &NaiveDateTime, 
     txn.commit()?;
 
     Ok(basho_id)
+}
+
+#[derive(Debug, Deserialize)]
+pub struct TorikumiMatchUpdateData {
+    east_name: String,
+    west_name: String,
+    east_win: Option<bool>,
+}
+
+pub fn update_torikumi(db: &mut Connection, basho_id: &BashoId, day: &u8, torikumi: &Vec<TorikumiMatchUpdateData>) -> Result<(), Error> {
+    let txn = db.transaction()?;
+
+    let mut rikishi_ids = HashMap::new();
+    let query_str = format!("
+            SELECT id, family_name
+            FROM rikishi
+            JOIN rikishi_basho AS rb
+                ON rb.rikishi_id = rikishi.id
+                AND rb.basho_id = ?
+            WHERE family_name IN ({})
+        ",
+        torikumi.iter().map(|_| "?, ?").join(", ")
+    );
+    let mut query_args: Vec<&ToSql> = vec![basho_id];
+    for TorikumiMatchUpdateData {east_name, west_name, east_win: _} in torikumi {
+        query_args.push(east_name);
+        query_args.push(west_name);
+    }
+    txn.prepare(query_str.as_str())?
+        .query_map(
+            query_args,
+            |row| {
+                let id: i64 = row.get("id")?;
+                let family_name: String = row.get("family_name")?;
+                rikishi_ids.insert(family_name, id);
+                Ok(())
+            })?;
+
+    for (seq, TorikumiMatchUpdateData {east_name, west_name, east_win})
+        in torikumi.iter().enumerate() {
+
+        if let Some(east_id) = rikishi_ids.get(east_name) {
+            txn.execute("
+                INSERT INTO torikumi (basho_id, day, seq, side, rikishi_id, win)
+                VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT (rikishi_id, basho_id) DO UPDATE SET
+                    family_name = excluded.family_name,
+                    given_name = excluded.given_name,
+                    rank = excluded.rank
+            ",
+            params![basho_id, day, seq as u32, RankSide::East, east_id, east_win])?;
+
+        } else {
+            return Err(DataError::RikishiNotFound {family_name: east_name.to_owned()}.into())
+        }
+
+        if let Some(west_id) = rikishi_ids.get(west_name) {
+            txn.execute("
+                INSERT INTO torikumi (basho_id, day, seq, side, rikishi_id, win)
+                VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT (rikishi_id, basho_id) DO UPDATE SET
+                    family_name = excluded.family_name,
+                    given_name = excluded.given_name,
+                    rank = excluded.rank
+            ",
+            params![basho_id, day, seq as u32, RankSide::West, west_id, east_win.and_then(|win| Some(!win))])?;
+
+        } else {
+            return Err(DataError::RikishiNotFound {family_name: west_name.to_owned()}.into())
+        }
+    }
+
+    txn.commit()?;
+
+    Ok(())
 }
