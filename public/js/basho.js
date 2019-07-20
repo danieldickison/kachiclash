@@ -3,7 +3,7 @@
 document.querySelectorAll('.select-radio').forEach(radio => {
     radio.addEventListener('change', event => {
         document.getElementsByName(radio.name).forEach(otherRadio => {
-            otherRadio.closest('label').classList.toggle('is-player-pick', otherRadio === radio);
+            otherRadio.closest('td').classList.toggle('is-player-pick', otherRadio === radio);
         });
         savePicks();
     });

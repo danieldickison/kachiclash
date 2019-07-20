@@ -28,27 +28,31 @@
             .select-radio {
                 vertical-align: middle;
                 margin-right: 5px;
+                
+                &[disabled] {
+                    display: none;
+                }
             }
 
             .is-player-pick {
-                background: rgba(255, 255, 255, 0.25);
-                box-shadow: inset 0 0 2px 1px white;
+                background: rgba(255, 255, 255, 0.5);
+                //box-shadow: inset 0 0 2px 1px white;
             }
 
             .rank-group-1 {
-                background: rgba(80, 150, 255, 1);
+                background: hsl(230, 80%, 75%);
             }
             .rank-group-2 {
-                background: rgba(100, 150, 255, 0.75);
+                background: hsl(200, 80%, 75%);
             }
             .rank-group-3 {
-                background: rgba(120, 150, 255, 0.5);
+                background: hsl(170, 70%, 65%);
             }
             .rank-group-4 {
-                background: rgba(140, 150, 255, 0.25);
+                background: hsl(140, 70%, 70%);
             }
             .rank-group-5 {
-                background: rgba(160, 150, 255, 0.1);
+                background: hsl(110, 60%, 70%);
             }
         }
     }

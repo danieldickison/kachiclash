@@ -88,19 +88,20 @@
 {%- macro rikishi_results(rikishi) -%}
     {%- match rikishi -%}
     {%- when Some with (rikishi) -%}
-        <td class="rikishi"
+        <td class="rikishi {% if rikishi.is_player_pick -%} is-player-pick {%- endif %}"
             data-rikishi-id="{{rikishi.id}}"
         >
-            <label {% if rikishi.is_player_pick -%} class="is-player-pick" {%- endif %}>
+            <label>
                 <input type="radio" class="select-radio"
                     name="rank-group-{{rikishi.rank.group()}}"
                     value="{{rikishi.id}}"
                     {% if rikishi.is_player_pick -%} checked {%- endif %}
+                    {% if basho.has_started() -%} disabled {%- endif %}
                 >
                 {{- rikishi.name -}}
             </label>
         </td>
-        <td class="hoshi">
+        <td class="hoshi {% if rikishi.is_player_pick && basho.has_started() -%} is-player-pick {%- endif %}">
         {%- for day in rikishi.results -%}
             {%- match day -%}
                 {%- when Some with (true) -%}⚪️
