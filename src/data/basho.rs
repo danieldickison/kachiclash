@@ -7,8 +7,7 @@ use chrono::naive::{NaiveDate, NaiveDateTime};
 use chrono::offset::Utc;
 use chrono::{DateTime, Datelike};
 use serde::{Deserialize, Deserializer};
-use rusqlite::{Connection, OptionalExtension};
-use failure::Error;
+use rusqlite::{Connection};
 use itertools::Itertools;
 
 use super::{DataError, PlayerId, RikishiId, Rank, RankGroup};
@@ -21,9 +20,10 @@ pub struct BashoInfo {
 }
 
 impl BashoInfo {
-    pub fn with_id(db: &Connection, id: BashoId) -> Result<Option<BashoInfo>, Error> {
+    pub fn with_id(db: &Connection, id: BashoId) -> Result<Option<BashoInfo>, DataError> {
         db.query_row("
             SELECT
+                COUNT(*) AS n,
                 basho.start_date,
                 basho.venue,
                 COUNT(DISTINCT pick.player_id) AS player_count
@@ -32,14 +32,17 @@ impl BashoInfo {
             WHERE basho.id = ?",
             params![id],
             |row| {
-                Ok(BashoInfo {
-                    id,
-                    start_date: row.get("start_date")?,
-                    venue: row.get("venue")?,
-                    player_count: row.get("player_count")?,
-                })
+                if row.get::<_, u32>("n")? == 0 {
+                    Ok(None)
+                } else {
+                    Ok(Some(BashoInfo {
+                        id,
+                        start_date: row.get("start_date")?,
+                        venue: row.get("venue")?,
+                        player_count: row.get("player_count")?,
+                    }))
+                }
             })
-            .optional()
             .map_err(|e| e.into())
     }
 
@@ -114,7 +117,7 @@ impl ToSql for BashoId {
 }
 
 
-pub fn save_player_picks(db: &mut Connection, player_id: PlayerId, basho_id: BashoId, picks: [Option<RikishiId>; 5]) -> Result<(), Error> {
+pub fn save_player_picks(db: &mut Connection, player_id: PlayerId, basho_id: BashoId, picks: [Option<RikishiId>; 5]) -> Result<(), DataError> {
     let txn = db.transaction()?;
     let start_date: DateTime<Utc> = txn.query_row("
         SELECT start_date
@@ -123,7 +126,7 @@ pub fn save_player_picks(db: &mut Connection, player_id: PlayerId, basho_id: Bas
         params![basho_id],
         |row| row.get(0))?;
     if start_date < Utc::now() {
-        return Err(DataError::BashoHasStarted.into());
+        return Err(DataError::BashoHasStarted);
     }
 
     let rank_groups: Vec<RankGroup> = txn.prepare("
@@ -135,7 +138,7 @@ pub fn save_player_picks(db: &mut Connection, player_id: PlayerId, basho_id: Bas
     .collect();
     debug!("rank groups {:?} for picks {:?}", rank_groups, picks);
     if rank_groups.clone().into_iter().unique().collect::<Vec<RankGroup>>() != rank_groups {
-        return Err(DataError::InvalidPicks.into())
+        return Err(DataError::InvalidPicks)
     }
 
     txn.execute("

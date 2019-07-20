@@ -242,4 +242,5 @@ pub fn save_picks(path: web::Path<BashoId>, form: web::Form<SavePicksFormData>, 
     let picks = &[form.rank_group_1, form.rank_group_2, form.rank_group_3, form.rank_group_4, form.rank_group_5];
     let mut db = state.db.lock().unwrap();
     data::basho::save_player_picks(&mut db, player_id, path.into_inner(), *picks)
+        .map_err(|e| e.into())
 }
