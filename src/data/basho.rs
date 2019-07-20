@@ -192,7 +192,10 @@ pub fn make_basho(db: &mut Connection, venue: &str, start_date: &NaiveDateTime, 
                 rikishi_ids.insert(family_name, id);
                 given_names.insert(id, given_name);
                 Ok(())
-            })?;
+            })?
+        // force evaluation of mapping function and collapse errors into one Result
+        .collect::<Result<(), rusqlite::Error>>()
+        .map_err(|e| DataError::from(e))?;
     if !ambiguous_shikona.is_empty() {
         return Err(DataError::AmbiguousShikona {family_names: ambiguous_shikona});
     }
@@ -234,12 +237,12 @@ pub struct TorikumiMatchUpdateData {
 pub fn update_torikumi(db: &mut Connection, basho_id: &BashoId, day: &u8, torikumi: &Vec<TorikumiMatchUpdateData>) -> Result<(), DataError> {
 
     debug!("updating torikumi for {} day {}", basho_id, day);
-    debug!("basho_id as sql: {:?}", basho_id.to_sql());
 
     let txn = db.transaction()?;
 
     let mut rikishi_ids = HashMap::new();
     let mut rikishi_ranks = HashMap::new();
+    let mut ambiguous_shikona = Vec::<String>::new();
     txn.prepare("
             SELECT b.rikishi_id, b.family_name, b.rank
             FROM banzuke AS b
@@ -248,15 +251,23 @@ pub fn update_torikumi(db: &mut Connection, basho_id: &BashoId, day: &u8, toriku
         .query_map(
             params![basho_id],
             |row| {
-                debug!("got a row");
-                let id: i64 = row.get("id")?;
+                let id: i64 = row.get("rikishi_id")?;
                 let family_name: String = row.get("family_name")?;
                 let rank: Rank = row.get("rank")?;
                 debug!("found mapping {} to rikishi id {}", family_name, id);
+                if rikishi_ids.get(&family_name).is_some() {
+                    ambiguous_shikona.push(family_name.to_owned());
+                }
                 rikishi_ids.insert(family_name, id);
                 rikishi_ranks.insert(id, rank);
                 Ok(())
-            })?;
+            })?
+        // force evaluation of mapping function and collapse errors into one Result
+        .collect::<Result<(), rusqlite::Error>>()
+        .map_err(|e| DataError::from(e))?;
+    if !ambiguous_shikona.is_empty() {
+        return Err(DataError::AmbiguousShikona {family_names: ambiguous_shikona});
+    }
 
     for (seq, TorikumiMatchUpdateData {winner, loser})
         in torikumi.iter().enumerate() {
@@ -271,11 +282,10 @@ pub fn update_torikumi(db: &mut Connection, basho_id: &BashoId, day: &u8, toriku
         let insert_1 = |side, rikishi_id, win| {
             txn.execute("
                     INSERT INTO torikumi (basho_id, day, seq, side, rikishi_id, win)
-                    VALUES (?, ?, ?, ?, ?)
-                    ON CONFLICT (rikishi_id, basho_id) DO UPDATE SET
-                        family_name = excluded.family_name,
-                        given_name = excluded.given_name,
-                        rank = excluded.rank
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    ON CONFLICT (basho_id, day, seq, side) DO UPDATE SET
+                        rikishi_id = excluded.rikishi_id,
+                        win = excluded.win
                 ",
                 params![basho_id, day, seq as u32, side, rikishi_id, win])
         };
