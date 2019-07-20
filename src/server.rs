@@ -4,7 +4,7 @@ use super::{data, handlers};
 use std::convert::TryInto;
 use std::process::Command;
 
-use actix_web::{web, middleware, HttpServer, App, HttpResponse};
+use actix_web::{web, middleware, HttpServer, App};
 use actix_web::cookie::SameSite;
 use actix_identity::{CookieIdentityPolicy, IdentityService};
 use actix_session::{CookieSession};
@@ -74,7 +74,7 @@ pub fn run(config: Config) -> std::io::Result<()> {
                 .service(web::resource("/player").to(handlers::list_players))
         )
         .default_service(
-            web::route().to(HttpResponse::NotFound)
+            web::route().to(|| -> Result<(), _> {Err(handlers::HandlerError::NotFound("Page".to_string()))})
         );
         if config.is_dev() {
             app = app.service(Files::new("/scss", "scss"));
