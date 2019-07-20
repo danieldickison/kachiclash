@@ -2,7 +2,7 @@
 
 {% block main_id %}p-torikumi{% endblock %}
 
-{% block subtitle %}torikumi{% endblock %}
+{% block subtitle %}{{basho_id}} day {{day}}{% endblock %}
 
 {% block head %}
     <script src="/static/js/torikumi.js" defer></script>
@@ -11,7 +11,7 @@
 
 {% block main %}
     <form id="torikumi-form" class="g-admin-form">
-        <h2>Enter torikumi results</h2>
+        <h2>Enter torikumi results for {{basho_id}} day {{day}}</h2>
         <label>
             Torikumi:
             <span class="footnote">Copy and paste the "text-only" torikumi results from <a href="http://sumodb.sumogames.de/Results_text.aspx?b=201907&d=1">sumodb.sumogames.de</a></span>

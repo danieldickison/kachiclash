@@ -88,12 +88,16 @@ fn admin_base(db: &Connection, identity: &Identity) -> Result<BaseTemplate> {
 #[template(path = "torikumi.html")]
 pub struct TorikumiTemplate {
     base: BaseTemplate,
+    basho_id: BashoId,
+    day: u8,
 }
 
-pub fn torikumi_page(state: web::Data<AppState>, identity: Identity) -> Result<AskamaResponder<TorikumiTemplate>> {
+pub fn torikumi_page(path: web::Path<(BashoId, u8)>, state: web::Data<AppState>, identity: Identity) -> Result<AskamaResponder<TorikumiTemplate>> {
     let db = state.db.lock().unwrap();
     Ok(TorikumiTemplate {
         base: admin_base(&db, &identity)?,
+        basho_id: path.0,
+        day: path.1,
     }.into())
 }
 
