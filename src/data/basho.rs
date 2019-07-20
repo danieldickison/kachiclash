@@ -11,7 +11,7 @@ use rusqlite::{Connection, OptionalExtension};
 use failure::Error;
 use itertools::Itertools;
 
-use super::{DataError, PlayerId, RikishiId, Rank, RankGroup, RankSide};
+use super::{DataError, PlayerId, RikishiId, Rank, RankGroup};
 
 pub struct BashoInfo {
     pub id: BashoId,
@@ -157,7 +157,7 @@ pub fn save_player_picks(db: &mut Connection, player_id: PlayerId, basho_id: Bas
 }
 
 
-pub fn make_basho(db: &mut Connection, venue: &str, start_date: &NaiveDateTime, banzuke: &[(String, Rank)]) -> Result<BashoId, Error> {
+pub fn make_basho(db: &mut Connection, venue: &str, start_date: &NaiveDateTime, banzuke: &[(String, Rank)]) -> Result<BashoId, DataError> {
     let txn = db.transaction()?;
     let basho_id: BashoId = start_date.date().into();
     txn.execute("
@@ -178,6 +178,7 @@ pub fn make_basho(db: &mut Connection, venue: &str, start_date: &NaiveDateTime, 
         ",
         banzuke.iter().map(|(_, _)| "?").join(", ")
     );
+    let mut ambiguous_shikona = Vec::<String>::new();
     txn.prepare(query_str.as_str())?
         .query_map(
             banzuke.iter().map(|(name, _)| name),
@@ -185,10 +186,17 @@ pub fn make_basho(db: &mut Connection, venue: &str, start_date: &NaiveDateTime, 
                 let id: i64 = row.get("id")?;
                 let family_name: String = row.get("family_name")?;
                 let given_name: String = row.get("given_name")?;
+                if rikishi_ids.get(&family_name).is_some() {
+                    ambiguous_shikona.push(family_name.to_owned());
+                }
                 rikishi_ids.insert(family_name, id);
                 given_names.insert(id, given_name);
                 Ok(())
             })?;
+    if !ambiguous_shikona.is_empty() {
+        return Err(DataError::AmbiguousShikona {family_names: ambiguous_shikona});
+    }
+
     for (family_name, rank) in banzuke {
         let rikishi_id = match rikishi_ids.get(family_name) {
             Some(id) => id.to_owned(),
@@ -219,72 +227,70 @@ pub fn make_basho(db: &mut Connection, venue: &str, start_date: &NaiveDateTime, 
 
 #[derive(Debug, Deserialize)]
 pub struct TorikumiMatchUpdateData {
-    east_name: String,
-    west_name: String,
-    east_win: Option<bool>,
+    winner: String,
+    loser: String,
 }
 
-pub fn update_torikumi(db: &mut Connection, basho_id: &BashoId, day: &u8, torikumi: &Vec<TorikumiMatchUpdateData>) -> Result<(), Error> {
+pub fn update_torikumi(db: &mut Connection, basho_id: &BashoId, day: &u8, torikumi: &Vec<TorikumiMatchUpdateData>) -> Result<(), DataError> {
+
+    debug!("updating torikumi for {} day {}", basho_id, day);
+    debug!("basho_id as sql: {:?}", basho_id.to_sql());
+
     let txn = db.transaction()?;
 
     let mut rikishi_ids = HashMap::new();
-    let query_str = format!("
-            SELECT id, family_name
-            FROM rikishi
-            JOIN rikishi_basho AS rb
-                ON rb.rikishi_id = rikishi.id
-                AND rb.basho_id = ?
-            WHERE family_name IN ({})
-        ",
-        torikumi.iter().map(|_| "?, ?").join(", ")
-    );
-    let mut query_args: Vec<&ToSql> = vec![basho_id];
-    for TorikumiMatchUpdateData {east_name, west_name, east_win: _} in torikumi {
-        query_args.push(east_name);
-        query_args.push(west_name);
-    }
-    txn.prepare(query_str.as_str())?
+    let mut rikishi_ranks = HashMap::new();
+    txn.prepare("
+            SELECT b.rikishi_id, b.family_name, b.rank
+            FROM banzuke AS b
+            WHERE b.basho_id = ?
+        ")?
         .query_map(
-            query_args,
+            params![basho_id],
             |row| {
+                debug!("got a row");
                 let id: i64 = row.get("id")?;
                 let family_name: String = row.get("family_name")?;
+                let rank: Rank = row.get("rank")?;
+                debug!("found mapping {} to rikishi id {}", family_name, id);
                 rikishi_ids.insert(family_name, id);
+                rikishi_ranks.insert(id, rank);
                 Ok(())
             })?;
 
-    for (seq, TorikumiMatchUpdateData {east_name, west_name, east_win})
+    for (seq, TorikumiMatchUpdateData {winner, loser})
         in torikumi.iter().enumerate() {
 
-        if let Some(east_id) = rikishi_ids.get(east_name) {
+        let winner_id = rikishi_ids.get(winner)
+            .ok_or_else(|| DataError::RikishiNotFound {family_name: winner.to_owned()})?;
+        let loser_id = rikishi_ids.get(loser)
+            .ok_or_else(|| DataError::RikishiNotFound {family_name: loser.to_owned()})?;
+        let winner_rank = rikishi_ranks.get(winner_id).unwrap();
+        let loser_rank = rikishi_ranks.get(loser_id).unwrap();
+
+        let insert_1 = |side, rikishi_id, win| {
             txn.execute("
-                INSERT INTO torikumi (basho_id, day, seq, side, rikishi_id, win)
-                VALUES (?, ?, ?, ?, ?)
-                ON CONFLICT (rikishi_id, basho_id) DO UPDATE SET
-                    family_name = excluded.family_name,
-                    given_name = excluded.given_name,
-                    rank = excluded.rank
-            ",
-            params![basho_id, day, seq as u32, RankSide::East, east_id, east_win])?;
+                    INSERT INTO torikumi (basho_id, day, seq, side, rikishi_id, win)
+                    VALUES (?, ?, ?, ?, ?)
+                    ON CONFLICT (rikishi_id, basho_id) DO UPDATE SET
+                        family_name = excluded.family_name,
+                        given_name = excluded.given_name,
+                        rank = excluded.rank
+                ",
+                params![basho_id, day, seq as u32, side, rikishi_id, win])
+        };
 
-        } else {
-            return Err(DataError::RikishiNotFound {family_name: east_name.to_owned()}.into())
-        }
-
-        if let Some(west_id) = rikishi_ids.get(west_name) {
-            txn.execute("
-                INSERT INTO torikumi (basho_id, day, seq, side, rikishi_id, win)
-                VALUES (?, ?, ?, ?, ?)
-                ON CONFLICT (rikishi_id, basho_id) DO UPDATE SET
-                    family_name = excluded.family_name,
-                    given_name = excluded.given_name,
-                    rank = excluded.rank
-            ",
-            params![basho_id, day, seq as u32, RankSide::West, west_id, east_win.and_then(|win| Some(!win))])?;
-
-        } else {
-            return Err(DataError::RikishiNotFound {family_name: west_name.to_owned()}.into())
-        }
+        // Figuring out the side: the rikishi with the higher rank appear on their own rank.side
+        insert_1(
+            if winner_rank > loser_rank { winner_rank.side } else { loser_rank.side.other() },
+            winner_id,
+            true
+        )?;
+        insert_1(
+            if loser_rank > winner_rank { loser_rank.side } else { winner_rank.side.other() },
+            loser_id,
+            false
+        )?;
     }
 
     txn.commit()?;

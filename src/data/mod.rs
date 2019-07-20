@@ -33,4 +33,18 @@ pub enum DataError {
     RikishiNotFound {
         family_name: String,
     },
+
+    #[fail(display = "Multiple rikishi with shikona: {:?}", family_names)]
+    AmbiguousShikona {
+        family_names: Vec<String>,
+    },
+
+    #[fail(display = "Database error: {}", _0)]
+    DatabaseError(rusqlite::Error),
+}
+
+impl From<rusqlite::Error> for DataError {
+    fn from(e: rusqlite::Error) -> Self {
+        DataError::DatabaseError(e)
+    }
 }

@@ -68,6 +68,15 @@ pub enum RankSide {
     West,
 }
 
+impl RankSide {
+    pub fn other(&self) -> RankSide {
+        match self {
+            RankSide::East => RankSide::West,
+            RankSide::West => RankSide::East,
+        }
+    }
+}
+
 impl fmt::Display for RankSide {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", match self {
