@@ -161,7 +161,7 @@ fn fetch_rikishi(db: &Connection, basho_id: BashoId, picks: HashSet<RikishiId>) 
             LEFT NATURAL JOIN torikumi
             WHERE
                 banzuke.basho_id = ?
-            ORDER BY banzuke.rikishi_id, torikumi.day
+            ORDER BY banzuke.rank DESC, banzuke.rikishi_id, torikumi.day
         ").unwrap()
         .query_map(
             params![basho_id],
