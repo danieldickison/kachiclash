@@ -1,0 +1,7 @@
+#!/bin/sh
+
+docker build -t kachiclash \
+    -v cargo-git:/home/rust/.cargo/git \
+    -v cargo-registry:/home/rust/.cargo/registry \
+    -v target:/home/rust/src/target \
+    .
