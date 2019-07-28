@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block main_id %}p-basho-list{% endblock %}
+
+{% block subtitle %}Basho List{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet" href="/static/css/basho.css">
+{% endblock %}
+
+{% block main %}
+    <h2>Basho List</h2>
+    <table class="basho-list">
+        <thead>
+            <th>Basho</th>
+            <th>Venue</th>
+            <th>Start Date</th>
+            <th>Players</th>
+        </thead>
+        <tbody>
+            {% for basho in basho_list -%}
+                <tr>
+                    <td><a href="{{basho.id.url_path()}}">{{basho.id}}</a></td>
+                    <td>{{basho.venue}}</td>
+                    <td>{{basho.start_date|jst_month_day}}</td>
+                    <td>{{basho.player_count}}</td>
+                </tr>
+            {%- endfor %}
+        </tbody>
+    </table>
+{% endblock %}

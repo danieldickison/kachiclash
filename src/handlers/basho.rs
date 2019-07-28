@@ -4,15 +4,38 @@ use actix_identity::Identity;
 use itertools::Itertools;
 use rusqlite::{Connection, Result as SqlResult};
 
-use super::{BaseTemplate, Result, HandlerError};
+use super::{BaseTemplate, Result, HandlerError, AskamaResponder};
 use crate::data::{self, Rank, RankSide, RankGroup, BashoId, BashoInfo, PlayerId, RikishiId};
 use crate::AppState;
 
 use actix_web::{web, HttpResponse, Responder};
 use askama::Template;
 
-pub fn basho_list(_state: web::Data<AppState>) -> impl Responder {
 
+mod filters {
+    use chrono::{DateTime, Utc, FixedOffset};
+
+    static JST_OFFSET: i32 = 9 * 3600;
+
+    pub fn jst_month_day(s: &DateTime<Utc>) -> askama::Result<String> {
+        Ok(s.with_timezone(&FixedOffset::east(JST_OFFSET)).format("%B %-d").to_string())
+    }
+}
+
+#[derive(Template)]
+#[template(path = "basho_list.html")]
+pub struct BashoListTemplate {
+    base: BaseTemplate,
+    basho_list: Vec<BashoInfo>,
+}
+
+pub fn basho_list(state: web::Data<AppState>, identity: Identity) -> Result<AskamaResponder<BashoListTemplate>> {
+    let db = state.db.lock().unwrap();
+    let base = BaseTemplate::new(&db, &identity)?;
+    Ok(BashoListTemplate {
+        base: base,
+        basho_list: BashoInfo::list_all(&db)?,
+    }.into())
 }
 
 #[derive(Template)]

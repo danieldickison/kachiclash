@@ -2,12 +2,12 @@ use std::str::FromStr;
 use std::convert::From;
 use std::collections::HashMap;
 use std::fmt;
-use rusqlite::types::{ToSql, ToSqlOutput, ValueRef, FromSql, FromSqlResult, FromSqlError};
+use rusqlite::{Connection, NO_PARAMS, Result as SqlResult};
+use rusqlite::types::{ToSql, ToSqlOutput, ValueRef, FromSql, FromSqlResult};
 use chrono::naive::{NaiveDate, NaiveDateTime};
 use chrono::offset::Utc;
 use chrono::{DateTime, Datelike};
 use serde::{Deserialize, Deserializer};
-use rusqlite::{Connection};
 use itertools::Itertools;
 
 use super::{DataError, PlayerId, RikishiId, Rank, RankGroup};
@@ -43,6 +43,31 @@ impl BashoInfo {
                     }))
                 }
             })
+            .map_err(|e| e.into())
+    }
+
+    pub fn list_all(db: &Connection) -> Result<Vec<BashoInfo>, DataError> {
+        db.prepare("
+                SELECT
+                    basho.id,
+                    basho.start_date,
+                    basho.venue,
+                    COUNT(DISTINCT pick.player_id) AS player_count
+                FROM basho
+                LEFT JOIN pick ON pick.basho_id = basho.id
+                GROUP BY basho.id
+                ORDER BY basho.id DESC")?
+            .query_map(
+                NO_PARAMS,
+                |row| {
+                    Ok(BashoInfo {
+                        id: row.get("id")?,
+                        start_date: row.get("start_date")?,
+                        venue: row.get("venue")?,
+                        player_count: row.get("player_count")?,
+                    })
+                })?
+            .collect::<SqlResult<Vec<BashoInfo>>>()
             .map_err(|e| e.into())
     }
 
@@ -100,10 +125,13 @@ impl<'de> Deserialize<'de> for BashoId {
 impl FromSql for BashoId {
     fn column_result(value: ValueRef) -> FromSqlResult<Self> {
         value
-            .as_str()
-            .and_then(|str|
-                str.parse().map_err(|err| FromSqlError::Other(Box::new(err)))
-            )
+            .as_i64()
+            .and_then(|num| {
+                Ok(Self {
+                    year: (num / 100) as i32,
+                    month: (num % 100) as u8,
+                })
+            })
     }
 }
 

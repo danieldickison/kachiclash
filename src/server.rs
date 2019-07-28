@@ -69,10 +69,7 @@ pub fn run(config: Config) -> std::io::Result<()> {
                     .route(web::get().to(handlers::admin::torikumi_page))
                     .route(web::post().to(handlers::admin::torikumi_post)))
         )
-        .service(
-            web::scope("/db")
-                .service(web::resource("/player").to(handlers::list_players))
-        )
+        
         .default_service(
             web::route().to(|| -> Result<(), _> {Err(handlers::HandlerError::NotFound("Page".to_string()))})
         );

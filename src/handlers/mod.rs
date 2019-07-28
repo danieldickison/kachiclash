@@ -82,31 +82,13 @@ impl BaseTemplate {
     }
 }
 
-#[derive(Template)]
-#[template(path = "index.html")]
-struct IndexTemplate {
-    base: BaseTemplate,
-    leaders: Vec<data::player::Player>,
-}
+// #[derive(Template)]
+// #[template(path = "index.html")]
+// struct IndexTemplate {
+//     base: BaseTemplate,
+//     leaders: Vec<data::player::Player>,
+// }
 
 pub fn index(state: Data<AppState>, identity: Identity) -> Result<impl Responder> {
-    debug!("Identity: {:?}", identity.identity());
-
-    let db = state.db.lock().unwrap();
-
-    let s = IndexTemplate {
-        base: BaseTemplate::new(&db, &identity)?,
-        leaders: data::player::list_players(&db)
-    }.render().unwrap();
-    Ok(HttpResponse::Ok().body(s))
-}
-
-pub fn list_players(state: Data<AppState>) -> impl Responder {
-    data::player::list_players(&state.db.lock().unwrap())
-        .iter()
-        .map(|p| {
-            format!("{}: {} joined {}", p.id, p.name, p.join_date)
-        })
-        .collect::<Vec<String>>()
-        .join("\n")
+    basho::basho_list(state, identity)
 }
