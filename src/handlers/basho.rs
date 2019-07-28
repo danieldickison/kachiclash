@@ -33,7 +33,7 @@ pub fn basho_list(state: web::Data<AppState>, identity: Identity) -> Result<Aska
     let db = state.db.lock().unwrap();
     let base = BaseTemplate::new(&db, &identity)?;
     Ok(BashoListTemplate {
-        base: base,
+        base,
         basho_list: BashoInfo::list_all(&db)?,
     }.into())
 }

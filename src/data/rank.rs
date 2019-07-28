@@ -69,7 +69,7 @@ pub enum RankSide {
 }
 
 impl RankSide {
-    pub fn other(&self) -> RankSide {
+    pub fn other(self) -> RankSide {
         match self {
             RankSide::East => RankSide::West,
             RankSide::West => RankSide::East,

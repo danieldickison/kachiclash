@@ -82,13 +82,22 @@ impl BaseTemplate {
     }
 }
 
-// #[derive(Template)]
-// #[template(path = "index.html")]
-// struct IndexTemplate {
-//     base: BaseTemplate,
-//     leaders: Vec<data::player::Player>,
-// }
-
 pub fn index(state: Data<AppState>, identity: Identity) -> Result<impl Responder> {
     basho::basho_list(state, identity)
+}
+
+
+#[derive(Template)]
+#[template(path = "index.html")]
+pub struct PlayerListTemplate {
+    base: BaseTemplate,
+    leaders: Vec<data::player::Player>,
+}
+
+pub fn player_list(state: Data<AppState>, identity: Identity) -> Result<AskamaResponder<PlayerListTemplate>> {
+    let db = state.db.lock().unwrap();
+    Ok(PlayerListTemplate {
+        base: BaseTemplate::new(&db, &identity)?,
+        leaders: data::player::list_players(&db),
+    }.into())
 }

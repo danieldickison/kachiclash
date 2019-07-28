@@ -112,8 +112,8 @@ pub fn torikumi_post(path: web::Path<(BashoId, u8)>, torikumi: web::Json<Torikum
     admin_base(&db, &identity)?;
     data::basho::update_torikumi(
         &mut db,
-        &path.0,
-        &path.1,
+        path.0,
+        path.1,
         &torikumi.torikumi
     ).map_err(|e| e.into())
 }

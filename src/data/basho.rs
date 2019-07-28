@@ -226,7 +226,7 @@ pub fn make_basho(db: &mut Connection, venue: &str, start_date: &NaiveDateTime, 
             })?
         // force evaluation of mapping function and collapse errors into one Result
         .collect::<Result<(), rusqlite::Error>>()
-        .map_err(|e| DataError::from(e))?;
+        .map_err(DataError::from)?;
     if !ambiguous_shikona.is_empty() {
         return Err(DataError::AmbiguousShikona {family_names: ambiguous_shikona});
     }
@@ -265,7 +265,7 @@ pub struct TorikumiMatchUpdateData {
     loser: String,
 }
 
-pub fn update_torikumi(db: &mut Connection, basho_id: &BashoId, day: &u8, torikumi: &Vec<TorikumiMatchUpdateData>) -> Result<(), DataError> {
+pub fn update_torikumi(db: &mut Connection, basho_id: BashoId, day: u8, torikumi: &[TorikumiMatchUpdateData]) -> Result<(), DataError> {
 
     debug!("updating torikumi for {} day {}", basho_id, day);
 
@@ -295,7 +295,7 @@ pub fn update_torikumi(db: &mut Connection, basho_id: &BashoId, day: &u8, toriku
             })?
         // force evaluation of mapping function and collapse errors into one Result
         .collect::<Result<(), rusqlite::Error>>()
-        .map_err(|e| DataError::from(e))?;
+        .map_err(DataError::from)?;
     if !ambiguous_shikona.is_empty() {
         return Err(DataError::AmbiguousShikona {family_names: ambiguous_shikona});
     }
