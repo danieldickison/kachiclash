@@ -25,13 +25,16 @@ const IMG_BASE: &str = "https://cdn.discordapp.com/";
 
 
 fn make_oauth_client(config: &Config) -> BasicClient {
+    let mut redirect_url = config.url();
+    redirect_url.set_path("login/discord_redirect");
+    
     BasicClient::new(
         ClientId::new(config.discord_client_id.to_owned()),
         Some(ClientSecret::new(config.discord_client_secret.to_owned())),
         AuthUrl::new(Url::parse("https://discordapp.com/api/oauth2/authorize").unwrap()),
         Some(TokenUrl::new(Url::parse("https://discordapp.com/api/oauth2/token").unwrap()))
     )
-    .set_redirect_url(RedirectUrl::new(Url::parse("http://localhost:8000/login/discord_redirect").unwrap()))
+    .set_redirect_url(RedirectUrl::new(redirect_url))
 }
 
 pub fn authorize_url(config: &Config) -> (Url, CsrfToken) {

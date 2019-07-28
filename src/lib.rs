@@ -16,6 +16,7 @@ extern crate serde_json;
 #[macro_use]
 extern crate rusqlite;
 
+use url::Url;
 use std::path::PathBuf;
 use envconfig::Envconfig;
 
@@ -56,6 +57,18 @@ pub struct Config {
 impl Config {
     pub fn is_dev(&self) -> bool {
         self.env == "dev"
+    }
+
+    pub fn url(&self) -> Url {
+        let mut url = Url::parse(format!("https://{}:{}", self.host, self.port).as_str())
+            .expect("create base url for host");
+        if url.port() == Some(80) {
+            url.set_port(None).expect("set url port");
+        }
+        if self.is_dev() {
+            url.set_scheme("http").expect("set scheme to unsecure http");
+        }
+        url
     }
 }
 
