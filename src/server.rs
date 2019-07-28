@@ -45,7 +45,7 @@ pub fn run(config: Config) -> std::io::Result<()> {
         .wrap(CookieSession::signed(&session_secret).secure(config.env != "dev"))
         .wrap(middleware::DefaultHeaders::new().header("Content-Type", "text/html; charset=utf-8"))
 
-        .service(Files::new("/static", "public"))
+        .service(Files::new("/static", &config.static_path))
         .service(web::resource("/").to(handlers::index))
 
         .service(web::resource("/logout").to(handlers::login::logout))
