@@ -62,11 +62,10 @@ impl Config {
     pub fn url(&self) -> Url {
         let mut url = Url::parse(format!("https://{}:{}", self.host, self.port).as_str())
             .expect("create base url for host");
-        if url.port() == Some(80) {
-            url.set_port(None).expect("set url port");
-        }
         if self.is_dev() {
             url.set_scheme("http").expect("set scheme to unsecure http");
+        } else {
+            url.set_port(None).expect("remove url port");
         }
         url
     }
