@@ -1,0 +1,18 @@
+[Unit]
+Description=runs the kachiclash webapp server
+Documentation=https://kachiclash.com
+After=network.target
+
+[Service]
+Type=simple
+User=kachiclash
+Group=kachiclash
+Environment=KACHI_ENV=prod
+Environment=KACHI_DB_PATH=/storage/kachiclash.com/var/kachiclash.sqlite
+Environment=KACHI_PORT=8001
+EnvironmentFile=/storage/kachiclash.com/prod_secrets
+ExecStart=/storage/kachiclash.com/server
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
