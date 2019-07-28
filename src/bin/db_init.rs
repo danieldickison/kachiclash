@@ -1,32 +1,31 @@
-#[macro_use]
-extern crate envconfig_derive;
-extern crate envconfig;
-
 use rusqlite::{params, Connection, NO_PARAMS};
-use std::path::Path;
+
 use chrono::Utc;
 use std::path::PathBuf;
-use envconfig::Envconfig;
-
-#[derive(Envconfig)]
-#[derive(Clone)]
-pub struct Config {
-    #[envconfig(from = "KACHI_ENV", default = "dev")]
-    pub env: String,
-
-    #[envconfig(from = "KACHI_DB_PATH", default = "var/kachiclash.sqlite")]
-    pub db_path: PathBuf,
-}
-
+use std::env;
 
 fn main() {
-    let config = Config::init().expect("Could not read config from environment");
-    init_database(&config.db_path);
-}
+    let mut dummy_enabled = false;
+    let mut path: Option<PathBuf> = None;
+    for arg in env::args().skip(1) {
+        if arg == "-d" {
+            dummy_enabled = true;
+        } else {
+            path = Some(arg.into());
+        }
+    }
+    let path = path.expect("missing db path argument");
 
-fn init_database(path: &Path) {
     println!("initializing db at {:?}", path);
     let conn = Connection::open(path).expect("sqlite db");
+    init_database(&conn);
+    if dummy_enabled {
+        populate_dummy_data(&conn);
+    }
+}
+
+fn init_database(conn: &Connection) {
+    println!("creating tables");
 
     // id is yearmonth
     conn.execute("
@@ -106,11 +105,11 @@ fn init_database(path: &Path) {
 
     conn.execute("CREATE INDEX basho_id ON pick (basho_id)", NO_PARAMS)
         .expect("create pick.basho_id index");
-
-    populate_dummy_data(&conn);
 }
 
 fn populate_dummy_data(conn: &Connection) {
+    println!("creating dummy data");
+
     let now = Utc::now();
 
     #[allow(clippy::inconsistent_digit_grouping)]
@@ -161,4 +160,3 @@ fn populate_dummy_data(conn: &Connection) {
         params![player_id, basho_id, rikishi1_id, rikishi4_id]
     ).unwrap();
 }
-
