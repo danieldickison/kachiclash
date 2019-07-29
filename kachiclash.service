@@ -1,5 +1,5 @@
 [Unit]
-Description=runs the kachiclash webapp server
+Description=kachiclash webapp server
 Documentation=https://kachiclash.com
 After=network.target
 
