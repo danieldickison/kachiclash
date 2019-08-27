@@ -10,7 +10,7 @@ use chrono::{DateTime, Datelike};
 use serde::{Deserialize, Deserializer};
 use itertools::Itertools;
 
-use super::{DataError, PlayerId, RikishiId, Rank, RankGroup};
+use super::{DataError, PlayerId, RikishiId, Rank, RankGroup, Day};
 
 pub struct BashoInfo {
     pub id: BashoId,
@@ -265,7 +265,7 @@ pub struct TorikumiMatchUpdateData {
     loser: String,
 }
 
-pub fn update_torikumi(db: &mut Connection, basho_id: BashoId, day: u8, torikumi: &[TorikumiMatchUpdateData]) -> Result<(), DataError> {
+pub fn update_torikumi(db: &mut Connection, basho_id: BashoId, day: Day, torikumi: &[TorikumiMatchUpdateData]) -> Result<(), DataError> {
 
     debug!("updating torikumi for {} day {}", basho_id, day);
 

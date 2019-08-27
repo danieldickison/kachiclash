@@ -5,7 +5,7 @@ use itertools::Itertools;
 use rusqlite::{Connection, Result as SqlResult};
 
 use super::{BaseTemplate, Result, HandlerError, AskamaResponder};
-use crate::data::{self, Rank, RankSide, RankGroup, BashoId, BashoInfo, PlayerId, RikishiId};
+use crate::data::{self, Rank, RankSide, RankGroup, BashoId, BashoInfo, PlayerId, RikishiId, Day};
 use crate::AppState;
 
 use actix_web::{web, HttpResponse, Responder};
@@ -171,6 +171,8 @@ fn fetch_leaders(db: &Connection, basho_id: BashoId) -> Result<Vec<BashoPlayerRe
     )
 }
 
+struct FetchedRikishiRow(Rank, RikishiId, String, Option<Day>, Option<bool>);
+
 fn fetch_rikishi(db: &Connection, basho_id: BashoId, picks: HashSet<RikishiId>) -> Result<Vec<BashoRikishiByRank>> {
     debug!("fetching rikishi results for basho {}", basho_id);
     Ok(db.prepare("
@@ -188,8 +190,8 @@ fn fetch_rikishi(db: &Connection, basho_id: BashoId, picks: HashSet<RikishiId>) 
         ").unwrap()
         .query_map(
             params![basho_id],
-            |row| -> SqlResult<(Rank, RikishiId, String, Option<u8>, Option<bool>)> {
-                Ok((
+            |row| -> SqlResult<FetchedRikishiRow> {
+                Ok(FetchedRikishiRow(
                     row.get("rank")?,
                     row.get("rikishi_id")?,
                     row.get("family_name")?,
@@ -198,7 +200,7 @@ fn fetch_rikishi(db: &Connection, basho_id: BashoId, picks: HashSet<RikishiId>) 
                 ))
             }
         )?
-        .collect::<SqlResult<Vec<(Rank, RikishiId, String, Option<u8>, Option<bool>)>>>()?
+        .collect::<SqlResult<Vec<FetchedRikishiRow>>>()?
         .into_iter()
         .group_by(|row| (row.0.name, row.0.number)) // rank name and number but group east/west together
         .into_iter()
@@ -223,7 +225,7 @@ fn fetch_rikishi(db: &Connection, basho_id: BashoId, picks: HashSet<RikishiId>) 
                     losses: 0,
                     is_player_pick: picks.contains(&arow.1),
                 };
-                for (_, _, _, day, win) in rows {
+                for FetchedRikishiRow(_, _, _, day, win) in rows {
                     match win {
                         Some(true) => rikishi.wins += 1,
                         Some(false) => rikishi.losses += 1,

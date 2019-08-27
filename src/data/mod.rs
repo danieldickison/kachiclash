@@ -13,6 +13,7 @@ pub mod basho;
 pub use basho::{BashoId, BashoInfo};
 
 pub type RikishiId = u32;
+pub type Day = u8;
 
 pub type DbConn = Mutex<Connection>;
 
