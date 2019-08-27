@@ -3,7 +3,6 @@ use crate::data::{self, Rank, BashoId};
 use crate::AppState;
 use super::{HandlerError, BaseTemplate, Result, AskamaResponder};
 
-use actix_web::{HttpResponse, Responder};
 use actix_web::web;
 use actix_identity::Identity;
 use rusqlite::Connection;
@@ -13,18 +12,15 @@ use chrono::NaiveDateTime;
 
 #[derive(Template)]
 #[template(path = "new_basho.html")]
-struct NewBashoTemplate {
+pub struct NewBashoTemplate {
     base: BaseTemplate,
 }
 
-pub fn new_basho_page(state: web::Data<AppState>, identity: Identity) -> Result<impl Responder> {
+pub fn new_basho_page(state: web::Data<AppState>, identity: Identity) -> Result<AskamaResponder<NewBashoTemplate>> {
     let db = state.db.lock().unwrap();
-    let base = admin_base(&db, &identity)?;
-
-    let s = NewBashoTemplate {
-        base,
-    }.render().unwrap();
-    Ok(HttpResponse::Ok().body(s))
+    Ok(NewBashoTemplate {
+        base: admin_base(&db, &identity)?
+    }.into())
 }
 
 #[derive(Debug, Deserialize)]
