@@ -53,8 +53,13 @@
 
     <section id="banzuke"
         {% if !basho.has_started() && base.player.is_some() %}class="selectable"{% endif %}
+
     >
         <h2>Banzuke</h2>
+
+        <div id="basho-count-down" data-start-date="{{basho.start_date.timestamp_millis()}}">
+            Time remaining: <span id="basho-count-down-time"></span>
+        </div>
 
         {% if !basho.has_started() -%}
             {%- if base.player.is_some() -%}
