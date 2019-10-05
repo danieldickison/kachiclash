@@ -5,21 +5,24 @@ use super::{HandlerError, BaseTemplate, Result, AskamaResponder};
 
 use actix_web::web;
 use actix_identity::Identity;
-use rusqlite::Connection;
+use rusqlite::{Connection, Result as SqlResult};
 use askama::Template;
 use serde::{Deserializer, Deserialize};
 use chrono::NaiveDateTime;
+use result::prelude::*;
 
 #[derive(Template)]
-#[template(path = "new_basho.html")]
-pub struct NewBashoTemplate {
+#[template(path = "edit_basho.html")]
+pub struct EditBashoTemplate {
     base: BaseTemplate,
+    basho: Option<BashoData>,
 }
 
-pub fn new_basho_page(state: web::Data<AppState>, identity: Identity) -> Result<AskamaResponder<NewBashoTemplate>> {
+pub fn edit_basho_page(path: web::Path<Option<BashoId>>, state: web::Data<AppState>, identity: Identity) -> Result<AskamaResponder<EditBashoTemplate>> {
     let db = state.db.lock().unwrap();
-    Ok(NewBashoTemplate {
-        base: admin_base(&db, &identity)?
+    Ok(EditBashoTemplate {
+        base: admin_base(&db, &identity)?,
+        basho: path.map(|id| BashoData::with_id(&db, id)).invert()?,
     }.into())
 }
 
@@ -29,6 +32,42 @@ pub struct BashoData {
     #[serde(deserialize_with="deserialize_datetime")]
     start_date: NaiveDateTime,
     banzuke: Vec<BanzukeRikishi>,
+}
+
+impl BashoData {
+    fn with_id(db: &Connection, id: BashoId) -> Result<Self> {
+        db.query_row("
+            SELECT
+                basho.start_date,
+                basho.venue
+            FROM basho
+            WHERE basho.id = ?",
+            params![id],
+            |row| {
+                Ok(Self {
+                    start_date: row.get("start_date")?,
+                    venue: row.get("venue")?,
+                    banzuke: Self::fetch_banzuke(&db, id)?,
+                 })
+            })
+            .map_err(|e| e.into())
+    }
+
+    fn fetch_banzuke(db: &Connection, id: BashoId) -> SqlResult<Vec<BanzukeRikishi>> {
+        db.prepare("
+            SELECT family_name, rank
+            FROM banzuke
+            WHERE basho_id = ?")?
+            .query_map(
+                params![id],
+                |row| {
+                    Ok(BanzukeRikishi {
+                        name: row.get("family_name")?,
+                        rank: row.get("rank")?,
+                    })
+                })?
+            .collect::<SqlResult<Vec<BanzukeRikishi>>>()
+    }
 }
 
 fn deserialize_datetime<'de, D>(deserializer: D) -> std::result::Result<NaiveDateTime, D::Error>
@@ -49,7 +88,7 @@ pub struct BanzukeResponseData {
     basho_url: String,
 }
 
-pub fn new_basho_post(basho: web::Json<BashoData>, state: web::Data<AppState>, identity: Identity)
+pub fn edit_basho_post(basho: web::Json<BashoData>, state: web::Data<AppState>, identity: Identity)
 -> Result<web::Json<BanzukeResponseData>> {
     let mut db = state.db.lock().unwrap();
     admin_base(&db, &identity)?;
