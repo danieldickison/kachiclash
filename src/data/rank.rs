@@ -34,6 +34,7 @@ pub enum RankName {
     Sekiwake,
     Komusubi,
     Maegashira,
+    Juryo,
 }
 
 impl fmt::Display for RankName {
@@ -44,6 +45,7 @@ impl fmt::Display for RankName {
             RankName::Sekiwake => 'S',
             RankName::Komusubi => 'K',
             RankName::Maegashira => 'M',
+            RankName::Juryo => 'J',
         })
     }
 }
@@ -57,6 +59,7 @@ impl TryFrom<char> for RankName {
             'S' => Ok(RankName::Sekiwake),
             'K' => Ok(RankName::Komusubi),
             'M' => Ok(RankName::Maegashira),
+            'J' => Ok(RankName::Juryo),
             _ => Err(RankError::UnknownChar(c))
         }
     }
@@ -115,7 +118,8 @@ impl RankGroup {
                 0..=5 => Self(3),
                 6..=10 => Self(4),
                 11..=std::u16::MAX => Self(5),
-            }
+            },
+            RankName::Juryo => Self(6),
         }
     }
 }
