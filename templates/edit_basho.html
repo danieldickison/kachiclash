@@ -14,17 +14,35 @@
         <h2>Create new basho</h2>
         <label>
             City:
-            <input name="venue">
+            <input name="venue"
+                   {%- match basho -%}
+                    {%- when Some with (b) -%} value="{{b.venue}}"
+                    {%- when None -%}
+                   {%- endmatch %}
+            >
         </label>
         <label>
             Start date:
             <span class="footnote">This is the precise time when entries will be closed, in JST.</span>
-            <input name="start_date" type="datetime-local" placeholder="yyyy-mm-dd hh:mm">
+            <input name="start_date" type="datetime-local" placeholder="yyyy-mm-dd hh:mm"
+                   {%- match basho -%}
+                    {%- when Some with (b) -%} value="{{b.start_date.format("%Y-%m-%d %H:%M")}}"
+                    {%- when None -%}
+                   {%- endmatch -%}
+            >
         </label>
         <label>
             Banzuke:
             <span class="footnote">Copy and paste the "text-only" banzuke from <a href="http://sumodb.sumogames.de/Banzuke_text.aspx?b=201907">sumodb.sumogames.de</a></span>
-            <textarea name="banzuke"></textarea>
+            <textarea name="banzuke">
+                {%- match basho -%}
+                {%- when Some with (b) -%}
+                    {%- for rikishi in b.banzuke -%}
+                        {{rikishi.rank}} {{rikishi.name}}
+                    {% endfor -%}
+                {%- when None -%}
+                {%- endmatch -%}
+            </textarea>
         </label>
         
         <input type="submit">

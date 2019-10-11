@@ -5,11 +5,10 @@ use super::{HandlerError, BaseTemplate, Result, AskamaResponder};
 
 use actix_web::web;
 use actix_identity::Identity;
-use rusqlite::{Connection, Result as SqlResult};
+use rusqlite::{Connection, Result as SqlResult, OptionalExtension};
 use askama::Template;
 use serde::{Deserializer, Deserialize};
 use chrono::NaiveDateTime;
-use result::prelude::*;
 
 #[derive(Template)]
 #[template(path = "edit_basho.html")]
@@ -18,12 +17,24 @@ pub struct EditBashoTemplate {
     basho: Option<BashoData>,
 }
 
-pub fn edit_basho_page(path: web::Path<Option<BashoId>>, state: web::Data<AppState>, identity: Identity) -> Result<AskamaResponder<EditBashoTemplate>> {
+pub fn new_basho_page(state: web::Data<AppState>, identity: Identity) -> Result<AskamaResponder<EditBashoTemplate>> {
     let db = state.db.lock().unwrap();
     Ok(EditBashoTemplate {
         base: admin_base(&db, &identity)?,
-        basho: path.map(|id| BashoData::with_id(&db, id)).invert()?,
+        basho: None,
     }.into())
+}
+
+pub fn edit_basho_page(path: web::Path<BashoId>, state: web::Data<AppState>, identity: Identity) -> Result<AskamaResponder<EditBashoTemplate>> {
+    let db = state.db.lock().unwrap();
+    match BashoData::with_id(&db, *path)? {
+        Some(basho) =>
+            Ok(EditBashoTemplate {
+                base: admin_base(&db, &identity)?,
+                basho: Some(basho),
+            }.into()),
+        None => Err(HandlerError::NotFound("basho".to_string()).into())
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -35,7 +46,7 @@ pub struct BashoData {
 }
 
 impl BashoData {
-    fn with_id(db: &Connection, id: BashoId) -> Result<Self> {
+    fn with_id(db: &Connection, id: BashoId) -> Result<Option<Self>> {
         db.query_row("
             SELECT
                 basho.start_date,
@@ -44,12 +55,14 @@ impl BashoData {
             WHERE basho.id = ?",
             params![id],
             |row| {
+                //debug!("got basho row start date {:?}", row.get("start_date")?);
                 Ok(Self {
                     start_date: row.get("start_date")?,
                     venue: row.get("venue")?,
                     banzuke: Self::fetch_banzuke(&db, id)?,
                  })
             })
+            .optional()
             .map_err(|e| e.into())
     }
 
@@ -61,6 +74,7 @@ impl BashoData {
             .query_map(
                 params![id],
                 |row| {
+                    //debug!("got banzuke row with name {:?}", row.get("family_name")?);
                     Ok(BanzukeRikishi {
                         name: row.get("family_name")?,
                         rank: row.get("rank")?,
