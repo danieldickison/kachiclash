@@ -43,8 +43,9 @@ torikumiForm.addEventListener('submit', event => {
     let data = {
             torikumi: parsedTorikumi,
         };
-    let url = window.location.href;
-    return fetch(url, {
+    let postURL = window.location.href;
+    const bashoURL = postURL.replace(/\/day\/.*$/i, '');
+    return fetch(postURL, {
         method: 'POST',
         body: JSON.stringify(data),
         headers: new Headers({
@@ -53,7 +54,7 @@ torikumiForm.addEventListener('submit', event => {
     })
     .then(response => {
         if (response.ok) {
-            window.location.reload();
+            window.location = bashoURL;
         } else {
             return response.text().then(msg => {throw msg});
         }
