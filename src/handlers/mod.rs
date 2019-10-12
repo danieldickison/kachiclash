@@ -80,6 +80,13 @@ impl BaseTemplate {
             player
         })
     }
+
+    fn is_admin(&self) -> bool {
+        match &self.player {
+            Some(p) => p.is_admin(),
+            None => false
+        }
+    }
 }
 
 pub fn index(state: Data<AppState>, identity: Identity) -> Result<impl Responder> {

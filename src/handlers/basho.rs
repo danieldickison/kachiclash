@@ -10,6 +10,7 @@ use crate::AppState;
 
 use actix_web::{web, HttpResponse, Responder};
 use askama::Template;
+use failure::_core::cmp::max;
 
 
 mod filters {
@@ -45,6 +46,7 @@ struct BashoTemplate {
     basho: BashoInfo,
     leaders: Vec<BashoPlayerResults>,
     rikishi_by_rank: Vec<BashoRikishiByRank>,
+    next_day: u8,
 }
 
 struct BashoPlayerResults {
@@ -64,11 +66,29 @@ struct BashoRikishi {
     is_player_pick: bool,
 }
 
+impl BashoRikishi {
+    fn next_day(&self) -> u8 {
+        for (i, win) in self.results.iter().enumerate().rev() {
+            if win.is_some() {
+                return (i + 2) as u8;
+            }
+        }
+        1
+    }
+}
+
 struct BashoRikishiByRank {
     rank: String,
     rank_group: RankGroup,
     east: Option<BashoRikishi>,
     west: Option<BashoRikishi>,
+}
+
+impl BashoRikishiByRank {
+    fn next_day(&self) -> u8 {
+        max(self.east.as_ref().map_or(1, |r| r.next_day()),
+            self.west.as_ref().map_or(1, |r| r.next_day()))
+    }
 }
 
 pub fn basho(path: web::Path<BashoId>, state: web::Data<AppState>, identity: Identity) -> Result<impl Responder> {
@@ -77,12 +97,17 @@ pub fn basho(path: web::Path<BashoId>, state: web::Data<AppState>, identity: Ide
     let base = BaseTemplate::new(&db, &identity)?;
     let player_id = base.player.as_ref().map(|p| p.id);
     let picks = fetch_player_picks(&db, player_id, basho_id)?;
+    let rikishi = fetch_rikishi(&db, basho_id, picks)?;
     let s = BashoTemplate {
         basho: BashoInfo::with_id(&db, basho_id)?
             .ok_or_else(|| HandlerError::NotFound("basho".to_string()))?,
         base,
         leaders: fetch_leaders(&db, basho_id)?,
-        rikishi_by_rank: fetch_rikishi(&db, basho_id, picks)?,
+        next_day: rikishi.iter()
+            .map(|rr| rr.next_day())
+            .max()
+            .unwrap_or(1),
+        rikishi_by_rank: rikishi,
     }.render()?;
     Ok(HttpResponse::Ok().body(s))
 }

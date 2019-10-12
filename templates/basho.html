@@ -12,6 +12,16 @@
 {% block main %}
     <h2>{{basho.id}} — {{basho.venue}}</h2>
 
+    {% if base.is_admin() %}
+        <section id="admin">
+            <h2>Admin Controls</h2>
+            <ul>
+                <li><a href="{{basho.id.url_path()}}/edit">edit banzuke</a></li>
+                <li><a href="{{basho.id.url_path()}}/day/{{next_day}}">enter day {{next_day}} results</a></li>
+            </ul>
+        </section>
+    {% endif %}
+
     {% if basho.has_started() %}
         <section id="leaderboard">
             <h2>Leaderboard</h2>
