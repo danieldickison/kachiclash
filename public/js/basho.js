@@ -10,9 +10,9 @@ document.querySelectorAll('.select-radio').forEach(radio => {
 });
 
 function savePicks() {
-    let form = document.getElementById('banzuke-select-rikishi-form');
-    let data = new URLSearchParams(new FormData(form));
-    let url = form.action;
+    const form = document.getElementById('banzuke-select-rikishi-form');
+    const data = new URLSearchParams(new FormData(form));
+    const url = form.action;
     return fetch(url, {
         method: 'POST',
         //credentials: 'same-origin', // include, *same-origin, omit
@@ -25,20 +25,20 @@ function savePicks() {
     });
 }
 
-let countDown = document.getElementById('basho-count-down');
+const countDown = document.getElementById('basho-count-down');
 if (countDown) {
-    let startTimestamp = parseInt(countDown.dataset.startDate);
-    let timeSpan = document.getElementById('basho-count-down-time');
+    const startTimestamp = parseInt(countDown.dataset.startDate);
+    const timeSpan = document.getElementById('basho-count-down-time');
     updateTimeRemaining();
     setInterval(updateTimeRemaining, 1000);
 
     function updateTimeRemaining() {
-        let remaining = (startTimestamp - Date.now()) / 1000;
-        let seconds = Math.floor(remaining % 60);
-        let minutes = Math.floor(remaining / 60) % 60;
-        let hours = Math.floor(remaining / 60 / 60) % 24;
-        let days = Math.floor(remaining / 60 / 60 / 24);
-        var str = "";
+        const remaining = (startTimestamp - Date.now()) / 1000;
+        const seconds = Math.floor(remaining % 60);
+        const minutes = Math.floor(remaining / 60) % 60;
+        const hours = Math.floor(remaining / 60 / 60) % 24;
+        const days = Math.floor(remaining / 60 / 60 / 24);
+        let str = "";
 
         if (days > 1) str += days + " days ";
         else if (days > 0) str += "1 day ";

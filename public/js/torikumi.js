@@ -1,34 +1,34 @@
 (function () {
 'use strict';
 
-let torikumiForm = document.getElementById('torikumi-form');
+const torikumiForm = document.getElementById('torikumi-form');
 
-var parsedTorikumi;
+let parsedTorikumi;
 torikumiForm.elements.torikumi.addEventListener('input', (event) => {
     parsedTorikumi = parseTorikumi(torikumiForm.elements.torikumi.value);
-    let tbody = torikumiForm.querySelector('.parsed-torikumi tbody');
+    const tbody = torikumiForm.querySelector('.parsed-torikumi tbody');
     tbody.innerHTML = '';
     parsedTorikumi.forEach(torikumi => {
-        let tr = document.createElement('tr');
+        const tr = document.createElement('tr');
         tbody.appendChild(tr);
 
-        let winner = document.createElement('td');
+        const winner = document.createElement('td');
         winner.innerText = torikumi.winner;
         tr.appendChild(winner);
 
-        let loser = document.createElement('td');
+        const loser = document.createElement('td');
         loser.innerText = torikumi.loser;
         tr.appendChild(loser);
     });
 });
 
 // Maches rank, name, record, kimarite, rank, name, record
-let TORIKUMI_REGEX = /^ *\w{1,2}\d{1,3}[ew] +(\w+) +\(\d+.\d+\) +\w+ +\w{1,2}\d{1,3}[ew] +(\w+) +\(\d+.\d+\) *$/gm
+const TORIKUMI_REGEX = /^ *\w{1,2}\d{1,3}[ew] +(\w+) +\(\d+.\d+\) +\w+ +\w{1,2}\d{1,3}[ew] +(\w+) +\(\d+.\d+\) *$/gm
 
 function parseTorikumi(str) {
     console.log("parsing torikumi");
-    let torikumi = [];
-    var match;
+    const torikumi = [];
+    let match;
     while (match = TORIKUMI_REGEX.exec(str)) {
         torikumi.push({
             winner: match[1],
@@ -40,10 +40,10 @@ function parseTorikumi(str) {
 
 torikumiForm.addEventListener('submit', event => {
     event.preventDefault();
-    let data = {
+    const data = {
             torikumi: parsedTorikumi,
         };
-    let postURL = window.location.href;
+    const postURL = window.location.href;
     const bashoURL = postURL.replace(/\/day\/.*$/i, '');
     return fetch(postURL, {
         method: 'POST',
