@@ -202,12 +202,13 @@ fn fetch_rikishi(db: &Connection, basho_id: BashoId, picks: HashSet<RikishiId>) 
         )?
         .collect::<SqlResult<Vec<FetchedRikishiRow>>>()?
         .into_iter()
+        .filter(|row| row.0.is_makuuchi())
         .group_by(|row| (row.0.name, row.0.number)) // rank name and number but group east/west together
         .into_iter()
         .sorted_by(|(rank1, _), (rank2, _)| rank1.cmp(rank2))
         .map(|(rank, pair)| {
             let mut out = BashoRikishiByRank {
-                rank: format!("{:}{}", rank.0, rank.1),
+                rank: format!("{}{}", rank.0, rank.1),
                 rank_group: RankGroup::for_rank(rank.0, rank.1),
                 east: None,
                 west: None,

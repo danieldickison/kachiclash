@@ -149,6 +149,10 @@ impl Rank {
     pub fn group(self) -> RankGroup {
         RankGroup::for_rank(self.name, self.number)
     }
+
+    pub fn is_makuuchi(self) -> bool {
+        self.name <= RankName::Maegashira
+    }
 }
 
 impl fmt::Display for Rank {
