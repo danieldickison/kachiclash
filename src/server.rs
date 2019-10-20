@@ -67,7 +67,7 @@ pub fn run(config: Config) -> std::io::Result<()> {
                 .service(web::resource("/{basho_id}/picks")
                     .route(web::post().to(handlers::basho::save_picks)))
                 .service(web::resource("/{basho_id}/day/{day}")
-                    .route(web::get().to(handlers::admin::torikumi_page))
+                    .route(web::get().to_async(handlers::admin::torikumi_page))
                     .route(web::post().to(handlers::admin::torikumi_post)))
         )
 

@@ -19,24 +19,6 @@ pub mod admin;
 
 type Result<T> = std::result::Result<T, failure::Error>;
 
-#[derive(Fail, Debug)]
-pub enum HandlerError {
-    #[fail(display = "Not Found")]
-    NotFound(String),
-
-    #[fail(display = "Must be logged in")]
-    MustBeLoggedIn,
-
-    #[fail(display = "External Service Error")]
-    ExternalServiceError,
-    
-    #[fail(display = "Database Error")]
-    DatabaseError,
-
-    #[fail(display = "CSRF Error")]
-    CSRFError,
-}
-
 impl error::ResponseError for HandlerError {
     fn error_response(&self) -> HttpResponse {
         match self {
@@ -57,6 +39,24 @@ impl error::ResponseError for HandlerError {
                 .body(format!("{}", self)),
         }
     }
+}
+
+#[derive(Fail, Debug)]
+pub enum HandlerError {
+    #[fail(display = "Not Found")]
+    NotFound(String),
+
+    #[fail(display = "Must be logged in")]
+    MustBeLoggedIn,
+
+    #[fail(display = "External Service Error")]
+    ExternalServiceError,
+
+    #[fail(display = "Database Error")]
+    DatabaseError,
+
+    #[fail(display = "CSRF Error")]
+    CSRFError,
 }
 
 struct BaseTemplate {

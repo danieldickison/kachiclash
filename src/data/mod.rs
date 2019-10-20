@@ -1,4 +1,4 @@
-use std::sync::Mutex;
+use std::sync::{Mutex, Arc};
 use std::path::Path;
 use rusqlite::{Connection, OpenFlags};
 use rusqlite::config::DbConfig::SQLITE_DBCONFIG_ENABLE_FKEY;
@@ -15,14 +15,14 @@ pub use basho::{BashoId, BashoInfo};
 pub type RikishiId = u32;
 pub type Day = u8;
 
-pub type DbConn = Mutex<Connection>;
+pub type DbConn = Arc<Mutex<Connection>>;
 
 pub fn make_conn(path: &Path) -> DbConn {
     let conn = Connection::open_with_flags(path, OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_NO_MUTEX)
         .expect("sqlite db");
     conn.set_db_config(SQLITE_DBCONFIG_ENABLE_FKEY, true)
         .expect("set foreign key enformance to on");
-    Mutex::new(conn)
+    Arc::new(Mutex::new(conn))
 }
 
 #[derive(Fail, Debug)]

@@ -85,8 +85,12 @@ pub struct BashoId {
 }
 
 impl BashoId {
+    pub fn id(self) -> String {
+        format!("{:04}{:02}", self.year, self.month)
+    }
+
     pub fn url_path(self) -> String {
-        format!("/basho/{:04}{:02}", self.year, self.month)
+        format!("/basho/{}", self.id())
     }
 }
 
@@ -137,7 +141,7 @@ impl FromSql for BashoId {
 
 impl ToSql for BashoId {
     fn to_sql(&self) -> rusqlite::Result<ToSqlOutput<'_>> {
-        let id: u32 = format!("{:04}{:02}", self.year, self.month)
+        let id: u32 = self.id()
             .parse()
             .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
         Ok(ToSqlOutput::from(id))
