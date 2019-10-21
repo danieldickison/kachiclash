@@ -15,6 +15,8 @@ extern crate serde;
 extern crate serde_json;
 #[macro_use]
 extern crate rusqlite;
+#[macro_use]
+extern crate lazy_static;
 
 use url::Url;
 use std::path::PathBuf;

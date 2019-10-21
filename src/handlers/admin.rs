@@ -11,8 +11,7 @@ use askama::Template;
 use serde::{Deserializer, Deserialize};
 use chrono::NaiveDateTime;
 use futures::prelude::*;
-use futures::future::{self};
-use crate::handlers::admin::SumoDbError::HttpRequestError;
+use regex::{Regex, RegexBuilder};
 
 #[derive(Template)]
 #[template(path = "edit_basho.html")]
@@ -184,7 +183,15 @@ pub fn torikumi_page(path: web::Path<(BashoId, u8)>, state: web::Data<AppState>,
 fn fetch_sumo_db_torikumi(basho_id: BashoId, day: u8)
     -> impl Future<Item = String, Error = failure::Error> {
 
-    let mut client = Client::default();
+    lazy_static! {
+        static ref RE: Regex =
+            RegexBuilder::new(r#"<div +class="simplecontent">\s*<pre>.*?\WMakuuchi\s+(.*?)</pre>"#)
+                .dot_matches_new_line(true)
+                .build()
+                .unwrap();
+    }
+
+    let client = Client::default();
     let url = format!("http://sumodb.sumogames.de/Results_text.aspx?b={}&d={}", basho_id.id(), day);
     client.get(url)
         .header("User-Agent", "kachiclash")
@@ -194,10 +201,19 @@ fn fetch_sumo_db_torikumi(basho_id: BashoId, day: u8)
             response.body().map_err(|_| SumoDbError::ParseError.into())
         })
         .and_then(|body| {
-            String::from_utf8(body.to_vec()).map_err(|e| {
-                warn!("failed to parse sumodb response as utf8: {}", e);
-                SumoDbError::ParseError.into()
-            })
+            String::from_utf8(body.to_vec())
+                .map_err(|e| {
+                    warn!("failed to parse sumodb response as utf8: {}", e);
+                    SumoDbError::ParseError.into()
+                })
+                .and_then(|str| {
+                    RE.captures(str.as_str())
+                        .map(|cap| cap.get(1).unwrap().as_str().to_string())
+                        .ok_or_else(|| {
+                            warn!("sumodb response did not match regex: {}", str);
+                            SumoDbError::ParseError.into()
+                        })
+                })
         })
 }
 

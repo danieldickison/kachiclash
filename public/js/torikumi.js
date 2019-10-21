@@ -4,7 +4,9 @@
 const torikumiForm = document.getElementById('torikumi-form');
 
 let parsedTorikumi;
-torikumiForm.elements.torikumi.addEventListener('input', (event) => {
+torikumiForm.elements.torikumi.addEventListener('input', torikumiFormInput);
+
+function torikumiFormInput() {
     parsedTorikumi = parseTorikumi(torikumiForm.elements.torikumi.value);
     const tbody = torikumiForm.querySelector('.parsed-torikumi tbody');
     tbody.innerHTML = '';
@@ -20,7 +22,7 @@ torikumiForm.elements.torikumi.addEventListener('input', (event) => {
         loser.innerText = torikumi.loser;
         tr.appendChild(loser);
     });
-});
+}
 
 // Maches rank, name, record, kimarite, rank, name, record
 const TORIKUMI_REGEX = /^ *\w{1,2}\d{1,3}[ew] +(\w+) +\(\d+.\d+\) +\w+ +\w{1,2}\d{1,3}[ew] +(\w+) +\(\d+.\d+\) *$/gm
@@ -43,7 +45,7 @@ torikumiForm.addEventListener('submit', event => {
     const data = {
             torikumi: parsedTorikumi,
         };
-    const postURL = window.location.href;
+    const postURL = location.href;
     const bashoURL = postURL.replace(/\/day\/.*$/i, '');
     return fetch(postURL, {
         method: 'POST',
@@ -61,4 +63,6 @@ torikumiForm.addEventListener('submit', event => {
     })
     .catch(err => alert("error updating torikumi: " + err));
 });
+
+torikumiFormInput();
 })();
