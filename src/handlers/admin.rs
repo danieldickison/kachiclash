@@ -166,18 +166,22 @@ pub fn torikumi_page(path: web::Path<(BashoId, u8)>, state: web::Data<AppState>,
     AdminBaseFuture {
         db: state.db.clone(),
         identity: identity.clone(),
-    }.join(fetch_sumo_db_torikumi(basho_id, day))
-        .then(move |result| {
-            // TODO: make base error fatal but sumo_db_text error optional
-            result.map(|(base, sumo_db_text)| {
-                TorikumiTemplate {
-                    base: base,
-                    basho_id: basho_id,
-                    day: day,
-                    sumo_db_text: Some(sumo_db_text),
-                }.into()
+    }.and_then(move |base| {
+        fetch_sumo_db_torikumi(basho_id, day)
+            .map(|txt| Some(txt))
+            .or_else(|e| {
+                warn!("failed to fetch sumodb data: {}", e);
+                Ok(None)
             })
-        })
+            .map(move |txt| (base, txt))
+    }).map(move |(base, sumo_db_text)| {
+        TorikumiTemplate {
+            base: base,
+            basho_id: basho_id,
+            day: day,
+            sumo_db_text: sumo_db_text,
+        }.into()
+    })
 }
 
 fn fetch_sumo_db_torikumi(basho_id: BashoId, day: u8)
@@ -196,34 +200,19 @@ fn fetch_sumo_db_torikumi(basho_id: BashoId, day: u8)
     client.get(url)
         .header("User-Agent", "kachiclash")
         .send()
-        .map_err(|_| SumoDbError::HttpRequestError.into())
+        .map_err(|e| format_err!("{}", e))
         .and_then(|mut response| {
-            response.body().map_err(|_| SumoDbError::ParseError.into())
+            response.body().map_err(|e| format_err!("{}", e))
         })
         .and_then(|body| {
             String::from_utf8(body.to_vec())
-                .map_err(|e| {
-                    warn!("failed to parse sumodb response as utf8: {}", e);
-                    SumoDbError::ParseError.into()
-                })
+                .map_err(|e| format_err!("{}", e))
                 .and_then(|str| {
                     RE.captures(str.as_str())
                         .map(|cap| cap.get(1).unwrap().as_str().to_string())
-                        .ok_or_else(|| {
-                            warn!("sumodb response did not match regex: {}", str);
-                            SumoDbError::ParseError.into()
-                        })
+                        .ok_or_else(|| format_err!("sumodb response did not match regex"))
                 })
         })
-}
-
-#[derive(Fail, Debug)]
-enum SumoDbError {
-    #[fail(display = "SumoDB http request failed")]
-    HttpRequestError,
-
-    #[fail(display = "SumoDB response could not be parsed")]
-    ParseError,
 }
 
 #[derive(Debug, Deserialize)]
