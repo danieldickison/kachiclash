@@ -4,7 +4,9 @@
 const bashoForm = document.getElementById('make-basho-form');
 
 let parsedBanzuke;
-bashoForm.elements.banzuke.addEventListener('input', (event) => {
+bashoForm.elements.banzuke.addEventListener('input', bashoFormInput);
+
+function bashoFormInput(event) {
     parsedBanzuke = parseBanzuke(bashoForm.elements.banzuke.value);
     const tbody = bashoForm.querySelector('.parsed-banzuke tbody');
     tbody.innerHTML = '';
@@ -20,7 +22,7 @@ bashoForm.elements.banzuke.addEventListener('input', (event) => {
         name.innerText = rikishi.name;
         tr.appendChild(name);
     });
-});
+}
 
 // Maches rank and name
 const BANZUKE_REGEX = /^ *(\w{1,2}\d{1,3}[ew]) *(\w+)/gm
@@ -65,4 +67,7 @@ bashoForm.addEventListener('submit', event => {
     })
     .catch(err => alert("error saving basho: " + err));
 });
+
+bashoFormInput();
+
 })();
