@@ -1,5 +1,5 @@
 
-use crate::data::{self, Rank, BashoId, DbConn};
+use crate::data::{self, Rank, BashoId};
 use crate::AppState;
 use super::{HandlerError, BaseTemplate, Result, AskamaResponder};
 
@@ -22,16 +22,17 @@ pub struct EditBashoTemplate {
 
 pub fn new_basho_page(state: web::Data<AppState>, identity: Identity) -> Result<AskamaResponder<EditBashoTemplate>> {
     Ok(EditBashoTemplate {
-        base: admin_base(&state.db, &identity)?,
+        base: admin_base(&state.db.lock().unwrap(), &identity)?,
         basho: None,
     }.into())
 }
 
 pub fn edit_basho_page(path: web::Path<BashoId>, state: web::Data<AppState>, identity: Identity) -> Result<AskamaResponder<EditBashoTemplate>> {
-    match BashoData::with_id(&state.db.lock().unwrap(), *path)? {
+    let db = state.db.lock().unwrap();
+    match BashoData::with_id(&db, *path)? {
         Some(basho) =>
             Ok(EditBashoTemplate {
-                base: admin_base(&state.db, &identity)?,
+                base: admin_base(&db, &identity)?,
                 basho: Some(basho),
             }.into()),
         None => Err(HandlerError::NotFound("basho".to_string()).into())
@@ -56,9 +57,10 @@ impl BashoData {
             WHERE basho.id = ?",
             params![id],
             |row| {
-                //debug!("got basho row start date {:?}", row.get("start_date")?);
+                let start_date: NaiveDateTime = row.get("start_date")?;
+                debug!("got basho row start date {:?}", start_date);
                 Ok(Self {
-                    start_date: row.get("start_date")?,
+                    start_date,
                     venue: row.get("venue")?,
                     banzuke: Self::fetch_banzuke(&db, id)?,
                  })
@@ -105,9 +107,10 @@ pub struct BanzukeResponseData {
 
 pub fn edit_basho_post(basho: web::Json<BashoData>, state: web::Data<AppState>, identity: Identity)
 -> Result<web::Json<BanzukeResponseData>> {
-    admin_base(&state.db, &identity)?;
+    let mut db = state.db.lock().unwrap();
+    admin_base(&db, &identity)?;
     let basho_id = data::basho::make_basho(
-        &mut state.db.lock().unwrap(),
+        &mut db,
         &basho.venue,
         &basho.start_date,
         &basho.banzuke
@@ -120,30 +123,13 @@ pub fn edit_basho_post(basho: web::Json<BashoData>, state: web::Data<AppState>, 
     }))
 }
 
-struct AdminBaseFuture {
-    db: DbConn,
-    identity: Identity,
-}
-
-impl Future for AdminBaseFuture {
-    type Item = BaseTemplate;
-    type Error = failure::Error;
-
-    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        let base = BaseTemplate::new(&self.db.lock().unwrap(), &self.identity)?;
-        if base.player.as_ref().map_or(false, |p| p.is_admin()) {
-            Ok(Async::Ready(base))
-        } else {
-            Err(HandlerError::MustBeLoggedIn.into())
-        }
+fn admin_base(db: &Connection, identity: &Identity) -> Result<BaseTemplate> {
+    let base = BaseTemplate::new(&db, &identity)?;
+    if base.player.as_ref().map_or(false, |p| p.is_admin()) {
+        Ok(base)
+    } else {
+        Err(HandlerError::MustBeLoggedIn.into())
     }
-}
-
-fn admin_base(db: &DbConn, identity: &Identity) -> Result<BaseTemplate> {
-    AdminBaseFuture {
-        db: db.clone(),
-        identity: identity.clone(),
-    }.wait()
 }
 
 
@@ -163,25 +149,25 @@ pub fn torikumi_page(path: web::Path<(BashoId, u8)>, state: web::Data<AppState>,
 
     let basho_id = path.0;
     let day = path.1;
-    AdminBaseFuture {
-        db: state.db.clone(),
-        identity: identity.clone(),
-    }.and_then(move |base| {
-        fetch_sumo_db_torikumi(basho_id, day)
-            .map(|txt| Some(txt))
-            .or_else(|e| {
-                warn!("failed to fetch sumodb data: {}", e);
-                Ok(None)
-            })
-            .map(move |txt| (base, txt))
-    }).map(move |(base, sumo_db_text)| {
-        TorikumiTemplate {
-            base: base,
-            basho_id: basho_id,
-            day: day,
-            sumo_db_text: sumo_db_text,
-        }.into()
-    })
+    let db = state.db.lock().unwrap();
+    admin_base(&db, &identity).into_future()
+        .and_then(move |base| {
+            fetch_sumo_db_torikumi(basho_id, day)
+                .map(|txt| Some(txt))
+                .or_else(|e| {
+                    warn!("failed to fetch sumodb data: {}", e);
+                    Ok(None)
+                })
+                .map(|opt_txt| (base, opt_txt))
+        })
+        .map(move |(base, sumo_db_text)| {
+            TorikumiTemplate {
+                base: base,
+                basho_id: basho_id,
+                day: day,
+                sumo_db_text: sumo_db_text,
+            }.into()
+        })
 }
 
 fn fetch_sumo_db_torikumi(basho_id: BashoId, day: u8)
@@ -222,9 +208,10 @@ pub struct TorikumiData {
 
 pub fn torikumi_post(path: web::Path<(BashoId, u8)>, torikumi: web::Json<TorikumiData>, state: web::Data<AppState>, identity: Identity)
 -> Result<()> {
-    admin_base(&state.db, &identity)?;
+    let mut db = state.db.lock().unwrap();
+    admin_base(&db, &identity)?;
     data::basho::update_torikumi(
-        &mut state.db.lock().unwrap(),
+        &mut db,
         path.0,
         path.1,
         &torikumi.torikumi
