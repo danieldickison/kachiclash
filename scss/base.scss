@@ -9,18 +9,32 @@ html {
 body {
     font-family: "Helvetica Neue", sans-serif;
     color: #333;
-    background: #eee;
+    background: #345F88;
     height: 100%;
     margin: 0;
     display: flex;
     flex-direction: column;
 }
 
+a {
+    text-decoration: none;
+    color: #345F88;
+    font-weight: 500;
+
+    &:visited {
+        color: #345F88;
+    }
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
 #g-header {
     width: 100%;
     margin: 0;
     padding: 10px;
-    background: #99cafa;
+    background: #F8F8FC;
     border-bottom: solid 1px #ccc;
     
     h1 {
@@ -44,8 +58,6 @@ body > main {
     margin: 0 auto;
     padding: 10px;
     background: white;
-    border-left: solid 1px #ccc;
-    border-right: solid 1px #ccc;
 }
 
 #g-footer {

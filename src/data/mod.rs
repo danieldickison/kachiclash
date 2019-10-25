@@ -7,7 +7,7 @@ mod rank;
 pub use rank::{Rank, RankName, RankSide, RankGroup};
 
 pub mod player;
-pub use player::{PlayerId};
+pub use player::{PlayerId, Player};
 
 pub mod basho;
 pub use basho::{BashoId, BashoInfo};

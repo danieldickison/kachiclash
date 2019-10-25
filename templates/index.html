@@ -1,19 +1,41 @@
 {% extends "base.html" %}
 
+{% block main_id %}p-index{% endblock %}
+
 {% block head %}
-    <style>
-        .leaderboard-heading {
-            font-size: 18px;
-            font-weight: bold;
-        }
-        .leaderboard {
-            background: #eee;
-            border: 1px solid #ccc;
-        }
-    </style>
+    <link rel="stylesheet" href="/static/css/index.css">
 {% endblock %}
 
 {% block main %}
+    <header>
+        <img src="/static/img/banner-1.jpg" width="950" height="406" alt="Kachi Clash banner">
+    </header>
+
+    <h2>Previous Emperor's Cup Winners</h2>
+    <table class="basho-list">
+        <thead>
+            <th>Basho</th>
+            <th>Venue</th>
+            <th>Players</th>
+            <th>Winner</th>
+        </thead>
+        <tbody>
+            {% for basho in basho_list -%}
+                <tr>
+                    <td><a href="{{basho.id.url_path()}}">{{basho.id}}</a></td>
+                    <td>{{basho.venue}}</td>
+                    <td>{{basho.player_count}}</td>
+                    <td>
+                        {%- match basho.winner -%}
+                        {%- when Some with (winner) %}{{winner.name}} 🏆
+                        {%- when None -%}
+                        {%- endmatch -%}
+                    </td>
+                </tr>
+            {%- endfor %}
+        </tbody>
+    </table>
+
     <h2 class="leaderboard-heading">Leaderboard</h2>
     <ol class="leaderboard">
     {% for player in leaders %}

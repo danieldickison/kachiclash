@@ -46,7 +46,7 @@ pub fn run(config: Config) -> std::io::Result<()> {
         .wrap(middleware::DefaultHeaders::new().header("Content-Type", "text/html; charset=utf-8"))
 
         .service(Files::new("/static", &config.static_path))
-        .service(web::resource("/").to(handlers::index))
+        .service(web::resource("/").to(handlers::index::index))
 
         .service(web::resource("/logout").to(handlers::login::logout))
         .service(
@@ -70,8 +70,6 @@ pub fn run(config: Config) -> std::io::Result<()> {
                     .route(web::get().to_async(handlers::admin::torikumi_page))
                     .route(web::post().to(handlers::admin::torikumi_post)))
         )
-
-        .service(web::resource("/players").to(handlers::player_list))
 
         .default_service(
             web::route().to(|| -> Result<(), _> {Err(handlers::HandlerError::NotFound("Page".to_string()))})

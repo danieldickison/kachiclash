@@ -10,13 +10,14 @@ use chrono::{DateTime, Datelike};
 use serde::{Deserialize, Deserializer};
 use itertools::Itertools;
 
-use super::{DataError, PlayerId, RikishiId, Rank, RankGroup, Day};
+use super::{DataError, PlayerId, Player, RikishiId, Rank, RankGroup, Day};
 
 pub struct BashoInfo {
     pub id: BashoId,
     pub start_date: DateTime<Utc>,
     pub venue: String,
     pub player_count: u32,
+    pub winner: Option<Player>,
 }
 
 impl BashoInfo {
@@ -40,6 +41,7 @@ impl BashoInfo {
                         start_date: row.get("start_date")?,
                         venue: row.get("venue")?,
                         player_count: row.get("player_count")?,
+                        winner: None, // TODO
                     }))
                 }
             })
@@ -65,6 +67,7 @@ impl BashoInfo {
                         start_date: row.get("start_date")?,
                         venue: row.get("venue")?,
                         player_count: row.get("player_count")?,
+                        winner: None, // TODO
                     })
                 })?
             .collect::<SqlResult<Vec<BashoInfo>>>()

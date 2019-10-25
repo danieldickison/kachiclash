@@ -1,18 +1,16 @@
 extern crate askama;
 
 use crate::data;
-use crate::AppState;
 
-use actix_web::{error, HttpResponse, Responder};
-use actix_web::web::Data;
+use actix_web::{error, HttpResponse};
 use actix_identity::Identity;
 use rusqlite::Connection;
 use failure::Fail;
-use askama::Template;
 
 mod askama_responder;
 use askama_responder::AskamaResponder;
 
+pub mod index;
 pub mod basho;
 pub mod login;
 pub mod admin;
@@ -87,24 +85,4 @@ impl BaseTemplate {
             None => false
         }
     }
-}
-
-pub fn index(state: Data<AppState>, identity: Identity) -> Result<impl Responder> {
-    basho::basho_list(state, identity)
-}
-
-
-#[derive(Template)]
-#[template(path = "index.html")]
-pub struct PlayerListTemplate {
-    base: BaseTemplate,
-    leaders: Vec<data::player::Player>,
-}
-
-pub fn player_list(state: Data<AppState>, identity: Identity) -> Result<AskamaResponder<PlayerListTemplate>> {
-    let db = state.db.lock().unwrap();
-    Ok(PlayerListTemplate {
-        base: BaseTemplate::new(&db, &identity)?,
-        leaders: data::player::list_players(&db),
-    }.into())
 }
