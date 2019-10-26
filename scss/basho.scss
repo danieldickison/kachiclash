@@ -1,14 +1,25 @@
 #p-basho {
+    #rules {
+        width: 950px;
+        padding: 10px 20px;
+        background: var(--color-mauve);
+        color: var(--color-light-fg);
+        margin: 0 auto;
+    }
+
     #leaderboard {
         background: #e8faff;
+        padding: 10px;
     }
     
     #banzuke {
         background: #fff8e8;
+        padding: 10px;
 
         table {
             border-collapse: collapse;
             line-height: 2;
+            margin: 0 auto;
 
             .rank {
                 text-align: center;

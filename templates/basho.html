@@ -11,10 +11,10 @@
 
 {% block main %}
 
-    <header>
-        <img src="/static/img/banner-1.jpg" width="950" height="406" alt="Kachi Clash banner">
-        <h3>RULES</h3>
-        <p>Pick ONE rikishi from EACH of the RANKED SECTIONS:</p>
+    <div id="g-hero"></div>
+    <section id="rules">
+        <h2>RULES</h2>
+        <p>Pick <strong>ONE</strong> rikishi from <strong>EACH</strong> of the <em>ranked sections</em>:</p>
         <p>Y-O | S-K | M1-M5 | M6-M10 | M11-M17</p>
         <p>Each time one of your picks wins a bout, you get 1 point.</p>
         <p>During the basho, players are ranked according to their # of wins, and first-place will earn a coveted 🏆 EMPEROR'S CUP 🏆 next to your name for all future Kachi Clash contests.</p>
@@ -26,7 +26,7 @@
                 Time remaining: <span id="basho-count-down-time"></span>
             </div>
         {% endif %}
-    </header>
+    </section>
 
     <h2>{{basho.id}} — {{basho.venue}}</h2>
 

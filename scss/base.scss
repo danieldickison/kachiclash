@@ -1,3 +1,11 @@
+:root {
+    --color-navy: #345F88;
+    --color-mauve: #560030;
+    --color-light-fg: #eee;
+    --color-dark-fg: #333;
+    --color-gray-bg: #f8f8f8;
+}
+
 * {
     box-sizing: border-box;
 }
@@ -9,7 +17,7 @@ html {
 body {
     font-family: "Helvetica Neue", sans-serif;
     color: #333;
-    background: #345F88;
+    background: var(--color-gray-bg);
     height: 100%;
     margin: 0;
     display: flex;
@@ -34,8 +42,9 @@ a {
     width: 100%;
     margin: 0;
     padding: 10px;
-    background: #F8F8FC;
+    background: var(--color-gray-bg);
     border-bottom: solid 1px #ccc;
+    z-index: 1;
     
     h1 {
         font-size: 18px;
@@ -53,11 +62,20 @@ a {
 }
 
 body > main {
-    max-width: 1024px;
+    width: 970px;
     flex-grow: 1;
     margin: 0 auto;
     padding: 10px;
     background: white;
+    box-shadow: 0 0 20px 5px rgba(0, 0, 0, 0.5);
+}
+
+#g-hero {
+    background: url(/static/img/banner-1.jpg);
+    width: 950px;
+    height: 406px;
+    display: block;
+    margin: 0 auto;
 }
 
 #g-footer {
