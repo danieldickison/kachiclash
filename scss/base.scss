@@ -3,7 +3,8 @@
     --color-mauve: #560030;
     --color-light-fg: #eee;
     --color-dark-fg: #333;
-    --color-gray-bg: #f8f8f8;
+    --color-gray-bg: #f2f2f2;
+    --color-border: rgba(0, 0, 0, 0.125);
 }
 
 * {
@@ -43,7 +44,7 @@ a {
     margin: 0;
     padding: 10px;
     background: var(--color-gray-bg);
-    border-bottom: solid 1px #ccc;
+    border-bottom: solid 1px var(--color-border);
     z-index: 1;
     
     h1 {
@@ -67,7 +68,8 @@ body > main {
     margin: 0 auto;
     padding: 10px;
     background: white;
-    box-shadow: 0 0 20px 5px rgba(0, 0, 0, 0.5);
+    border-left: solid 1px var(--color-border);
+    border-right: solid 1px var(--color-border);
 }
 
 #g-hero {
