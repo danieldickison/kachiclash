@@ -3,15 +3,14 @@ use std::convert::From;
 use std::collections::HashMap;
 use std::fmt;
 use rusqlite::{Connection, NO_PARAMS, Result as SqlResult};
-use rusqlite::types::{ToSql, ToSqlOutput, ValueRef, FromSql, FromSqlResult, FromSqlError};
+use rusqlite::types::{ToSql, ToSqlOutput, ValueRef, FromSql, FromSqlResult};
 use chrono::naive::{NaiveDate, NaiveDateTime};
 use chrono::offset::Utc;
 use chrono::{DateTime, Datelike};
 use serde::{Deserialize, Deserializer};
 use itertools::Itertools;
 
-use super::{DataError, PlayerId, Player, RikishiId, Rank, RankGroup, Day};
-use crate::data::basho::Award::EmperorsCup;
+use super::{DataError, PlayerId, Player, RikishiId, Rank, RankGroup, Day, Award};
 
 pub struct BashoInfo {
     pub id: BashoId,
@@ -224,40 +223,6 @@ impl ToSql for BashoId {
         Ok(ToSqlOutput::from(id))
     }
 }
-
-
-#[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Copy, Clone)]
-pub enum Award {
-    EmperorsCup = 1
-}
-
-impl Award {
-    pub fn emoji(self) -> &'static str {
-        match self {
-            EmperorsCup => "🏆"
-        }
-    }
-}
-
-impl FromSql for Award {
-    fn column_result(value: ValueRef) -> FromSqlResult<Self> {
-        value
-            .as_i64()
-            .and_then(|num| {
-                match num {
-                    1 => Ok(EmperorsCup),
-                    _ => Err(FromSqlError::OutOfRange(num)),
-                }
-            })
-    }
-}
-
-impl ToSql for Award {
-    fn to_sql(&self) -> rusqlite::Result<ToSqlOutput<'_>> {
-        Ok(ToSqlOutput::from(*self as u8))
-    }
-}
-
 
 pub fn save_player_picks(db: &mut Connection, player_id: PlayerId, basho_id: BashoId, picks: [Option<RikishiId>; 5]) -> Result<(), DataError> {
     let txn = db.transaction()?;
