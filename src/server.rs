@@ -68,6 +68,10 @@ pub fn run(config: Config) -> std::io::Result<()> {
                 .service(web::resource("/{basho_id}/day/{day}")
                     .route(web::get().to_async(handlers::admin::torikumi_page))
                     .route(web::post().to(handlers::admin::torikumi_post)))
+                .service(web::resource("/{basho_id}/bestow_emperors_cup")
+                    .route(web::post().to(handlers::admin::bestow_emperors_cup)))
+                .service(web::resource("/{basho_id}/revoke_emperors_cup")
+                    .route(web::post().to(handlers::admin::revoke_emperors_cup)))
         )
 
         .default_service(

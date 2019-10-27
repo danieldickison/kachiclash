@@ -1,5 +1,5 @@
 
-use crate::data::{self, Rank, BashoId};
+use crate::data::{self, Rank, BashoId, PlayerId, Award};
 use crate::AppState;
 use super::{HandlerError, BaseTemplate, Result, AskamaResponder};
 
@@ -206,4 +206,26 @@ pub fn torikumi_post(path: web::Path<(BashoId, u8)>, torikumi: web::Json<Torikum
         path.1,
         &torikumi.torikumi
     ).map_err(|e| e.into())
+}
+
+
+#[derive(Debug, Deserialize)]
+pub struct AwardData {
+    player_id: PlayerId
+}
+
+pub fn bestow_emperors_cup(path: web::Path<BashoId>, award: web::Json<AwardData>, state: web::Data<AppState>, identity: Identity)
+-> Result<()> {
+    let mut db = state.db.lock().unwrap();
+    admin_base(&db, &identity)?;
+    Award::EmperorsCup.bestow(&mut db, *path, award.player_id)
+        .map_err(|e| e.into())
+}
+
+pub fn revoke_emperors_cup(path: web::Path<BashoId>, award: web::Json<AwardData>, state: web::Data<AppState>, identity: Identity)
+-> Result<()> {
+    let mut db = state.db.lock().unwrap();
+    admin_base(&db, &identity)?;
+    Award::EmperorsCup.revoke(&mut db, *path, award.player_id)
+        .map_err(|e| e.into())
 }

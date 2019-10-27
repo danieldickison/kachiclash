@@ -1,5 +1,7 @@
 use rusqlite::types::{FromSql, ValueRef, FromSqlResult, FromSqlError, ToSqlOutput};
-use rusqlite::ToSql;
+use rusqlite::{ToSql, Connection};
+use super::PlayerId;
+use crate::data::BashoId;
 
 #[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Copy, Clone)]
 pub enum Award {
@@ -11,6 +13,27 @@ impl Award {
         match self {
             Award::EmperorsCup => "🏆"
         }
+    }
+
+    pub fn bestow(self, db: &mut Connection, basho_id: BashoId, player_id: PlayerId) -> rusqlite::Result<()> {
+        db.prepare("
+                INSERT INTO award (basho_id, type, player_id)
+                VALUES (?, ?, ?)
+            ")?
+            .execute(params![basho_id, self, player_id])
+            .map(|_| ())
+    }
+
+    pub fn revoke(self, db: &mut Connection, basho_id: BashoId, player_id: PlayerId) -> rusqlite::Result<()> {
+        db.prepare("
+                DELETE FROM award
+                WHERE basho_id = ? AND type = ? AND player_id = ?
+            ")?
+            .execute(params![basho_id, self, player_id])
+            .and_then(|count| match count {
+                1 => Ok(()),
+                n => Err(rusqlite::Error::StatementChangedRows(n))
+            })
     }
 }
 

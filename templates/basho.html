@@ -64,6 +64,16 @@
                             </td>
                         {% endfor -%}
                         <td>{{player.total}}</td>
+                        {% if base.is_admin() %}
+                            <td>
+                                <button class="bestow-emperors-cup-button" data-player-id="{{player.id}}">
+                                    Bestow 🏆
+                                </button>
+                                <button class="revoke-emperors-cup-button" data-player-id="{{player.id}}">
+                                    Revoke <s>🏆</s>
+                                </button>
+                            </td>
+                        {% endif %}
                     </tr>
                 {%- endfor %}
                 </tbody>
