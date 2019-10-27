@@ -1,0 +1,12 @@
+
+<section id="g-rules">
+    <h2>RULES</h2>
+    <p>Pick <strong>ONE</strong> rikishi from <strong>EACH</strong> of the <em>ranked sections</em>:</p>
+    <p>Y-O | S-K | M1-M5 | M6-M10 | M11-M17</p>
+    <p>Each time one of your picks wins a bout, you get 1 point.</p>
+    <p>During the basho, players are ranked according to their # of wins, and first-place will earn a coveted 🏆 EMPEROR'S CUP 🏆 next to your name for all future Kachi Clash contests.</p>
+
+    {% if !basho.has_started() %}
+        <p>You can freely change your picks until the basho starts on {{basho.start_date.format("%Y-%m-%d %H:%M")}} JST.</p>
+    {% endif %}
+</section>
