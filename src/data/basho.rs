@@ -28,13 +28,7 @@ impl BashoInfo {
                 COUNT(*) AS n,
                 basho.start_date,
                 basho.venue,
-                COUNT(DISTINCT pick.player_id) AS player_count,
-                (
-                    SELECT GROUP_CONCAT(player.name)
-                    FROM award
-                    JOIN player ON player.id = award.player_id
-                    WHERE award.basho_id = basho.id AND award.type = ?
-                ) AS winners
+                COUNT(DISTINCT pick.player_id) AS player_count
             FROM basho
             LEFT JOIN pick ON pick.basho_id = basho.id
             WHERE basho.id = ?",
@@ -308,9 +302,8 @@ pub fn save_player_picks(db: &mut Connection, player_id: PlayerId, basho_id: Bas
 }
 
 
-pub fn make_basho(db: &mut Connection, venue: &str, start_date: &NaiveDateTime, banzuke: &[(String, Rank)]) -> Result<BashoId, DataError> {
+pub fn update_basho(db: &mut Connection, basho_id: BashoId, venue: &str, start_date: &NaiveDateTime, banzuke: &[(String, Rank)]) -> Result<BashoId, DataError> {
     let txn = db.transaction()?;
-    let basho_id: BashoId = start_date.date().into();
     txn.execute("
         INSERT INTO basho (id, start_date, venue)
         VALUES (?, ?, ?)

@@ -141,7 +141,13 @@ fn fetch_leaders(db: &Connection, basho_id: BashoId) -> Result<Vec<BashoPlayerRe
                 player.id,
                 player.name,
                 torikumi.day,
-                SUM(torikumi.win) AS wins
+                SUM(torikumi.win) AS wins,
+                COALESCE((
+                    SELECT 1
+                    FROM award AS a
+                    WHERE a.player_id = player.id AND type = :award_type
+                    LIMIT 1
+                ), 0) AS has_emperors_cup
             FROM player
             JOIN pick ON pick.player_id = player.id AND pick.basho_id = :basho_id
             LEFT JOIN torikumi ON torikumi.rikishi_id = pick.rikishi_id AND torikumi.basho_id = pick.basho_id
@@ -159,31 +165,38 @@ fn fetch_leaders(db: &Connection, basho_id: BashoId) -> Result<Vec<BashoPlayerRe
         ").unwrap()
         .query_map_named(
             named_params!{
-                ":basho_id": basho_id
+                ":basho_id": basho_id,
+                ":award_type": data::Award::EmperorsCup,
             },
-            |row| -> SqlResult<(PlayerId, String, Option<u8>, Option<i8>)> {
+            |row| -> SqlResult<(PlayerId, String, Option<u8>, Option<i8>, bool)> {
                 Ok((
                     row.get("id")?,
                     row.get("name")?,
                     row.get("day")?,
                     row.get("wins")?,
+                    row.get("has_emperors_cup")?,
                 ))
             }
         )?
-        .collect::<SqlResult<Vec<(PlayerId, String, Option<u8>, Option<i8>)>>>()?
+        .collect::<SqlResult<Vec<(PlayerId, String, Option<u8>, Option<i8>, bool)>>>()?
         .into_iter()
         .group_by(|row| row.0)
         .into_iter()
         .map(|(_player_id, rows)| {
             let mut rows = rows.peekable();
             let arow = rows.peek().unwrap();
+            let mut name = arow.1.to_string();
+            if arow.4 {
+                name.push_str(" ");
+                name.push_str(data::Award::EmperorsCup.emoji());
+            }
             let mut results = BashoPlayerResults {
                 id: arow.0,
-                name: arow.1.to_string(),
+                name,
                 total: 0,
                 days: [None; 15]
             };
-            for (_, _, day, wins) in rows {
+            for (_, _, day, wins, _) in rows {
                 if let Some(day) = day {
                     results.days[day as usize - 1] = wins;
                     results.total += wins.unwrap_or(0);

@@ -46,7 +46,7 @@ bashoForm.addEventListener('submit', event => {
             start_date: bashoForm.elements.start_date.value,
             banzuke: parsedBanzuke,
         };
-    const url = '/basho/new';
+    const url = location.href;
     return fetch(url, {
         method: 'POST',
         body: JSON.stringify(data),

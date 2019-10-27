@@ -20,23 +20,12 @@ pub struct EditBashoTemplate {
     basho: Option<BashoData>,
 }
 
-pub fn new_basho_page(state: web::Data<AppState>, identity: Identity) -> Result<AskamaResponder<EditBashoTemplate>> {
-    Ok(EditBashoTemplate {
-        base: admin_base(&state.db.lock().unwrap(), &identity)?,
-        basho: None,
-    }.into())
-}
-
 pub fn edit_basho_page(path: web::Path<BashoId>, state: web::Data<AppState>, identity: Identity) -> Result<AskamaResponder<EditBashoTemplate>> {
     let db = state.db.lock().unwrap();
-    match BashoData::with_id(&db, *path)? {
-        Some(basho) =>
-            Ok(EditBashoTemplate {
-                base: admin_base(&db, &identity)?,
-                basho: Some(basho),
-            }.into()),
-        None => Err(HandlerError::NotFound("basho".to_string()).into())
-    }
+    Ok(EditBashoTemplate {
+        base: admin_base(&db, &identity)?,
+        basho: BashoData::with_id(&db, *path)?,
+    }.into())
 }
 
 #[derive(Debug, Deserialize)]
@@ -105,12 +94,13 @@ pub struct BanzukeResponseData {
     basho_url: String,
 }
 
-pub fn edit_basho_post(basho: web::Json<BashoData>, state: web::Data<AppState>, identity: Identity)
+pub fn edit_basho_post(path: web::Path<BashoId>, basho: web::Json<BashoData>, state: web::Data<AppState>, identity: Identity)
 -> Result<web::Json<BanzukeResponseData>> {
     let mut db = state.db.lock().unwrap();
     admin_base(&db, &identity)?;
-    let basho_id = data::basho::make_basho(
+    let basho_id = data::basho::update_basho(
         &mut db,
+        *path,
         &basho.venue,
         &basho.start_date,
         &basho.banzuke

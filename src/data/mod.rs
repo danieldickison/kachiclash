@@ -10,7 +10,7 @@ pub mod player;
 pub use player::{PlayerId, Player};
 
 pub mod basho;
-pub use basho::{BashoId, BashoInfo};
+pub use basho::{BashoId, BashoInfo, Award};
 
 pub type RikishiId = u32;
 pub type Day = u8;
