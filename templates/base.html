@@ -11,9 +11,6 @@
             {% match base.player %}
             {%- when Some with (player) -%}
                 {{player.name}} |
-                {% if player.is_admin() -%}
-                    <a href="/basho/new">new basho</a> |
-                {%- endif %}
                 <a href="/logout">log out</a>
 
             {%- when None -%}

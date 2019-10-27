@@ -17,7 +17,7 @@ pub struct Player {
 }
 
 impl Player {
-    fn from_row(row: &Row) -> Result<Self, rusqlite::Error> {
+    pub fn from_row(row: &Row) -> Result<Self, rusqlite::Error> {
         Ok(Player {
             id: row.get("id")?,
             name: row.get("name")?,

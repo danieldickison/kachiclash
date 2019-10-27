@@ -3,7 +3,7 @@ use std::convert::From;
 use std::collections::HashMap;
 use std::fmt;
 use rusqlite::{Connection, NO_PARAMS, Result as SqlResult};
-use rusqlite::types::{ToSql, ToSqlOutput, ValueRef, FromSql, FromSqlResult};
+use rusqlite::types::{ToSql, ToSqlOutput, ValueRef, FromSql, FromSqlResult, FromSqlError};
 use chrono::naive::{NaiveDate, NaiveDateTime};
 use chrono::offset::Utc;
 use chrono::{DateTime, Datelike};
@@ -11,13 +11,14 @@ use serde::{Deserialize, Deserializer};
 use itertools::Itertools;
 
 use super::{DataError, PlayerId, Player, RikishiId, Rank, RankGroup, Day};
+use crate::data::basho::Award::EmperorsCup;
 
 pub struct BashoInfo {
     pub id: BashoId,
     pub start_date: DateTime<Utc>,
     pub venue: String,
     pub player_count: u32,
-    pub winner: Option<Player>,
+    pub winners: Vec<Player>,
 }
 
 impl BashoInfo {
@@ -27,28 +28,35 @@ impl BashoInfo {
                 COUNT(*) AS n,
                 basho.start_date,
                 basho.venue,
-                COUNT(DISTINCT pick.player_id) AS player_count
+                COUNT(DISTINCT pick.player_id) AS player_count,
+                (
+                    SELECT GROUP_CONCAT(player.name)
+                    FROM award
+                    JOIN player ON player.id = award.player_id
+                    WHERE award.basho_id = basho.id AND award.type = ?
+                ) AS winners
             FROM basho
             LEFT JOIN pick ON pick.basho_id = basho.id
             WHERE basho.id = ?",
-            params![id],
-            |row| {
-                if row.get::<_, u32>("n")? == 0 {
-                    Ok(None)
-                } else {
-                    Ok(Some(BashoInfo {
-                        id,
-                        start_date: row.get("start_date")?,
-                        venue: row.get("venue")?,
-                        player_count: row.get("player_count")?,
-                        winner: None, // TODO
-                    }))
-                }
-            })
+                     params![id],
+                     |row| {
+                         if row.get::<_, u32>("n")? == 0 {
+                             Ok(None)
+                         } else {
+                             Ok(Some(BashoInfo {
+                                 id,
+                                 start_date: row.get("start_date")?,
+                                 venue: row.get("venue")?,
+                                 player_count: row.get("player_count")?,
+                                 winners: BashoInfo::fetch_winners(&db, id)?,
+                             }))
+                         }
+                     })
             .map_err(|e| e.into())
     }
 
     pub fn list_all(db: &Connection) -> Result<Vec<BashoInfo>, DataError> {
+        let mut winners = BashoInfo::fetch_all_winners(&db)?;
         db.prepare("
                 SELECT
                     basho.id,
@@ -62,12 +70,13 @@ impl BashoInfo {
             .query_map(
                 NO_PARAMS,
                 |row| {
+                    let basho_id = row.get("id")?;
                     Ok(BashoInfo {
-                        id: row.get("id")?,
+                        id: basho_id,
                         start_date: row.get("start_date")?,
                         venue: row.get("venue")?,
                         player_count: row.get("player_count")?,
-                        winner: None, // TODO
+                        winners: winners.remove(&basho_id).unwrap_or(vec![]),
                     })
                 })?
             .collect::<SqlResult<Vec<BashoInfo>>>()
@@ -77,11 +86,52 @@ impl BashoInfo {
     pub fn has_started(&self) -> bool {
         self.start_date < Utc::now()
     }
+
+    fn fetch_winners(db: &Connection, basho_id: BashoId) -> SqlResult<Vec<Player>> {
+        Ok(db.prepare("
+                SELECT
+                    p.id, p.name, p.join_date, p.admin_level,
+                    d.user_id, d.username, d.avatar, d.discriminator
+                FROM award AS a
+                JOIN player AS p ON p.id = a.player_id
+                LEFT JOIN player_discord AS d ON d.player_id = p.id
+                WHERE a.basho_id = ? AND a.type = ?
+            ").unwrap()
+            .query_map(params![basho_id, Award::EmperorsCup], |row| Player::from_row(row))?
+            .map(|r| r.unwrap())
+            .collect())
+    }
+
+    fn fetch_all_winners(db: &Connection) -> SqlResult<HashMap<BashoId, Vec<Player>>> {
+        let mut map = HashMap::new();
+        let mut stmt = db.prepare("
+                SELECT
+                    a.basho_id,
+                    p.id, p.name, p.join_date, p.admin_level,
+                    d.user_id, d.username, d.avatar, d.discriminator
+                FROM award AS a
+                JOIN player AS p ON p.id = a.player_id
+                LEFT JOIN player_discord AS d ON d.player_id = p.id
+                WHERE a.type = ?
+            ")?;
+        let rows = stmt.query_map(params![Award::EmperorsCup], |row| {
+                Ok((row.get::<_, BashoId>("basho_id")?, Player::from_row(row)?))
+            })?;
+        for res in rows {
+            let (basho_id, player) = res?;
+            if !map.contains_key(&basho_id) {
+                map.insert(basho_id, Vec::new());
+            }
+            let vec = map.get_mut(&basho_id).unwrap();
+            vec.push(player);
+        }
+        Ok(map)
+    }
 }
 
 
 
-#[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Copy, Clone)]
+#[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Copy, Clone, Hash)]
 pub struct BashoId {
     pub year: i32,
     pub month: u8,
@@ -95,12 +145,41 @@ impl BashoId {
     pub fn url_path(self) -> String {
         format!("/basho/{}", self.id())
     }
+
+    pub fn season(self) -> String {
+        match self.month {
+            1 => "Hatsu".to_string(),
+            3 => "Haru".to_string(),
+            5 => "Natsu".to_string(),
+            7 => "Nagoya".to_string(),
+            9 => "Aki".to_string(),
+            11 => "Kyushu".to_string(),
+            _ => {
+                let date = NaiveDate::from_ymd(self.year, self.month.into(), 1);
+                format!("{}", date.format("%B"))
+            }
+        }
+    }
+
+    pub fn next_honbasho(self) -> BashoId {
+        let next_month = self.month + 2;
+        if next_month > 12 {
+            BashoId {
+                year: self.year + 1,
+                month: 1,
+            }
+        } else {
+            BashoId {
+                year: self.year,
+                month: next_month,
+            }
+        }
+    }
 }
 
 impl fmt::Display for BashoId {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        let date = NaiveDate::from_ymd(self.year, self.month.into(), 1);
-        write!(f, "{}", date.format("%B %Y"))
+        write!(f, "{} {:04}", self.season(), self.year)
     }
 }
 
@@ -122,8 +201,9 @@ impl From<NaiveDate> for BashoId {
 }
 
 impl<'de> Deserialize<'de> for BashoId {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where D: Deserializer<'de> {
+    fn deserialize<D>(deserializer: D)
+        -> Result<Self, D::Error> where D: Deserializer<'de> {
+
         let s = String::deserialize(deserializer)?;
         s.parse().map_err(serde::de::Error::custom)
     }
@@ -148,6 +228,39 @@ impl ToSql for BashoId {
             .parse()
             .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
         Ok(ToSqlOutput::from(id))
+    }
+}
+
+
+#[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Copy, Clone)]
+pub enum Award {
+    EmperorsCup = 1
+}
+
+impl Award {
+    pub fn emoji(self) -> &'static str {
+        match self {
+            EmperorsCup => "🏆"
+        }
+    }
+}
+
+impl FromSql for Award {
+    fn column_result(value: ValueRef) -> FromSqlResult<Self> {
+        value
+            .as_i64()
+            .and_then(|num| {
+                match num {
+                    1 => Ok(EmperorsCup),
+                    _ => Err(FromSqlError::OutOfRange(num)),
+                }
+            })
+    }
+}
+
+impl ToSql for Award {
+    fn to_sql(&self) -> rusqlite::Result<ToSqlOutput<'_>> {
+        Ok(ToSqlOutput::from(*self as u8))
     }
 }
 

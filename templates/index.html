@@ -9,6 +9,12 @@
 {% block main %}
     <div id="g-hero"></div>
 
+    {% if base.is_admin() %}
+        <section>
+            <a href="{{next_basho_id.url_path()}}/edit">enter banzuke for {{next_basho_id}}</a>
+        </section>
+    {% endif %}
+
     <h2>Previous Emperor's Cup Winners</h2>
     <table class="basho-list">
         <thead>
@@ -24,10 +30,10 @@
                     <td>{{basho.venue}}</td>
                     <td>{{basho.player_count}}</td>
                     <td>
-                        {%- match basho.winner -%}
-                        {%- when Some with (winner) %}{{winner.name}} 🏆
-                        {%- when None -%}
-                        {%- endmatch -%}
+                        {% for winner in basho.winners -%}
+                            {{winner.name}} 🏆
+                            {%- if loop.first && !loop.last %}, {% endif %}
+                        {%- endfor %}
                     </td>
                 </tr>
             {%- endfor %}
