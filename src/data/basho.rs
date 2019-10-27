@@ -84,7 +84,8 @@ impl BashoInfo {
         Ok(db.prepare("
                 SELECT
                     p.id, p.name, p.join_date, p.admin_level,
-                    d.user_id, d.username, d.avatar, d.discriminator
+                    d.user_id, d.username, d.avatar, d.discriminator,
+                    1 AS has_emperors_cup
                 FROM award AS a
                 JOIN player AS p ON p.id = a.player_id
                 LEFT JOIN player_discord AS d ON d.player_id = p.id
@@ -101,7 +102,8 @@ impl BashoInfo {
                 SELECT
                     a.basho_id,
                     p.id, p.name, p.join_date, p.admin_level,
-                    d.user_id, d.username, d.avatar, d.discriminator
+                    d.user_id, d.username, d.avatar, d.discriminator,
+                    1 AS has_emperors_cup
                 FROM award AS a
                 JOIN player AS p ON p.id = a.player_id
                 LEFT JOIN player_discord AS d ON d.player_id = p.id

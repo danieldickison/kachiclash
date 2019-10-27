@@ -45,7 +45,7 @@
                     <td>{{basho.player_count}}</td>
                     <td>
                         {% for winner in basho.winners -%}
-                            {{winner.name}} 🏆
+                            {{winner.name}}
                             {%- if loop.first && !loop.last %}, {% endif %}
                         {%- endfor %}
                     </td>
@@ -60,7 +60,7 @@
         <li class="leaderboard__item">
             <img src="{{player.tiny_thumb()}}">
             {{player.name}}
-            joined {{player.join_date}}
+            joined {{player.join_date.format("%Y-%m-%d")}}
         </li>
     {% endfor %}
     </ol>

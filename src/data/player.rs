@@ -1,9 +1,9 @@
-use rusqlite::{NO_PARAMS, Row, Connection, OptionalExtension};
+use rusqlite::{Row, Connection, OptionalExtension};
 use chrono::{DateTime, Utc};
 use failure::Error;
 
 use crate::external::discord;
-
+use super::{Award};
 
 pub type PlayerId = i64;
 
@@ -18,9 +18,15 @@ pub struct Player {
 
 impl Player {
     pub fn from_row(row: &Row) -> Result<Self, rusqlite::Error> {
+        let mut name: String = row.get("name")?;
+        let has_emperors_cup: bool = row.get("has_emperors_cup")?;
+        if has_emperors_cup {
+            name.push_str(" ");
+            name.push_str(Award::EmperorsCup.emoji());
+        }
         Ok(Player {
             id: row.get("id")?,
-            name: row.get("name")?,
+            name: name,
             join_date: row.get("join_date")?,
             admin_level: row.get("admin_level")?,
             discord_info: match row.get("user_id")? {
@@ -51,11 +57,17 @@ pub fn player_info(db: &Connection, player_id: PlayerId) -> Result<Option<Player
     db.query_row("
             SELECT
                 p.id, p.name, p.join_date, p.admin_level,
-                d.user_id, d.username, d.avatar, d.discriminator
+                d.user_id, d.username, d.avatar, d.discriminator,
+                COALESCE((
+                    SELECT 1
+                    FROM award AS a
+                    WHERE a.player_id = p.id AND type = ?
+                    LIMIT 1
+                ), 0) AS has_emperors_cup
             FROM player AS p
             LEFT JOIN player_discord AS d ON d.player_id = p.id
             WHERE p.id = ?
-        ", params![player_id], |row| Player::from_row(row))
+        ", params![Award::EmperorsCup, player_id], |row| Player::from_row(row))
         .optional()
         .map_err(|e| e.into())
 }
@@ -64,11 +76,17 @@ pub fn list_players(db: &Connection) -> Vec<Player> {
     db.prepare("
             SELECT
                 p.id, p.name, p.join_date, p.admin_level,
-                d.user_id, d.username, d.avatar, d.discriminator
+                d.user_id, d.username, d.avatar, d.discriminator,
+                COALESCE((
+                    SELECT 1
+                    FROM award AS a
+                    WHERE a.player_id = p.id AND type = ?
+                    LIMIT 1
+                ), 0) AS has_emperors_cup
             FROM player AS p
             LEFT JOIN player_discord AS d ON d.player_id = p.id
         ").unwrap()
-        .query_map(NO_PARAMS, |row| Player::from_row(row))
+        .query_map(params![Award::EmperorsCup], |row| Player::from_row(row))
         .and_then(|mapped_rows| {
             Ok(mapped_rows.map(|r| r.unwrap()).collect::<Vec<Player>>())
         }).unwrap()
