@@ -2,6 +2,13 @@
     #leaderboard {
         background: #e8faff;
         padding: var(--section-padding);
+
+        table {
+            th, td {
+                min-width: 1rem;
+                text-align: right;
+            }
+        }
     }
     
     #banzuke {

@@ -6,7 +6,7 @@ use super::{Award, DataError};
 
 pub type PlayerId = i64;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Player {
     pub id: PlayerId,
     pub name: String,

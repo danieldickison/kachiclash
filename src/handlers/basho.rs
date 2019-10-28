@@ -5,7 +5,7 @@ use itertools::Itertools;
 use rusqlite::{Connection, Result as SqlResult};
 
 use super::{BaseTemplate, Result, HandlerError, AskamaResponder};
-use crate::data::{self, Rank, RankSide, RankGroup, BashoId, BashoInfo, PlayerId, RikishiId, Day};
+use crate::data::{self, Rank, RankSide, RankGroup, BashoId, BashoInfo, PlayerId, RikishiId, Day, Player};
 use crate::AppState;
 
 use actix_web::{web, HttpResponse, Responder};
@@ -50,8 +50,7 @@ struct BashoTemplate {
 }
 
 struct BashoPlayerResults {
-    id: PlayerId,
-    name: String,
+    player: Player,
     total: i8,
     days: [Option<i8>; 15],
 }
@@ -138,8 +137,8 @@ fn fetch_leaders(db: &Connection, basho_id: BashoId) -> Result<Vec<BashoPlayerRe
     debug!("fetching leaders for basho {}", basho_id);
     Ok(db.prepare("
             SELECT
-                player.id,
-                player.name,
+                player.id, player.name, player.admin_level, player.join_date,
+                discord.user_id, discord.username, discord.avatar, discord.discriminator,
                 torikumi.day,
                 SUM(torikumi.win) AS wins,
                 COALESCE((
@@ -149,6 +148,7 @@ fn fetch_leaders(db: &Connection, basho_id: BashoId) -> Result<Vec<BashoPlayerRe
                     LIMIT 1
                 ), 0) AS has_emperors_cup
             FROM player
+            LEFT JOIN player_discord AS discord ON discord.player_id = player.id
             JOIN pick ON pick.player_id = player.id AND pick.basho_id = :basho_id
             LEFT JOIN torikumi ON torikumi.rikishi_id = pick.rikishi_id AND torikumi.basho_id = pick.basho_id
             WHERE player.id IN (
@@ -168,35 +168,30 @@ fn fetch_leaders(db: &Connection, basho_id: BashoId) -> Result<Vec<BashoPlayerRe
                 ":basho_id": basho_id,
                 ":award_type": data::Award::EmperorsCup,
             },
-            |row| -> SqlResult<(PlayerId, String, Option<u8>, Option<i8>, bool)> {
+            |row| -> SqlResult<(Player, Option<u8>, Option<i8>)> {
                 Ok((
-                    row.get("id")?,
-                    row.get("name")?,
+                    Player::from_row(row)?,
                     row.get("day")?,
                     row.get("wins")?,
-                    row.get("has_emperors_cup")?,
                 ))
             }
         )?
-        .collect::<SqlResult<Vec<(PlayerId, String, Option<u8>, Option<i8>, bool)>>>()?
+        .collect::<SqlResult<Vec<(Player, Option<u8>, Option<i8>)>>>()?
         .into_iter()
-        .group_by(|row| row.0)
+        .group_by(|row| {
+            let player = &row.0;
+            player.id
+        })
         .into_iter()
         .map(|(_player_id, rows)| {
             let mut rows = rows.peekable();
             let arow = rows.peek().unwrap();
-            let mut name = arow.1.to_string();
-            if arow.4 {
-                name.push_str(" ");
-                name.push_str(data::Award::EmperorsCup.emoji());
-            }
             let mut results = BashoPlayerResults {
-                id: arow.0,
-                name,
+                player: arow.0.clone(),
                 total: 0,
                 days: [None; 15]
             };
-            for (_, _, day, wins, _) in rows {
+            for (_, day, wins) in rows {
                 if let Some(day) = day {
                     results.days[day as usize - 1] = wins;
                     results.total += wins.unwrap_or(0);

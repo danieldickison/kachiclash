@@ -51,7 +51,7 @@ pub fn exchange_code(config: &Config, auth_code: AuthorizationCode) -> Result<Ba
         .map_err(|e| e.into())
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct UserInfo {
     pub id: String,
     pub username: String,
