@@ -1,12 +1,12 @@
 #p-basho {
     #leaderboard {
         background: #e8faff;
-        padding: 10px;
+        padding: var(--section-padding);
     }
     
     #banzuke {
         background: #fff8e8;
-        padding: 10px;
+        padding: var(--section-padding);
 
         table {
             border-collapse: collapse;

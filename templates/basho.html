@@ -12,9 +12,6 @@
 
 {% block main %}
 
-    <div id="g-hero"></div>
-    {% include "rules.html" %}
-
     <h2>{{basho.id}} — {{basho.venue}}</h2>
 
     {% if base.is_admin() %}
@@ -26,6 +23,9 @@
             </ul>
         </section>
     {% endif %}
+
+    <div id="g-hero"></div>
+    {% include "rules.html" %}
 
     {% if basho.has_started() %}
         <section id="leaderboard">

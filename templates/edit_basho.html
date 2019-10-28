@@ -23,7 +23,7 @@
         </label>
         <label>
             Start date:
-            <span class="footnote">This is the precise time when entries will be closed, in JST.</span>
+            <span class="footnote">This is the precise time when entries will be closed, in JST. (yyyy-mm-dd hh:mm)</span>
             <input name="start_date" type="datetime-local" placeholder="yyyy-mm-dd hh:mm"
                 {%- match basho -%}
                 {%- when Some with (b) -%} value="{{b.start_date.format("%Y-%m-%d %H:%M")}}"

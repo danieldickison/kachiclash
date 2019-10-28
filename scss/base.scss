@@ -1,10 +1,13 @@
 :root {
     --color-navy: #345F88;
     --color-mauve: #560030;
-    --color-light-fg: #eee;
+    --color-light-fg: #f3f3f3;
     --color-dark-fg: #333;
     --color-gray-bg: #f2f2f2;
+    --color-light-bg: white;
     --color-border: rgba(0, 0, 0, 0.125);
+
+    --section-padding: 1rem;
 }
 
 * {
@@ -27,11 +30,11 @@ body {
 
 a {
     text-decoration: none;
-    color: #345F88;
+    color: --var(color-navy);
     font-weight: 500;
 
     &:visited {
-        color: #345F88;
+        color: --var(color-navy);
     }
 
     &:hover {
@@ -39,11 +42,17 @@ a {
     }
 }
 
+section {
+    border: solid 1px var(--color-border);
+    padding: var(--section-padding);
+    background: var(--color-light-bg);
+}
+
 #g-header {
     width: 100%;
     margin: 0;
     padding: 10px;
-    background: var(--color-gray-bg);
+    background: var(--color-light-bg);
     border-bottom: solid 1px var(--color-border);
     z-index: 1;
     
@@ -63,13 +72,9 @@ a {
 }
 
 body > main {
-    width: 970px;
+    width: 950px;
     flex-grow: 1;
     margin: 0 auto;
-    padding: 10px;
-    background: white;
-    border-left: solid 1px var(--color-border);
-    border-right: solid 1px var(--color-border);
 }
 
 #g-hero {
