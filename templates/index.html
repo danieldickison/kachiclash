@@ -18,7 +18,12 @@
 
     {% match basho_list.first() %}
         {% when Some with (basho) %}
-            {% if !basho.has_started() %}
+            {% if basho.has_started() %}
+                <section id="next-basho">
+                    <h2>The Current Basho is {{basho.id}}</h2>
+                    <a href="{{basho.id.url_path()}}">Click here to view results</a>
+                </section>
+            {% else %}
                 {% include "rules.html" %}
                 <section id="next-basho">
                     <h2>The Next Basho is {{basho.id}}</h2>
