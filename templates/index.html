@@ -17,23 +17,23 @@
     {% endif %}
 
     {% match basho_list.first() %}
-        {% when Some with (basho) %}
-            {% if basho.has_started() %}
-                <section id="next-basho">
-                    <h2>The Current Basho is {{basho.id}}</h2>
-                    <a href="{{basho.id.url_path()}}">Click here to view results</a>
-                </section>
-            {% else %}
-                {% include "rules.html" %}
-                <section id="next-basho">
-                    <h2>The Next Basho is {{basho.id}}</h2>
-                    <p id="basho-count-down" data-start-date="{{basho.start_date.timestamp_millis()}}">
-                        Time remaining: <span id="basho-count-down-time"></span>
-                    </p>
-                    <a href="{{basho.id.url_path()}}">Click here to enter!</a>
-                </section>
-            {% endif %}
-        {% when None %}
+    {% when Some with (basho) %}
+        {% if basho.has_started() %}
+            <section id="next-basho">
+                <h2>The Current Basho is {{basho.id}}</h2>
+                <a href="{{basho.id.url_path()}}">Click here to view results</a>
+            </section>
+        {% else %}
+            {% include "rules.html" %}
+            <section id="next-basho">
+                <h2>The Next Basho is {{basho.id}}</h2>
+                <p id="basho-count-down" data-start-date="{{basho.start_date.timestamp_millis()}}">
+                    Time remaining: <span id="basho-count-down-time"></span>
+                </p>
+                <a href="{{basho.id.url_path()}}">Click here to enter!</a>
+            </section>
+        {% endif %}
+    {% when None %}
     {% endmatch %}
 
     <h2>Previous Emperor's Cup Winners</h2>

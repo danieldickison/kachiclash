@@ -45,8 +45,8 @@
                         {%- for wins in player.days -%}
                             <td>
                             {%- match wins -%}
-                                {%- when Some with (num) %}{{num}}
-                                {%- when None %}-
+                            {%- when Some with (num) %}{{num}}
+                            {%- when None %}-
                             {%- endmatch -%}
                             </td>
                         {% endfor -%}

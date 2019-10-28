@@ -17,8 +17,8 @@
             <span class="footnote">Copy and paste the "text-only" torikumi results from <a href="http://sumodb.sumogames.de/Results_text.aspx?b=201907&d=1">sumodb.sumogames.de</a></span>
             <textarea name="torikumi">
                 {%- match sumo_db_text -%}
-                    {%- when Some with (str) -%}{{str}}
-                    {%- when None -%}
+                {%- when Some with (str) -%}{{str}}
+                {%- when None -%}
                 {%- endmatch -%}
             </textarea>
         </label>
