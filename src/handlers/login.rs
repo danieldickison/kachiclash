@@ -67,10 +67,10 @@ pub fn discord_redirect(query: web::Query<OAuthRedirectQuery>, state: web::Data<
                     warn!("error getting logged in user info from discord: {:?}", e);
                     HandlerError::ExternalServiceError
                 })?;
-            let player_id = player::player_for_discord_user(&mut db, user_info)
+            let player_id = player::player_id_with_discord_user(&mut db, user_info)
                 .map_err(|err| {
                     warn!("error creating player for discord login: {:?}", err);
-                    HandlerError::DatabaseError
+                    HandlerError::DatabaseError(err.into())
                 })?;
 
             id.remember(player_id.to_string());

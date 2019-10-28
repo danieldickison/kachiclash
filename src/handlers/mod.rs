@@ -1,6 +1,6 @@
 extern crate askama;
 
-use crate::data;
+use crate::data::{Player, DataError};
 
 use actix_web::{error, HttpResponse};
 use actix_identity::Identity;
@@ -23,16 +23,16 @@ impl error::ResponseError for HandlerError {
             HandlerError::NotFound(thing) => HttpResponse::NotFound()
                 .content_type("text/plain")
                 .body(format!("{} not found", thing)),
-            HandlerError::ExternalServiceError => HttpResponse::InternalServerError()
+            HandlerError::ExternalServiceError =>
+                HttpResponse::InternalServerError()
                 .content_type("text/plain")
                 .body(format!("{}", self)),
-            HandlerError::DatabaseError => HttpResponse::InternalServerError()
+            HandlerError::DatabaseError(_) =>
+                HttpResponse::InternalServerError()
                 .content_type("text/plain")
                 .body(format!("{}", self)),
-            HandlerError::CSRFError => HttpResponse::Forbidden()
-                .content_type("text/plain")
-                .body(format!("{}", self)),
-            HandlerError::MustBeLoggedIn => HttpResponse::Forbidden()
+            HandlerError::CSRFError | HandlerError::MustBeLoggedIn =>
+                HttpResponse::Forbidden()
                 .content_type("text/plain")
                 .body(format!("{}", self)),
         }
@@ -50,22 +50,22 @@ pub enum HandlerError {
     #[fail(display = "External Service Error")]
     ExternalServiceError,
 
-    #[fail(display = "Database Error")]
-    DatabaseError,
+    #[fail(display = "Database Error: {}", _0)]
+    DatabaseError(DataError),
 
     #[fail(display = "CSRF Error")]
     CSRFError,
 }
 
 struct BaseTemplate {
-    player: Option<data::player::Player>,
+    player: Option<Player>,
 }
 
 impl BaseTemplate {
     fn new(db: &Connection, identity: &Identity) -> Result<Self> {
         let player = match identity.identity() {
             Some(id) => {
-                let player = data::player::player_info(&db, id.parse()?)?;
+                let player = Player::with_id(&db, id.parse()?)?;
                 if player.is_none() {
                     error!("identity player id {} not found; forcing log out", id);
                     identity.forget();

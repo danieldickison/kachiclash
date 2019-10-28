@@ -1,9 +1,8 @@
 use rusqlite::{Row, Connection, OptionalExtension};
 use chrono::{DateTime, Utc};
-use failure::Error;
 
 use crate::external::discord;
-use super::{Award};
+use super::{Award, DataError};
 
 pub type PlayerId = i64;
 
@@ -17,6 +16,46 @@ pub struct Player {
 }
 
 impl Player {
+    pub fn with_id(db: &Connection, player_id: PlayerId) -> Result<Option<Self>, DataError> {
+        db.query_row("
+                SELECT
+                    p.id, p.name, p.join_date, p.admin_level,
+                    d.user_id, d.username, d.avatar, d.discriminator,
+                    COALESCE((
+                        SELECT 1
+                        FROM award AS a
+                        WHERE a.player_id = p.id AND type = ?
+                        LIMIT 1
+                    ), 0) AS has_emperors_cup
+                FROM player AS p
+                LEFT JOIN player_discord AS d ON d.player_id = p.id
+                WHERE p.id = ?
+            ", params![Award::EmperorsCup, player_id], |row| Player::from_row(row))
+            .optional()
+            .map_err(|e| e.into())
+    }
+
+    pub fn list_all(db: &Connection) -> Result<Vec<Self>, DataError> {
+        db.prepare("
+                SELECT
+                    p.id, p.name, p.join_date, p.admin_level,
+                    d.user_id, d.username, d.avatar, d.discriminator,
+                    COALESCE((
+                        SELECT 1
+                        FROM award AS a
+                        WHERE a.player_id = p.id AND type = ?
+                        LIMIT 1
+                    ), 0) AS has_emperors_cup
+                FROM player AS p
+                LEFT JOIN player_discord AS d ON d.player_id = p.id
+            ").unwrap()
+            .query_map(params![Award::EmperorsCup], |row| Player::from_row(row))
+            .and_then(|mapped_rows| {
+                Ok(mapped_rows.map(|r| r.unwrap()).collect::<Vec<Player>>())
+            })
+            .map_err(|e| e.into())
+    }
+
     pub fn from_row(row: &Row) -> Result<Self, rusqlite::Error> {
         let mut name: String = row.get("name")?;
         let has_emperors_cup: bool = row.get("has_emperors_cup")?;
@@ -53,46 +92,7 @@ impl Player {
     }
 }
 
-pub fn player_info(db: &Connection, player_id: PlayerId) -> Result<Option<Player>, Error> {
-    db.query_row("
-            SELECT
-                p.id, p.name, p.join_date, p.admin_level,
-                d.user_id, d.username, d.avatar, d.discriminator,
-                COALESCE((
-                    SELECT 1
-                    FROM award AS a
-                    WHERE a.player_id = p.id AND type = ?
-                    LIMIT 1
-                ), 0) AS has_emperors_cup
-            FROM player AS p
-            LEFT JOIN player_discord AS d ON d.player_id = p.id
-            WHERE p.id = ?
-        ", params![Award::EmperorsCup, player_id], |row| Player::from_row(row))
-        .optional()
-        .map_err(|e| e.into())
-}
-
-pub fn list_players(db: &Connection) -> Vec<Player> {
-    db.prepare("
-            SELECT
-                p.id, p.name, p.join_date, p.admin_level,
-                d.user_id, d.username, d.avatar, d.discriminator,
-                COALESCE((
-                    SELECT 1
-                    FROM award AS a
-                    WHERE a.player_id = p.id AND type = ?
-                    LIMIT 1
-                ), 0) AS has_emperors_cup
-            FROM player AS p
-            LEFT JOIN player_discord AS d ON d.player_id = p.id
-        ").unwrap()
-        .query_map(params![Award::EmperorsCup], |row| Player::from_row(row))
-        .and_then(|mapped_rows| {
-            Ok(mapped_rows.map(|r| r.unwrap()).collect::<Vec<Player>>())
-        }).unwrap()
-}
-
-pub fn player_for_discord_user(db: &mut Connection, user_info: discord::UserInfo) -> Result<PlayerId, rusqlite::Error> {
+pub fn player_id_with_discord_user(db: &mut Connection, user_info: discord::UserInfo) -> Result<PlayerId, rusqlite::Error> {
     let txn = db.transaction()?;
     let now = Utc::now();
     let existing_row = txn
@@ -107,10 +107,10 @@ pub fn player_for_discord_user(db: &mut Connection, user_info: discord::UserInfo
     match existing_row {
         None => {
             txn.execute("INSERT INTO player (join_date, name) VALUES (?, ?)",
-                params![now, user_info.username]).unwrap();
+                        params![now, user_info.username]).unwrap();
             let player_id = txn.last_insert_rowid();
             txn.execute("INSERT INTO player_discord (player_id, user_id, username, avatar, discriminator, mod_date) VALUES (?, ?, ?, ?, ?, ?)",
-                params![player_id, user_info.id, user_info.username, user_info.avatar, user_info.discriminator, now]).unwrap();
+                        params![player_id, user_info.id, user_info.username, user_info.avatar, user_info.discriminator, now]).unwrap();
             txn.commit()?;
             Ok(player_id)
         },
@@ -121,7 +121,7 @@ pub fn player_for_discord_user(db: &mut Connection, user_info: discord::UserInfo
                         SET username = ?, mod_date = ?
                         WHERE user_id = ?
                     ",
-                    params![user_info.username, now, user_info.id])?;
+                            params![user_info.username, now, user_info.id])?;
             }
             txn.commit()?;
             Ok(player_id)
