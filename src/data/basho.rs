@@ -41,7 +41,7 @@ impl BashoInfo {
                                  start_date: row.get("start_date")?,
                                  venue: row.get("venue")?,
                                  player_count: row.get("player_count")?,
-                                 winners: BashoInfo::fetch_winners(&db, id)?,
+                                 winners: BashoInfo::fetch_basho_winners(&db, id)?,
                              }))
                          }
                      })
@@ -80,7 +80,7 @@ impl BashoInfo {
         self.start_date < Utc::now()
     }
 
-    fn fetch_winners(db: &Connection, basho_id: BashoId) -> SqlResult<Vec<Player>> {
+    fn fetch_basho_winners(db: &Connection, basho_id: BashoId) -> SqlResult<Vec<Player>> {
         Ok(db.prepare("
                 SELECT
                     p.id, p.name, p.join_date, p.admin_level,
