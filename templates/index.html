@@ -40,16 +40,18 @@
         </thead>
         <tbody>
             {% for basho in basho_list -%}
-                <tr>
-                    <td><a href="{{basho.id.url_path()}}">{{basho.id}}</a></td>
-                    <td>{{basho.player_count}}</td>
-                    <td>
-                        {% for winner in basho.winners -%}
-                            {{winner.name}}
-                            {%- if loop.first && !loop.last %}, {% endif %}
-                        {%- endfor %}
-                    </td>
-                </tr>
+                {% if !basho.winners.is_empty() %}
+                    <tr>
+                        <td><a href="{{basho.id.url_path()}}">{{basho.id}}</a></td>
+                        <td>{{basho.player_count}}</td>
+                        <td>
+                            {% for winner in basho.winners -%}
+                                {{winner.name}}
+                                {%- if loop.first && !loop.last %}, {% endif %}
+                            {%- endfor %}
+                        </td>
+                    </tr>
+                    {% endif %}
             {%- endfor %}
         </tbody>
     </table>
