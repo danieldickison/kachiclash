@@ -90,6 +90,10 @@ impl Player {
             None => "/static/default_avatar.png".to_string(),
         }
     }
+
+    pub fn url_path(&self) -> String {
+        format!("/player/{}", self.id)
+    }
 }
 
 pub fn player_id_with_discord_user(db: &mut Connection, user_info: discord::UserInfo) -> Result<PlayerId, rusqlite::Error> {

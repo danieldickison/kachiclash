@@ -10,7 +10,8 @@
         <div class="player-menu">
             {% match base.player %}
             {%- when Some with (player) -%}
-                {{player.name}} |
+                {% include "player_listing.html" %}
+                |
                 <a href="/logout">log out</a>
 
             {%- when None -%}

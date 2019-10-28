@@ -34,37 +34,38 @@
     {% when None %}
     {% endmatch %}
 
-    <h2>Previous Emperor's Cup Winners</h2>
-    <table class="basho-list">
-        <thead>
-            <th>Basho</th>
-            <th>Players</th>
-            <th>Winner</th>
-        </thead>
-        <tbody>
-            {% for basho in basho_list -%}
-                {% if !basho.winners.is_empty() %}
-                    <tr>
-                        <td><a href="{{basho.id.url_path()}}">{{basho.id}}</a></td>
-                        <td>{{basho.player_count}}</td>
-                        <td>
-                            {% for winner in basho.winners -%}
-                                {{winner.name}}
-                                {%- if loop.first && !loop.last %}, {% endif %}
-                            {%- endfor %}
-                        </td>
-                    </tr>
-                    {% endif %}
-            {%- endfor %}
-        </tbody>
-    </table>
+    <section id="prev-winners">
+        <h2>Previous Emperor's Cup Winners</h2>
+        <table class="basho-list">
+            <thead>
+                <th>Basho</th>
+                <th>Players</th>
+                <th>Winner</th>
+            </thead>
+            <tbody>
+                {% for basho in basho_list -%}
+                    {% if !basho.winners.is_empty() %}
+                        <tr>
+                            <td><a href="{{basho.id.url_path()}}">{{basho.id}}</a></td>
+                            <td>{{basho.player_count}}</td>
+                            <td>
+                                {% for player in basho.winners -%}
+                                    {% include "player_listing.html" %}
+                                    {%- if loop.first && !loop.last %}, {% endif %}
+                                {%- endfor %}
+                            </td>
+                        </tr>
+                        {% endif %}
+                {%- endfor %}
+            </tbody>
+        </table>
+    </section>
 
     <h2 class="leaderboard-heading">Leaderboard</h2>
     <ol class="leaderboard">
     {% for player in leaders %}
         <li class="leaderboard__item">
-            <img src="{{player.tiny_thumb()}}">
-            {{player.name}}
+            {% include "player_listing.html" %}
             joined {{player.join_date.format("%Y-%m-%d")}}
         </li>
     {% endfor %}
