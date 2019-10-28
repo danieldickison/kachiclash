@@ -1,5 +1,5 @@
 :root {
-    --color-navy: #345F88;
+    --color-navy: #345f88;
     --color-mauve: #560030;
     --color-light-fg: #f3f3f3;
     --color-dark-fg: #333;
@@ -30,11 +30,11 @@ body {
 
 a {
     text-decoration: none;
-    color: --var(color-navy);
+    color: var(--color-navy);
     font-weight: 500;
 
     &:visited {
-        color: --var(color-navy);
+        color: var(--color-navy);
     }
 
     &:hover {
@@ -122,5 +122,6 @@ body > main {
         width: 1.5rem;
         height: 1.5rem;
         vertical-align: middle;
+        border-radius: 0.75rem;
     }
 }
