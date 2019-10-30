@@ -15,6 +15,48 @@
         background: #fff8e8;
         padding: var(--section-padding);
 
+        .save-picks-button,
+        .change-picks-button {
+            font-size: 1.5rem;
+            background: var(--color-navy);
+            color: var(--color-light-fg);
+            border: solid 2px var(--color-border);
+            border-radius: 5px;
+            margin: 1rem 10% 1rem auto;
+
+            &:active {
+                background: var(--color-navy-highlight);
+            }
+        }
+
+        .save-picks-button {
+            display: none;
+        }
+        .change-picks-button {
+            display: block;
+        }
+
+        &.selectable {
+            table .select-radio {
+                display: inline-block;
+            }
+
+            .change-picks-button {
+                display: none;
+            }
+
+            .save-picks-button {
+                display: block;
+            }
+        }
+
+        *.has-started {
+            .change-picks-button,
+            .save-picks-button {
+                display: none;
+            }
+        }
+
         table {
             border-collapse: collapse;
             line-height: 2;
@@ -38,10 +80,7 @@
             .select-radio {
                 vertical-align: middle;
                 margin-right: 5px;
-                
-                &[disabled] {
-                    display: none;
-                }
+                display: none;
             }
 
             .is-player-pick {

@@ -1,11 +1,25 @@
 'use strict';
 
+const banzukeSection = document.getElementById('banzuke');
+
 document.querySelectorAll('.select-radio').forEach(radio => {
     radio.addEventListener('change', event => {
         document.getElementsByName(radio.name).forEach(otherRadio => {
             otherRadio.closest('td').classList.toggle('is-player-pick', otherRadio === radio);
         });
+        //savePicks();
+    });
+});
+
+document.querySelectorAll('.save-picks-button').forEach(button => {
+    button.addEventListener('click', event => {
         savePicks();
+        banzukeSection.classList.toggle('selectable', false);
+    });
+});
+document.querySelectorAll('.change-picks-button').forEach(button => {
+    button.addEventListener('click', event => {
+        banzukeSection.classList.toggle('selectable', true);
     });
 });
 
@@ -15,12 +29,16 @@ function savePicks() {
     const url = form.action;
     return fetch(url, {
         method: 'POST',
-        //credentials: 'same-origin', // include, *same-origin, omit
         body: data,
     })
     .then(response => {
-        if (!response.ok) {
-            response.text().then(text => alert("error saving your pick: " + text));
+        if (response.ok) {
+            alert("Your picks have been saved!");
+        } else {
+            response.text().then(text => {
+                alert("Error saving your picks: " + text);
+                banzukeSection.classList.toggle('selectable', true);
+            });
         }
     });
 }

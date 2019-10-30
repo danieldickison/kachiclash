@@ -47,6 +47,7 @@ struct BashoTemplate {
     leaders: Vec<BashoPlayerResults>,
     rikishi_by_rank: Vec<BashoRikishiByRank>,
     next_day: u8,
+    initially_selectable: bool,
 }
 
 struct BashoPlayerResults {
@@ -96,17 +97,19 @@ pub fn basho(path: web::Path<BashoId>, state: web::Data<AppState>, identity: Ide
     let base = BaseTemplate::new(&db, &identity)?;
     let player_id = base.player.as_ref().map(|p| p.id);
     let picks = fetch_player_picks(&db, player_id, basho_id)?;
-    let rikishi = fetch_rikishi(&db, basho_id, picks)?;
+    let rikishi = fetch_rikishi(&db, basho_id, &picks)?;
+    let basho = BashoInfo::with_id(&db, basho_id)?
+            .ok_or_else(|| HandlerError::NotFound("basho".to_string()))?;
     let s = BashoTemplate {
-        basho: BashoInfo::with_id(&db, basho_id)?
-            .ok_or_else(|| HandlerError::NotFound("basho".to_string()))?,
-        base,
         leaders: fetch_leaders(&db, basho_id)?,
         next_day: rikishi.iter()
             .map(|rr| rr.next_day())
             .max()
             .unwrap_or(1),
         rikishi_by_rank: rikishi,
+        initially_selectable: !basho.has_started() && base.player.is_some() && picks.len() < RankGroup::count(),
+        basho,
+        base,
     }.render()?;
     Ok(HttpResponse::Ok().body(s))
 }
@@ -206,7 +209,7 @@ fn fetch_leaders(db: &Connection, basho_id: BashoId) -> Result<Vec<BashoPlayerRe
 
 struct FetchedRikishiRow(Rank, RikishiId, String, Option<Day>, Option<bool>);
 
-fn fetch_rikishi(db: &Connection, basho_id: BashoId, picks: HashSet<RikishiId>) -> Result<Vec<BashoRikishiByRank>> {
+fn fetch_rikishi(db: &Connection, basho_id: BashoId, picks: &HashSet<RikishiId>) -> Result<Vec<BashoRikishiByRank>> {
     debug!("fetching rikishi results for basho {}", basho_id);
     Ok(db.prepare("
             SELECT

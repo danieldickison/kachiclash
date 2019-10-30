@@ -80,13 +80,16 @@
     {% endif %}
 
     <section id="banzuke"
-        {% if !basho.has_started() && base.player.is_some() %}class="selectable"{% endif %}
+        class="
+            {% if basho.has_started() %} has-started {% endif %}
+            {% if initially_selectable %} selectable {% endif %}
+        "
     >
         <h2>Banzuke</h2>
 
         {% if !basho.has_started() -%}
             {%- if base.player.is_some() -%}
-                <p>Select one rikishi from each group below. Changes are saved automatically!</p>
+                <p>Select one rikishi from each group below, then click the Save Picks button. You can change your picks until the basho starts.</p>
             {%- else -%}
                 <p><a href="/login">Log in or sign up</a> to play!</p>
             {%- endif -%}
@@ -95,6 +98,9 @@
                 Time remaining: <span id="basho-count-down-time"></span>
             </p>
         {%- endif %}
+
+        <button class="save-picks-button">Save Picks</button>
+        <button class="change-picks-button">Change Picks</button>
         
         <form id="banzuke-select-rikishi-form" action="{{basho.id.url_path()}}/picks">
             <table>
@@ -114,6 +120,9 @@
                 </tbody>
             </table>
         </form>
+
+        <button class="save-picks-button">Save Picks</button>
+        <button class="change-picks-button">Change Picks</button>
     </section>
 {% endblock %}
 

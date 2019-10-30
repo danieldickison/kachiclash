@@ -122,6 +122,10 @@ impl RankGroup {
             RankName::Juryo => Self(6),
         }
     }
+
+    pub fn count() -> usize {
+        5
+    }
 }
 
 impl Deref for RankGroup {

@@ -1,5 +1,6 @@
 :root {
     --color-navy: #345f88;
+    --color-navy-highlight: #5283a9;
     --color-mauve: #560030;
     --color-light-fg: #f3f3f3;
     --color-dark-fg: #333;
@@ -40,6 +41,10 @@ a {
     &:hover {
         text-decoration: underline;
     }
+}
+
+button {
+    cursor: pointer;
 }
 
 section {
