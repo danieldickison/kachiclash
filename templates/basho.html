@@ -143,13 +143,15 @@
             </label>
         </td>
         <td class="hoshi {% if rikishi.is_player_pick && basho.has_started() -%} is-player-pick {%- endif %}">
-        {%- for day in rikishi.results -%}
-            {%- match day -%}
-                {%- when Some with (true) -%}⚪️
-                {%- when Some with (false) -%}⚫️
-                {%- when None -%}—
-            {%- endmatch -%}
-        {%- endfor -%}
+            {% if basho.has_started() %}
+                {%- for day in rikishi.results -%}
+                    {%- match day -%}
+                        {%- when Some with (true) -%}⚪️
+                        {%- when Some with (false) -%}⚫️
+                        {%- when None -%}—
+                    {%- endmatch -%}
+                {%- endfor -%}
+            {% endif %}
         </td>
     {%- when None -%}
         <td></td>
