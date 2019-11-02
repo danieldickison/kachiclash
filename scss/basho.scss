@@ -4,9 +4,22 @@
         padding: var(--section-padding);
 
         table {
+            border-collapse: collapse;
+            margin: 0 auto;
+
+            th {
+                font-weight: bold;
+                color: var(--color-gray-fg);
+            }
+
             th, td {
                 min-width: 1rem;
-                text-align: right;
+                text-align: center;
+            }
+
+            td.pick {
+                font-size: 0.875rem;
+                padding: 0 0.125rem;
             }
         }
     }

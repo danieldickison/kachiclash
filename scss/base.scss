@@ -4,6 +4,7 @@
     --color-mauve: #560030;
     --color-light-fg: #f3f3f3;
     --color-dark-fg: #333;
+    --color-gray-fg: #666;
     --color-gray-bg: #f2f2f2;
     --color-light-bg: white;
     --color-border: rgba(0, 0, 0, 0.125);
@@ -123,6 +124,8 @@ body > main {
 }
 
 .g-player-listing {
+    white-space: nowrap;
+
     img {
         width: 1.5rem;
         height: 1.5rem;

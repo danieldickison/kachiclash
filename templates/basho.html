@@ -24,7 +24,7 @@
         </section>
     {% endif %}
 
-    <div id="g-hero"></div>
+    <a id="g-hero" href="/"></a>
     {% include "rules.html" %}
 
     <section id="leaderboard">
@@ -51,13 +51,13 @@
                 <tr>
                     <td>{% include "player_listing.html" %}</td>
                     {% for rikishi in leader.picks %}
-                        <td>
+                        <td class="pick">
                         {%- match rikishi -%}
                         {%- when Some with (r) %}{{r.name}}
                         {%- when None -%}
                         {%- endmatch -%}
                         </td>
-                        
+
                     {% endfor %}
                     {% for wins in leader.days -%}
                         <td>
@@ -71,10 +71,10 @@
                     {% if base.is_admin() %}
                         <td>
                             <button class="bestow-emperors-cup-button" data-player-id="{{player.id}}">
-                                Bestow 🏆
+                                🏆
                             </button>
                             <button class="revoke-emperors-cup-button" data-player-id="{{player.id}}">
-                                Revoke <s>🏆</s>
+                                <s>🏆</s>
                             </button>
                         </td>
                     {% endif %}

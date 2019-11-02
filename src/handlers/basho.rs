@@ -166,7 +166,7 @@ fn fetch_leaders<'a>(db: &Connection, basho_id: BashoId, rikishi: &'a HashMap<Ri
                 WHERE pick.basho_id = :basho_id
                 GROUP BY pick.player_id
                 ORDER BY SUM(torikumi.win) DESC
-                LIMIT 10
+                LIMIT 100
             )
             GROUP BY player.id, torikumi.day
             ORDER BY player.id, torikumi.day
