@@ -1,5 +1,5 @@
 extern crate itertools;
-use std::collections::HashSet;
+use std::collections::{HashSet, HashMap};
 use actix_identity::Identity;
 use itertools::Itertools;
 use rusqlite::{Connection, Result as SqlResult};
@@ -41,21 +41,23 @@ pub fn basho_list(state: web::Data<AppState>, identity: Identity) -> Result<Aska
 
 #[derive(Template)]
 #[template(path = "basho.html")]
-struct BashoTemplate {
+struct BashoTemplate<'a> {
     base: BaseTemplate,
     basho: BashoInfo,
-    leaders: Vec<BashoPlayerResults>,
+    leaders: Vec<BashoPlayerResults<'a>>,
     rikishi_by_rank: Vec<BashoRikishiByRank>,
     next_day: u8,
     initially_selectable: bool,
 }
 
-struct BashoPlayerResults {
+struct BashoPlayerResults<'a> {
     player: Player,
     total: i8,
     days: [Option<i8>; 15],
+    picks: [Option<&'a BashoRikishi>; 5],
 }
 
+#[derive(Clone)]
 struct BashoRikishi {
     id: RikishiId,
     name: String,
@@ -101,12 +103,12 @@ pub fn basho(path: web::Path<BashoId>, state: web::Data<AppState>, identity: Ide
     let basho = BashoInfo::with_id(&db, basho_id)?
             .ok_or_else(|| HandlerError::NotFound("basho".to_string()))?;
     let s = BashoTemplate {
-        leaders: fetch_leaders(&db, basho_id)?,
-        next_day: rikishi.iter()
+        leaders: fetch_leaders(&db, basho_id, &rikishi.by_id)?,
+        next_day: rikishi.by_rank.iter()
             .map(|rr| rr.next_day())
             .max()
             .unwrap_or(1),
-        rikishi_by_rank: rikishi,
+        rikishi_by_rank: rikishi.by_rank,
         initially_selectable: !basho.has_started() && base.player.is_some() && picks.len() < RankGroup::count(),
         basho,
         base,
@@ -136,13 +138,16 @@ fn fetch_player_picks(db: &Connection, player_id: Option<PlayerId>, basho_id: Ba
     Ok(set)
 }
 
-fn fetch_leaders(db: &Connection, basho_id: BashoId) -> Result<Vec<BashoPlayerResults>> {
+fn fetch_leaders<'a>(db: &Connection, basho_id: BashoId, rikishi: &'a HashMap<RikishiId, BashoRikishi>)
+    -> Result<Vec<BashoPlayerResults<'a>>> {
+
     debug!("fetching leaders for basho {}", basho_id);
     Ok(db.prepare("
             SELECT
                 player.id, player.name, player.admin_level, player.join_date,
                 discord.user_id, discord.username, discord.avatar, discord.discriminator,
                 torikumi.day,
+                GROUP_CONCAT(pick.rikishi_id) AS pick_ids,
                 SUM(torikumi.win) AS wins,
                 COALESCE((
                     SELECT 1
@@ -171,15 +176,16 @@ fn fetch_leaders(db: &Connection, basho_id: BashoId) -> Result<Vec<BashoPlayerRe
                 ":basho_id": basho_id,
                 ":award_type": data::Award::EmperorsCup,
             },
-            |row| -> SqlResult<(Player, Option<u8>, Option<i8>)> {
+            |row| -> SqlResult<(Player, String, Option<u8>, Option<i8>)> {
                 Ok((
                     Player::from_row(row)?,
+                    row.get("pick_ids")?,
                     row.get("day")?,
                     row.get("wins")?,
                 ))
             }
         )?
-        .collect::<SqlResult<Vec<(Player, Option<u8>, Option<i8>)>>>()?
+        .collect::<SqlResult<Vec<(Player, String, Option<u8>, Option<i8>)>>>()?
         .into_iter()
         .group_by(|row| {
             let player = &row.0;
@@ -189,12 +195,19 @@ fn fetch_leaders(db: &Connection, basho_id: BashoId) -> Result<Vec<BashoPlayerRe
         .map(|(_player_id, rows)| {
             let mut rows = rows.peekable();
             let arow = rows.peek().unwrap();
+            let mut picks: [Option<&BashoRikishi>; 5] = [None; 5];
+            for rikishi_id in arow.1.split(",").map(|id| id.parse().unwrap()) {
+                if let Some(r) = rikishi.get(&rikishi_id) {
+                    picks[*r.rank.group() as usize - 1] = Some(r);
+                }
+            }
             let mut results = BashoPlayerResults {
                 player: arow.0.clone(),
+                picks,
                 total: 0,
                 days: [None; 15]
             };
-            for (_, day, wins) in rows {
+            for (_, _, day, wins) in rows {
                 if let Some(day) = day {
                     results.days[day as usize - 1] = wins;
                     results.total += wins.unwrap_or(0);
@@ -209,9 +222,16 @@ fn fetch_leaders(db: &Connection, basho_id: BashoId) -> Result<Vec<BashoPlayerRe
 
 struct FetchedRikishiRow(Rank, RikishiId, String, Option<Day>, Option<bool>);
 
-fn fetch_rikishi(db: &Connection, basho_id: BashoId, picks: &HashSet<RikishiId>) -> Result<Vec<BashoRikishiByRank>> {
+struct FetchRikishiResult {
+    by_rank: Vec<BashoRikishiByRank>,
+    by_id: HashMap<RikishiId, BashoRikishi>,
+}
+
+fn fetch_rikishi(db: &Connection, basho_id: BashoId, picks: &HashSet<RikishiId>)
+    -> Result<FetchRikishiResult> {
+
     debug!("fetching rikishi results for basho {}", basho_id);
-    Ok(db.prepare("
+    let vec: Vec<BashoRikishiByRank> = db.prepare("
             SELECT
                 banzuke.rank,
                 banzuke.rikishi_id,
@@ -279,8 +299,21 @@ fn fetch_rikishi(db: &Connection, basho_id: BashoId, picks: &HashSet<RikishiId>)
             }
             out
         })
-        .collect()
-    )
+        .collect();
+    let mut map = HashMap::with_capacity(2 * vec.len());
+    for brr in &vec {
+        if let Some(r) = &brr.east {
+            // TODO: how can I specify lifetimes so the HashMap has references to values owned by the Vec to avoid cloning here?
+            map.insert(r.id, r.clone());
+        }
+        if let Some(r) = &brr.west {
+            map.insert(r.id, r.clone());
+        }
+    }
+    Ok(FetchRikishiResult {
+        by_rank: vec,
+        by_id: map,
+    })
 }
 
 

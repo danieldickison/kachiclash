@@ -27,57 +27,62 @@
     <div id="g-hero"></div>
     {% include "rules.html" %}
 
-    {% if basho.has_started() %}
-        <section id="leaderboard">
-            <h2>Leaderboard</h2>
-            <table>
-                <thead>
-                    <th>Day</th>
+    <section id="leaderboard">
+        <h2>Leaderboard</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th colspan="6"></th>
+                    <th colspan="15">Day</th>
+                </tr>
+                <tr>
+                    <th>Player</th>
+                    <th colspan="5">Picks</th>
                     {% for day in 1..16 -%}
                         <th>{{day}}</th>
                     {% endfor -%}
                     <th>Total</th>
-                </thead>
-                <tbody>
-                {% for leader in leaders -%}
-                    {# TODO: we want to do `let player = &leader.player' but not sure askama provides a way to create a reference like that. Any way to avoid cloning here for passing player into the player_listing.html template? #}
-                    {% let player = leader.player.clone() %}
-                    <tr>
-                        <td>{% include "player_listing.html" %}</td>
-                        {%- for wins in leader.days -%}
-                            <td>
-                            {%- match wins -%}
-                            {%- when Some with (num) %}{{num}}
-                            {%- when None %}-
-                            {%- endmatch -%}
-                            </td>
-                        {% endfor -%}
-                        <td>{{leader.total}}</td>
-                        {% if base.is_admin() %}
-                            <td>
-                                <button class="bestow-emperors-cup-button" data-player-id="{{player.id}}">
-                                    Bestow 🏆
-                                </button>
-                                <button class="revoke-emperors-cup-button" data-player-id="{{player.id}}">
-                                    Revoke <s>🏆</s>
-                                </button>
-                            </td>
-                        {% endif %}
-                    </tr>
-                {%- endfor %}
-                </tbody>
-            </table>
-        </section>
-    {% else %}
-        <p>
-            {{basho.player_count}} entries:
-            {% for leader in leaders %}
+                </tr>
+            </thead>
+            <tbody>
+            {% for leader in leaders -%}
+                {# TODO: we want to do `let player = &leader.player' but not sure askama provides a way to create a reference like that. Any way to avoid cloning here for passing player into the player_listing.html template? #}
                 {% let player = leader.player.clone() %}
-                {% include "player_listing.html" %}
-                {%- if !loop.last -%},{% endif %}
+                <tr>
+                    <td>{% include "player_listing.html" %}</td>
+                    {% for rikishi in leader.picks %}
+                        <td>
+                        {%- match rikishi -%}
+                        {%- when Some with (r) %}{{r.name}}
+                        {%- when None -%}
+                        {%- endmatch -%}
+                        </td>
+                        
+                    {% endfor %}
+                    {% for wins in leader.days -%}
+                        <td>
+                        {%- match wins -%}
+                        {%- when Some with (num) %}{{num}}
+                        {%- when None %}-
+                        {%- endmatch -%}
+                        </td>
+                    {% endfor -%}
+                    <td>{{leader.total}}</td>
+                    {% if base.is_admin() %}
+                        <td>
+                            <button class="bestow-emperors-cup-button" data-player-id="{{player.id}}">
+                                Bestow 🏆
+                            </button>
+                            <button class="revoke-emperors-cup-button" data-player-id="{{player.id}}">
+                                Revoke <s>🏆</s>
+                            </button>
+                        </td>
+                    {% endif %}
+                </tr>
             {%- endfor %}
-        </p>
-    {% endif %}
+            </tbody>
+        </table>
+    </section>
 
     <section id="banzuke"
         class="
