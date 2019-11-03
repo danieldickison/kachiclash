@@ -52,7 +52,7 @@ struct BashoTemplate<'a> {
 
 struct BashoPlayerResults<'a> {
     player: Player,
-    total: i8,
+    total: u8,
     days: [Option<i8>; 15],
     picks: [Option<&'a BashoRikishi>; 5],
 }
@@ -103,7 +103,7 @@ pub fn basho(path: web::Path<BashoId>, state: web::Data<AppState>, identity: Ide
     let basho = BashoInfo::with_id(&db, basho_id)?
             .ok_or_else(|| HandlerError::NotFound("basho".to_string()))?;
     let s = BashoTemplate {
-        leaders: fetch_leaders(&db, basho_id, &rikishi.by_id)?,
+        leaders: fetch_leaders(&db, basho_id, player_id, &rikishi.by_id)?,
         next_day: rikishi.by_rank.iter()
             .map(|rr| rr.next_day())
             .max()
@@ -138,7 +138,7 @@ fn fetch_player_picks(db: &Connection, player_id: Option<PlayerId>, basho_id: Ba
     Ok(set)
 }
 
-fn fetch_leaders<'a>(db: &Connection, basho_id: BashoId, rikishi: &'a HashMap<RikishiId, BashoRikishi>)
+fn fetch_leaders<'a>(db: &Connection, basho_id: BashoId, player_id: Option<PlayerId>, rikishi: &'a HashMap<RikishiId, BashoRikishi>)
     -> Result<Vec<BashoPlayerResults<'a>>> {
 
     debug!("fetching leaders for basho {}", basho_id);
@@ -146,76 +146,62 @@ fn fetch_leaders<'a>(db: &Connection, basho_id: BashoId, rikishi: &'a HashMap<Ri
             SELECT
                 player.id, player.name, player.admin_level, player.join_date,
                 discord.user_id, discord.username, discord.avatar, discord.discriminator,
-                torikumi.day,
+                bs.wins,
+                player.id = :player_id AS is_self,
                 GROUP_CONCAT(pick.rikishi_id) AS pick_ids,
-                SUM(torikumi.win) AS wins,
                 COALESCE((
                     SELECT 1
                     FROM award AS a
                     WHERE a.player_id = player.id AND type = :award_type
                     LIMIT 1
                 ), 0) AS has_emperors_cup
-            FROM player
+            FROM basho_score AS bs
+            JOIN player ON player.id = bs.player_id
             LEFT JOIN player_discord AS discord ON discord.player_id = player.id
-            JOIN pick ON pick.player_id = player.id AND pick.basho_id = :basho_id
-            LEFT JOIN torikumi ON torikumi.rikishi_id = pick.rikishi_id AND torikumi.basho_id = pick.basho_id
-            WHERE player.id IN (
-                SELECT pick.player_id
-                FROM pick
-                LEFT JOIN torikumi ON torikumi.rikishi_id = pick.rikishi_id AND torikumi.basho_id = pick.basho_id
-                WHERE pick.basho_id = :basho_id
-                GROUP BY pick.player_id
-                ORDER BY SUM(torikumi.win) DESC
-                LIMIT 100
-            )
-            GROUP BY player.id, torikumi.day
-            ORDER BY player.id, torikumi.day
+            JOIN pick ON pick.player_id = player.id AND pick.basho_id = bs.basho_id
+            WHERE bs.basho_id = :basho_id
+            GROUP BY player.id
+            ORDER BY is_self DESC, bs.wins DESC
+            LIMIT 100
         ").unwrap()
         .query_map_named(
             named_params!{
                 ":basho_id": basho_id,
+                ":player_id": player_id,
                 ":award_type": data::Award::EmperorsCup,
             },
-            |row| -> SqlResult<(Player, String, Option<u8>, Option<i8>)> {
+            |row| -> SqlResult<(Player, u8, String)> {
                 Ok((
                     Player::from_row(row)?,
-                    row.get("pick_ids")?,
-                    row.get("day")?,
                     row.get("wins")?,
+                    row.get("pick_ids")?,
                 ))
             }
         )?
-        .collect::<SqlResult<Vec<(Player, String, Option<u8>, Option<i8>)>>>()?
+        .collect::<SqlResult<Vec<(Player, u8, String)>>>()?
         .into_iter()
-        .group_by(|row| {
-            let player = &row.0;
-            player.id
-        })
-        .into_iter()
-        .map(|(_player_id, rows)| {
-            let mut rows = rows.peekable();
-            let arow = rows.peek().unwrap();
-            let mut picks: [Option<&BashoRikishi>; 5] = [None; 5];
-            for rikishi_id in arow.1.split(",").map(|id| id.parse().unwrap()) {
+        .map(|(player, total, picks_str)| {
+            ;
+            let mut picks = [None; 5];
+            let mut days = [None; 15];
+            let mut total_validation = 0;
+            for rikishi_id in picks_str.split(",").map(|id| id.parse().unwrap()) {
                 if let Some(r) = rikishi.get(&rikishi_id) {
                     picks[*r.rank.group() as usize - 1] = Some(r);
+                    for (day, win) in r.results.iter().enumerate() {
+                        match win {
+                            Some(true) => {
+                                days[day] = Some(days[day].unwrap_or(0) + 1);
+                                total_validation += 1;
+                            },
+                            _ => ()
+                        }
+                    }
                 }
             }
-            let mut results = BashoPlayerResults {
-                player: arow.0.clone(),
-                picks,
-                total: 0,
-                days: [None; 15]
-            };
-            for (_, _, day, wins) in rows {
-                if let Some(day) = day {
-                    results.days[day as usize - 1] = wins;
-                    results.total += wins.unwrap_or(0);
-                }
-            }
-            results
+            assert_eq!(total, total_validation);
+            BashoPlayerResults { player, picks, total, days }
         })
-        .sorted_by_key(|result| -result.total)
         .collect()
     )
 }
