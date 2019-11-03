@@ -34,6 +34,7 @@ function savePicks() {
     .then(response => {
         if (response.ok) {
             alert("Your picks have been saved!");
+            location.reload();
         } else {
             response.text().then(text => {
                 alert("Error saving your picks: " + text);

@@ -45,10 +45,12 @@
             <p id="basho-count-down" data-start-date="{{basho.start_date.timestamp_millis()}}">
                 Time remaining: <span id="basho-count-down-time"></span>
             </p>
-        {%- endif %}
 
-        <button class="save-picks-button">Save Picks</button>
-        <button class="change-picks-button">Change Picks</button>
+            {%- if base.player.is_some() -%}
+                <button class="save-picks-button">Save Picks</button>
+                <button class="change-picks-button">Change Picks</button>
+            {%- endif -%}
+        {%- endif %}
         
         <form id="banzuke-select-rikishi-form" action="{{basho.id.url_path()}}/picks">
             <table>
@@ -69,8 +71,10 @@
             </table>
         </form>
 
-        <button class="save-picks-button">Save Picks</button>
-        <button class="change-picks-button">Change Picks</button>
+        {% if !basho.has_started() && base.player.is_some() -%}
+            <button class="save-picks-button">Save Picks</button>
+            <button class="change-picks-button">Change Picks</button>
+        {% endif %}
     </section>
 
     <section id="leaderboard">
