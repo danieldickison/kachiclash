@@ -10,6 +10,7 @@
     --color-border: rgba(0, 0, 0, 0.125);
 
     --section-padding: 1rem;
+    --header-height: 49px;
 }
 
 * {
@@ -55,25 +56,36 @@ section {
 }
 
 #g-header {
+    position: relative;
     width: 100%;
+    min-height: var(--header-height);
     margin: 0;
-    padding: 10px;
-    background: var(--color-light-bg);
+    background: url(/static/img/banner-bg.png) var(--color-navy);
+    background-size: contain;
+    color: var(--color-light-fg);
     border-bottom: solid 1px var(--color-border);
     z-index: 1;
+
+    a {
+        color: inherit;
+    }
     
-    h1 {
-        font-size: 18px;
-        margin: 0;
-        padding: 0;
-        a {
-            text-decoration: none;
-            color: inherit;
+    a.logo {
+        position: absolute;
+        top: 0;
+        left: 0;
+
+        img {
+            height: var(--header-height);
+            width: auto;
         }
     }
 
     .player-menu {
-        float: right;
+        position: absolute;
+        top: 0;
+        right: var(--section-padding);
+        line-height: var(--header-height);
     }
 }
 
