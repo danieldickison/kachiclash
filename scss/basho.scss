@@ -6,6 +6,7 @@
         table {
             border-collapse: collapse;
             margin: 0 auto;
+            font-size: 0.875rem;
 
             th {
                 font-weight: bold;
@@ -18,8 +19,11 @@
                 vertical-align: baseline;
             }
 
+            td.name {
+                max-width: 8rem;
+            }
+
             td.pick {
-                font-size: 0.875rem;
                 padding: 0 0.125rem;
             }
 

@@ -72,7 +72,7 @@
         <button class="save-picks-button">Save Picks</button>
         <button class="change-picks-button">Change Picks</button>
     </section>
-    
+
     <section id="leaderboard">
         <h2>Leaderboard</h2>
         <table>
@@ -95,7 +95,7 @@
                 {# TODO: we want to do `let player = &leader.player' but not sure askama provides a way to create a reference like that. Any way to avoid cloning here for passing player into the player_listing.html template? #}
                 {% let player = leader.player.clone() %}
                 <tr>
-                    <td>{% include "player_listing.html" %}</td>
+                    <td class="name">{% include "player_listing.html" %}</td>
                     {% for rikishi in leader.picks %}
                         <td class="pick">
                         {%- match rikishi -%}
