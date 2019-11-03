@@ -10,16 +10,21 @@
             th {
                 font-weight: bold;
                 color: var(--color-gray-fg);
+                text-align: center;
             }
 
             th, td {
                 min-width: 1rem;
-                text-align: center;
+                vertical-align: baseline;
             }
 
             td.pick {
                 font-size: 0.875rem;
                 padding: 0 0.125rem;
+            }
+
+            td.score {
+                text-align: right;
             }
         }
     }
