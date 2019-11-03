@@ -27,6 +27,9 @@
 
             td.pick {
                 padding: 0 0.125rem;
+                max-width: 5rem;
+                overflow: hidden;
+                text-overflow: ellipsis;
             }
 
             td.score {
