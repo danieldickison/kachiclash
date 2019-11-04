@@ -1,7 +1,7 @@
 use rusqlite::{Row, Connection, OptionalExtension};
 use chrono::{DateTime, Utc};
 
-use crate::external::discord;
+use crate::external::{self, discord};
 use super::{Award, DataError};
 
 pub type PlayerId = i64;
@@ -131,5 +131,25 @@ pub fn player_id_with_discord_user(db: &mut Connection, user_info: discord::User
             Ok(player_id)
         },
         Some(Err(e)) => Err(e)
+    }
+}
+
+pub fn player_id_with_external_user(db: &mut Connection, user_info: impl external::UserInfo) -> Result<PlayerId, rusqlite::Error> {
+    let txn = db.transaction()?;
+    let now = Utc::now();
+    let existing_player = user_info.update_existing_player(&txn, now)?;
+    match existing_player {
+        None => {
+            txn.execute("INSERT INTO player (join_date, name) VALUES (?, ?)",
+                        params![now, user_info.name_suggestion()]).unwrap();
+            let player_id = txn.last_insert_rowid();
+            user_info.insert_into_db(&txn, now, player_id)?;
+            txn.commit()?;
+            Ok(player_id)
+        },
+        Some(player_id) => {
+            txn.commit()?;
+            Ok(player_id)
+        }
     }
 }

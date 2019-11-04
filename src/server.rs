@@ -54,6 +54,8 @@ pub fn run(config: Config) -> std::io::Result<()> {
                 .service(web::resource("").to(handlers::login::index))
                 .service(web::resource("/discord").to(handlers::login::discord))
                 .service(web::resource("/discord_redirect").to(handlers::login::discord_redirect))
+                .service(web::resource("/google").to(handlers::login::google))
+                .service(web::resource("/google_redirect").to(handlers::login::google_redirect))
         )
 
         .service(

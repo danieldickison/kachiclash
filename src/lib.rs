@@ -54,6 +54,12 @@ pub struct Config {
 
     #[envconfig(from = "DISCORD_CLIENT_SECRET")]
     pub discord_client_secret: String,
+
+    #[envconfig(from = "GOOGLE_CLIENT_ID")]
+    pub google_client_id: String,
+
+    #[envconfig(from = "GOOGLE_CLIENT_SECRET")]
+    pub google_client_secret: String,
 }
 
 impl Config {
