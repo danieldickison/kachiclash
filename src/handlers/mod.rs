@@ -14,6 +14,7 @@ pub mod index;
 pub mod basho;
 pub mod login;
 pub mod admin;
+pub mod settings;
 
 type Result<T> = std::result::Result<T, failure::Error>;
 

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block main_id %}p-settings{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet" href="/static/css/settings.css">
+{% endblock %}
+
+{% block main %}
+    {% match message %}
+    {% when Some with (msg) %}
+        <div class="message">{{msg}}</div>
+    {% when None %}
+    {% endmatch %}
+    {% match error %}
+    {% when Some with (err) %}
+        <div class="error">{{err}}</div>
+    {% when None %}
+    {% endmatch %}
+
+    <section id="profile">
+        <h2>Profile</h2>
+        <form method="POST">
+            <label>
+                Display Name (letters and numbers only):
+                <input name="name" type="text" required minlength="4" maxlength="14" pattern="^[a-zA-Z][a-zA-Z0-9]+$"
+                    value="{{base.player.as_ref().unwrap().name}}"
+                >
+            </label>
+            <button>Save</button>
+        </form>
+    </section>
+{% endblock %}

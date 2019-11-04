@@ -57,6 +57,10 @@ pub fn run(config: Config) -> std::io::Result<()> {
                 .service(web::resource("/google").to(handlers::login::google))
                 .service(web::resource("/google_redirect").to(handlers::login::google_redirect))
         )
+        .service(web::resource("/settings")
+            .route(web::get().to(handlers::settings::settings_page))
+            .route(web::post().to(handlers::settings::settings_post))
+        )
 
         .service(
             web::scope("/basho")
