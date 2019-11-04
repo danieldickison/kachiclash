@@ -1,8 +1,9 @@
-use rusqlite::{Row, Connection, OptionalExtension};
+use rusqlite::{Row, Connection, OptionalExtension, ErrorCode, Error as SqlError};
 use chrono::{DateTime, Utc};
 
 use crate::external::{self, discord};
 use super::{Award, DataError};
+use rand::random;
 
 pub type PlayerId = i64;
 
@@ -102,8 +103,20 @@ pub fn player_id_with_external_user(db: &mut Connection, user_info: impl externa
     let existing_player = user_info.update_existing_player(&txn, now)?;
     match existing_player {
         None => {
-            txn.execute("INSERT INTO player (join_date, name) VALUES (?, ?)",
-                        params![now, user_info.name_suggestion()]).unwrap();
+            let mut name_suffix = "".to_string();
+            loop {
+                let name = format!("{}{}", user_info.name_suggestion(), name_suffix);
+                match txn.execute("INSERT INTO player (join_date, name) VALUES (?, ?)",
+                                  params![now, name]) {
+                    Err(SqlError::SqliteFailure(rusqlite::ffi::Error { code: ErrorCode::ConstraintViolation, .. }, Some(ref str)))
+                    if str.contains("player.name") => {
+                        name_suffix = random::<u16>().to_string();
+                        continue;
+                    },
+                    Err(e) => return Err(e),
+                    Ok(_) => break,
+                }
+            }
             let player_id = txn.last_insert_rowid();
             user_info.insert_into_db(&txn, now, player_id)?;
             txn.commit()?;
