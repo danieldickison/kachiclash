@@ -14,14 +14,20 @@ document.querySelectorAll('.select-radio').forEach(radio => {
 document.querySelectorAll('.save-picks-button').forEach(button => {
     button.addEventListener('click', event => {
         savePicks();
-        banzukeSection.classList.toggle('selectable', false);
+        setSelectable(false);
+
     });
 });
 document.querySelectorAll('.change-picks-button').forEach(button => {
     button.addEventListener('click', event => {
-        banzukeSection.classList.toggle('selectable', true);
+        setSelectable(true);
     });
 });
+
+function setSelectable(selectable) {
+    banzukeSection.classList.toggle('selectable', selectable);
+    document.querySelectorAll('.select-radio').forEach(button => button.disabled = !selectable);
+}
 
 function savePicks() {
     const form = document.getElementById('banzuke-select-rikishi-form');

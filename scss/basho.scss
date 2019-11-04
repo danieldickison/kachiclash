@@ -71,13 +71,12 @@
             .change-picks-button {
                 display: none;
             }
-
             .save-picks-button {
                 display: block;
             }
         }
 
-        *.has-started {
+        &.has-started {
             .change-picks-button,
             .save-picks-button {
                 display: none;
