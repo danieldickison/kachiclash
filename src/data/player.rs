@@ -12,7 +12,7 @@ pub struct Player {
     pub name: String,
     pub join_date: DateTime<Utc>,
     admin_level: u8,
-    pub discord_info: Option<discord::UserInfo>,
+    pub discord_info: Option<discord::DiscordUserInfo>,
 }
 
 impl Player {
@@ -69,7 +69,7 @@ impl Player {
             join_date: row.get("join_date")?,
             admin_level: row.get("admin_level")?,
             discord_info: match row.get("user_id")? {
-                Some(user_id) => Some(discord::UserInfo {
+                Some(user_id) => Some(discord::DiscordUserInfo {
                     id: user_id,
                     username: row.get("username")?,
                     avatar: row.get("avatar")?,
@@ -93,44 +93,6 @@ impl Player {
 
     pub fn url_path(&self) -> String {
         format!("/player/{}", self.id)
-    }
-}
-
-pub fn player_id_with_discord_user(db: &mut Connection, user_info: discord::UserInfo) -> Result<PlayerId, rusqlite::Error> {
-    let txn = db.transaction()?;
-    let now = Utc::now();
-    let existing_row = txn
-        .prepare("SELECT player_id, username FROM player_discord WHERE user_id = ?")?
-        .query_map(
-            params![user_info.id],
-            |row| -> Result<(i64, String), _> {
-                Ok((row.get("player_id")?, row.get("username")?))
-            }
-        )?
-        .next();
-    match existing_row {
-        None => {
-            txn.execute("INSERT INTO player (join_date, name) VALUES (?, ?)",
-                        params![now, user_info.username]).unwrap();
-            let player_id = txn.last_insert_rowid();
-            txn.execute("INSERT INTO player_discord (player_id, user_id, username, avatar, discriminator, mod_date) VALUES (?, ?, ?, ?, ?, ?)",
-                        params![player_id, user_info.id, user_info.username, user_info.avatar, user_info.discriminator, now]).unwrap();
-            txn.commit()?;
-            Ok(player_id)
-        },
-        Some(Ok((player_id, username))) => {
-            if username != user_info.username {
-                txn.execute("
-                        UPDATE player_discord
-                        SET username = ?, mod_date = ?
-                        WHERE user_id = ?
-                    ",
-                            params![user_info.username, now, user_info.id])?;
-            }
-            txn.commit()?;
-            Ok(player_id)
-        },
-        Some(Err(e)) => Err(e)
     }
 }
 
