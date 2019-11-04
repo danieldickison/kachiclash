@@ -2,4 +2,4 @@
 
 A Grand Sumo prediction game.
 
-httsp://kachiclash.com
+https://kachiclash.com
