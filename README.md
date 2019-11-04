@@ -1,2 +1,5 @@
-# kachiclash
-a fantasy sumo web app
+# Kachi Clash
+
+A Grand Sumo prediction game.
+
+httsp://kachiclash.com
