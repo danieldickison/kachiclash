@@ -3,11 +3,12 @@
 {% block main_id %}p-login{% endblock %}
 
 {% block head %}
-    <style>
-    </style>
+    <link rel="stylesheet" href="/static/css/login.css">
 {% endblock %}
 
 {% block main %}
-    <a class="discord-login" href="/login/discord">Login with Discord</a>
-    <a class="google-login" href="/login/google">Login with Google</a>
+    <section id="external-providers">
+        <a class="discord-login" href="/login/discord">Login with Discord</a>
+        <a class="google-login" href="/login/google">Login with Google</a>
+    </section>
 {% endblock %}
