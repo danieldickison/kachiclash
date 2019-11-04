@@ -84,7 +84,7 @@ fn oauth_redirect(query: &OAuthRedirectQuery, state: web::Data<AppState>, sessio
                     warn!("error getting logged in user info from discord: {:?}", e);
                     HandlerError::ExternalServiceError
                 })?;
-            let player_id = player::player_id_with_external_user(&mut db, user_info)
+            let (player_id, is_new) = player::player_id_with_external_user(&mut db, user_info)
                 .map_err(|err| {
                     warn!("error creating player for discord login: {:?}", err);
                     HandlerError::DatabaseError(err.into())
@@ -94,7 +94,7 @@ fn oauth_redirect(query: &OAuthRedirectQuery, state: web::Data<AppState>, sessio
             session.remove("oauth_csrf");
 
             Ok(web::HttpResponse::SeeOther()
-                .set_header(http::header::LOCATION, "/")
+                .set_header(http::header::LOCATION, if is_new {"/settings"} else {"/"})
                 .finish())
         },
         Some(_) | None => {

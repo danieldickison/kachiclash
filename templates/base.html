@@ -13,6 +13,8 @@
             {%- when Some with (player) -%}
                 {% include "player_listing.html" %}
                 |
+                <a href="/settings">settings</a>
+                |
                 <a href="/logout">log out</a>
 
             {%- when None -%}

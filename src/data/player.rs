@@ -97,7 +97,7 @@ impl Player {
     }
 }
 
-pub fn player_id_with_external_user(db: &mut Connection, user_info: impl external::UserInfo) -> Result<PlayerId, rusqlite::Error> {
+pub fn player_id_with_external_user(db: &mut Connection, user_info: impl external::UserInfo) -> Result<(PlayerId, bool), rusqlite::Error> {
     let txn = db.transaction()?;
     let now = Utc::now();
     let existing_player = user_info.update_existing_player(&txn, now)?;
@@ -120,11 +120,11 @@ pub fn player_id_with_external_user(db: &mut Connection, user_info: impl externa
             let player_id = txn.last_insert_rowid();
             user_info.insert_into_db(&txn, now, player_id)?;
             txn.commit()?;
-            Ok(player_id)
+            Ok((player_id, true))
         },
         Some(player_id) => {
             txn.commit()?;
-            Ok(player_id)
+            Ok((player_id, false))
         }
     }
 }
