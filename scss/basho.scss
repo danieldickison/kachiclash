@@ -16,13 +16,10 @@
 
             th, td {
                 min-width: 1rem;
-                vertical-align: baseline;
             }
 
             td.name {
-                max-width: 8rem;
-                overflow: hidden;
-                text-overflow: ellipsis;
+                padding-top: 2px; /* adjust baseline alignment of name cell with others */
             }
 
             td.pick {
