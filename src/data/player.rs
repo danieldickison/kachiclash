@@ -88,7 +88,7 @@ impl Player {
     pub fn tiny_thumb(&self) -> String {
         match &self.discord_info {
             Some(info) => discord::avatar_url(&info, discord::ImageExt::PNG, discord::ImageSize::TINY).to_string(),
-            None => "/static/default_avatar.png".to_string(),
+            None => "/static/img/oicho-silhouette.png".to_string(),
         }
     }
 
