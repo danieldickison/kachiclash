@@ -8,6 +8,11 @@
             margin: 0 auto;
             font-size: 0.875rem;
 
+            tr.self {
+                background: var(--color-table-highlight-bg);
+                outline: solid 2px var(--color-table-highlight-outline);
+            }
+
             th {
                 font-weight: bold;
                 color: var(--color-gray-fg);
@@ -16,6 +21,13 @@
 
             th, td {
                 min-width: 1rem;
+            }
+
+            td.rank, th.rank {
+                text-align: right;
+            }
+            td.rank {
+                padding-right: 0.25rem;
             }
 
             td.name {

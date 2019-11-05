@@ -55,6 +55,8 @@ struct BashoPlayerResults<'a> {
     total: u8,
     days: [Option<i8>; 15],
     picks: [Option<&'a BashoRikishi>; 5],
+    rank: usize,
+    is_self: bool,
 }
 
 #[derive(Clone)]
@@ -141,8 +143,9 @@ fn fetch_player_picks(db: &Connection, player_id: Option<PlayerId>, basho_id: Ba
 fn fetch_leaders<'a>(db: &Connection, basho_id: BashoId, player_id: Option<PlayerId>, rikishi: &'a HashMap<RikishiId, BashoRikishi>)
     -> Result<Vec<BashoPlayerResults<'a>>> {
 
-    debug!("fetching leaders for basho {}", basho_id);
-    Ok(db.prepare("
+    const LIMIT: usize = 100;
+    debug!("fetching {} leaders for basho {}", LIMIT, basho_id);
+    let mut leaders: Vec<BashoPlayerResults<'a>> = db.prepare("
             SELECT
                 player.*,
                 bs.wins,
@@ -155,12 +158,13 @@ fn fetch_leaders<'a>(db: &Connection, basho_id: BashoId, player_id: Option<Playe
             WHERE bs.basho_id = :basho_id
             GROUP BY player.id
             ORDER BY is_self DESC, bs.wins DESC
-            LIMIT 100
+            LIMIT :limit
         ").unwrap()
         .query_map_named(
             named_params!{
                 ":basho_id": basho_id,
                 ":player_id": player_id,
+                ":limit": LIMIT as u32,
             },
             |row| -> SqlResult<(Player, u8, String)> {
                 Ok((
@@ -192,10 +196,29 @@ fn fetch_leaders<'a>(db: &Connection, basho_id: BashoId, player_id: Option<Playe
                 }
             }
             assert_eq!(total, total_validation);
-            BashoPlayerResults { player, picks, total, days }
+            BashoPlayerResults {
+                is_self: player_id.map_or(false, |id| player.id == id),
+                rank: 0, // populated later
+                player, picks, total, days,
+            }
         })
-        .collect()
-    )
+        .collect();
+    leaders.sort_by_key(|p| -(p.total as i16));
+    let mut last_total = 0;
+    let mut last_rank = 1;
+    let count = leaders.len();
+    for (i, p) in leaders.iter_mut().enumerate() {
+        if p.total != last_total {
+            last_total = p.total;
+            last_rank = i + 1;
+        }
+        if p.is_self && count == LIMIT && i == count - 1 {
+            p.rank = 0; // zero means an unknown rank > LIMIT
+        } else {
+            p.rank = last_rank;
+        }
+    }
+    Ok(leaders)
 }
 
 struct FetchedRikishiRow(Rank, RikishiId, String, Option<Day>, Option<bool>);

@@ -86,6 +86,7 @@
                     <th colspan="15">Day</th>
                 </tr>
                 <tr>
+                    <th class="rank">{% if basho.has_started() %}Rank{% else %}Entry{% endif %}</th>
                     <th>Player</th>
                     <th colspan="5">Picks</th>
                     {% for day in 1..16 -%}
@@ -98,7 +99,14 @@
             {% for leader in leaders -%}
                 {# TODO: we want to do `let player = &leader.player' but not sure askama provides a way to create a reference like that. Any way to avoid cloning here for passing player into the player_listing.html template? #}
                 {% let player = leader.player.clone() %}
-                <tr>
+                <tr {% if leader.is_self %}class="self"{% endif %}>
+                    <td class="rank">
+                        {% if basho.has_started() %}
+                            {{leader.rank}}
+                        {% else %}
+                            {{loop.index}}
+                        {% endif %}
+                    </td>
                     <td class="name">{% include "player_listing.html" %}</td>
                     {% for rikishi in leader.picks %}
                         <td class="pick">
@@ -151,7 +159,7 @@
                 {{- rikishi.name -}}
             </label>
         </td>
-        <td class="hoshi {% if rikishi.is_player_pick && basho.has_started() -%} is-player-pick {%- endif %}">
+        <td class="hoshi">
             {% if basho.has_started() %}
                 {%- for day in rikishi.results -%}
                     {%- match day -%}
