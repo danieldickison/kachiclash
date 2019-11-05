@@ -144,19 +144,12 @@ fn fetch_leaders<'a>(db: &Connection, basho_id: BashoId, player_id: Option<Playe
     debug!("fetching leaders for basho {}", basho_id);
     Ok(db.prepare("
             SELECT
-                player.id, player.name, player.admin_level, player.join_date,
-                discord.user_id, discord.username, discord.avatar, discord.discriminator,
+                player.*,
                 bs.wins,
                 player.id = :player_id AS is_self,
-                GROUP_CONCAT(pick.rikishi_id) AS pick_ids,
-                COALESCE((
-                    SELECT 1
-                    FROM award AS a
-                    WHERE a.player_id = player.id AND type = :award_type
-                    LIMIT 1
-                ), 0) AS has_emperors_cup
+                GROUP_CONCAT(pick.rikishi_id) AS pick_ids
             FROM basho_score AS bs
-            JOIN player ON player.id = bs.player_id
+            JOIN player_info AS player ON player.id = bs.player_id
             LEFT JOIN player_discord AS discord ON discord.player_id = player.id
             JOIN pick ON pick.player_id = player.id AND pick.basho_id = bs.basho_id
             WHERE bs.basho_id = :basho_id
@@ -168,7 +161,6 @@ fn fetch_leaders<'a>(db: &Connection, basho_id: BashoId, player_id: Option<Playe
             named_params!{
                 ":basho_id": basho_id,
                 ":player_id": player_id,
-                ":award_type": data::Award::EmperorsCup,
             },
             |row| -> SqlResult<(Player, u8, String)> {
                 Ok((

@@ -117,12 +117,12 @@ pub enum ImageSize {
     // LARGE   = 1024,
 }
 
-pub fn avatar_url(user_info: &DiscordUserInfo, ext: ImageExt, size: ImageSize) -> Url {
+pub fn avatar_url(user_id: &str, avatar: &Option<String>, discriminator: &str, ext: ImageExt, size: ImageSize) -> Url {
     let base = Url::parse(IMG_BASE).unwrap();
-    if let Some(hash) = &user_info.avatar {
-        base.join(&format!("avatars/{}/{}.{}?size={}", user_info.id, hash, ext, size as i32)[..]).unwrap()
+    if let Some(hash) = &avatar {
+        base.join(&format!("avatars/{}/{}.{}?size={}", user_id, hash, ext, size as i32)[..]).unwrap()
     } else {
-        let discrim = u16::from_str_radix(&user_info.discriminator[..], 10).unwrap_or(0) % 5;
+        let discrim = u16::from_str_radix(discriminator, 10).unwrap_or(0) % 5;
         base.join(&format!("embed/avatars/{}.png?size={}", discrim, size as i32)[..]).unwrap()
     }
 }

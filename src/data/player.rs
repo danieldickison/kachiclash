@@ -1,9 +1,10 @@
-use rusqlite::{Row, Connection, OptionalExtension, ErrorCode, Error as SqlError};
+use rusqlite::{Row, Connection, OptionalExtension, ErrorCode, Error as SqlError, NO_PARAMS};
 use chrono::{DateTime, Utc};
 
 use crate::external::{self, discord};
-use super::{Award, DataError};
+use super::{DataError};
 use rand::random;
+use url::Url;
 
 pub type PlayerId = i64;
 
@@ -12,45 +13,30 @@ pub struct Player {
     pub id: PlayerId,
     pub name: String,
     pub join_date: DateTime<Utc>,
+    pub emperors_cups: u8,
     admin_level: u8,
-    pub discord_info: Option<discord::DiscordUserInfo>,
+    discord_user_id: Option<String>,
+    discord_avatar: Option<String>,
+    discord_discriminator: Option<String>,
+    google_picture: Option<String>,
 }
 
 impl Player {
     pub fn with_id(db: &Connection, player_id: PlayerId) -> Result<Option<Self>, DataError> {
         db.query_row("
-                SELECT
-                    p.id, p.name, p.join_date, p.admin_level,
-                    d.user_id, d.username, d.avatar, d.discriminator,
-                    COALESCE((
-                        SELECT 1
-                        FROM award AS a
-                        WHERE a.player_id = p.id AND type = ?
-                        LIMIT 1
-                    ), 0) AS has_emperors_cup
-                FROM player AS p
-                LEFT JOIN player_discord AS d ON d.player_id = p.id
+                SELECT *
+                FROM player_info AS p
                 WHERE p.id = ?
-            ", params![Award::EmperorsCup, player_id], |row| Player::from_row(row))
+            ", params![player_id], |row| Player::from_row(row))
             .optional()
             .map_err(|e| e.into())
     }
 
     pub fn list_all(db: &Connection) -> Result<Vec<Self>, DataError> {
         db.prepare("
-                SELECT
-                    p.id, p.name, p.join_date, p.admin_level,
-                    d.user_id, d.username, d.avatar, d.discriminator,
-                    COALESCE((
-                        SELECT 1
-                        FROM award AS a
-                        WHERE a.player_id = p.id AND type = ?
-                        LIMIT 1
-                    ), 0) AS has_emperors_cup
-                FROM player AS p
-                LEFT JOIN player_discord AS d ON d.player_id = p.id
+                SELECT * FROM player_info
             ").unwrap()
-            .query_map(params![Award::EmperorsCup], |row| Player::from_row(row))
+            .query_map(NO_PARAMS, |row| Player::from_row(row))
             .and_then(|mapped_rows| {
                 Ok(mapped_rows.map(|r| r.unwrap()).collect::<Vec<Player>>())
             })
@@ -58,27 +44,21 @@ impl Player {
     }
 
     pub fn from_row(row: &Row) -> Result<Self, rusqlite::Error> {
-        let mut name: String = row.get("name")?;
-        let has_emperors_cup: bool = row.get("has_emperors_cup")?;
-        if has_emperors_cup {
-            name.push_str(" ");
-            name.push_str(Award::EmperorsCup.emoji());
-        }
         Ok(Player {
             id: row.get("id")?,
-            name: name,
+            name: row.get("name")?,
             join_date: row.get("join_date")?,
+            emperors_cups: row.get("emperors_cups")?,
             admin_level: row.get("admin_level")?,
-            discord_info: match row.get("user_id")? {
-                Some(user_id) => Some(discord::DiscordUserInfo {
-                    id: user_id,
-                    username: row.get("username")?,
-                    avatar: row.get("avatar")?,
-                    discriminator: row.get("discriminator")?,
-                }),
-                None => None
-            }
+            discord_user_id: row.get("discord_user_id")?,
+            discord_avatar: row.get("discord_avatar")?,
+            discord_discriminator: row.get("discord_discriminator")?,
+            google_picture: row.get("google_picture")?,
         })
+    }
+
+    pub fn has_emperors_cup(&self) -> bool {
+        self.emperors_cups > 0
     }
 
     pub fn is_admin(&self) -> bool {
@@ -86,9 +66,19 @@ impl Player {
     }
 
     pub fn tiny_thumb(&self) -> String {
-        match &self.discord_info {
-            Some(info) => discord::avatar_url(&info, discord::ImageExt::PNG, discord::ImageSize::TINY).to_string(),
-            None => "/static/img/oicho-silhouette.png".to_string(),
+        const DEFAULT: &'static str = "/static/img/oicho-silhouette.png";
+
+        if let Some(user_id) = &self.discord_user_id {
+            discord::avatar_url(
+                &user_id,
+                &self.discord_avatar,
+                &self.discord_discriminator.as_ref().unwrap_or(&"0".to_string()),
+                discord::ImageExt::PNG,
+                discord::ImageSize::TINY).to_string()
+        } else if let Some(picture) = &self.google_picture {
+            Url::parse(&picture).map(|url| url.to_string()).unwrap_or(DEFAULT.to_owned())
+        } else {
+            DEFAULT.to_owned()
         }
     }
 

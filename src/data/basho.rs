@@ -82,13 +82,9 @@ impl BashoInfo {
 
     fn fetch_basho_winners(db: &Connection, basho_id: BashoId) -> SqlResult<Vec<Player>> {
         Ok(db.prepare("
-                SELECT
-                    p.id, p.name, p.join_date, p.admin_level,
-                    d.user_id, d.username, d.avatar, d.discriminator,
-                    1 AS has_emperors_cup
+                SELECT p.*
                 FROM award AS a
-                JOIN player AS p ON p.id = a.player_id
-                LEFT JOIN player_discord AS d ON d.player_id = p.id
+                JOIN player_info AS p ON p.id = a.player_id
                 WHERE a.basho_id = ? AND a.type = ?
             ").unwrap()
             .query_map(params![basho_id, Award::EmperorsCup], |row| Player::from_row(row))?
@@ -101,12 +97,9 @@ impl BashoInfo {
         let mut stmt = db.prepare("
                 SELECT
                     a.basho_id,
-                    p.id, p.name, p.join_date, p.admin_level,
-                    d.user_id, d.username, d.avatar, d.discriminator,
-                    1 AS has_emperors_cup
+                    p.*
                 FROM award AS a
-                JOIN player AS p ON p.id = a.player_id
-                LEFT JOIN player_discord AS d ON d.player_id = p.id
+                JOIN player_info AS p ON p.id = a.player_id
                 WHERE a.type = ?
             ")?;
         let rows = stmt.query_map(params![Award::EmperorsCup], |row| {
