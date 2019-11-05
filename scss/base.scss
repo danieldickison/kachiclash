@@ -1,6 +1,7 @@
 :root {
     --color-navy: #345f88;
     --color-navy-highlight: #5283a9;
+    --color-orange: #f0b810;
     --color-mauve: #560030;
     --color-light-fg: #f3f3f3;
     --color-dark-fg: #333;
@@ -111,6 +112,10 @@ body > main {
     background: var(--color-navy);
     color: var(--color-light-fg);
     margin: 0 auto;
+
+    a {
+        color: var(--color-orange);
+    }
 }
 
 #g-footer {
