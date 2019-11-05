@@ -145,10 +145,6 @@ body > main {
 .g-player-listing {
     white-space: nowrap;
 
-    img {
-        width: 1.5rem;
-        height: 1.5rem;
-    }
     .img-wrapper {
         display: inline-block;
         width: 1.5rem;
@@ -167,6 +163,12 @@ body > main {
             right: 0;
             border-radius: 0.75rem;
             border: 1px solid rgba(0, 0, 0, 0.25);
+        }
+        
+        img {
+            position: absolute;
+            width: 100%;
+            height: 100%;
         }
     }
 }
