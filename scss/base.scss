@@ -151,7 +151,7 @@ body > main {
 .g-player-listing {
     display: inline-flex;
     flex-flow: row nowrap;
-    align-items: baseline;
+    align-items: center;
     vertical-align: middle;
 
     .name {
@@ -166,13 +166,13 @@ body > main {
 
     .cup {
         flex: none;
+        line-height: 1.5rem;
     }
 
     .img-wrapper {
         display: inline-block;
         width: 1.5rem;
         height: 1.5rem;
-        vertical-align: middle;
         align-self: center;
         border-radius: 0.75rem;
         overflow: hidden;
