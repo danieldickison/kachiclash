@@ -19,6 +19,7 @@ use crate::data::player;
 use crate::external::{AuthProvider};
 use crate::external::google::GoogleAuthProvider;
 use crate::external::discord::DiscordAuthProvider;
+use crate::external::reddit::RedditAuthProvider;
 
 #[derive(Template)]
 #[template(path = "login.html")]
@@ -40,6 +41,10 @@ pub fn discord(state: web::Data<AppState>, session: Session) -> impl Responder {
 
 pub fn google(state: web::Data<AppState>, session: Session) -> impl Responder {
     oauth_login(&state.config, session, GoogleAuthProvider)
+}
+
+pub fn reddit(state: web::Data<AppState>, session: Session) -> impl Responder {
+    oauth_login(&state.config, session, RedditAuthProvider)
 }
 
 fn oauth_login(config: &Config, session: Session, provider: impl AuthProvider) -> impl Responder {
@@ -64,6 +69,10 @@ pub fn discord_redirect(query: web::Query<OAuthRedirectQuery>, state: web::Data<
 
 pub fn google_redirect(query: web::Query<OAuthRedirectQuery>, state: web::Data<AppState>, session: Session, id: Identity) -> Result<impl Responder> {
     oauth_redirect(&query, state, session, id, GoogleAuthProvider)
+}
+
+pub fn reddit_redirect(query: web::Query<OAuthRedirectQuery>, state: web::Data<AppState>, session: Session, id: Identity) -> Result<impl Responder> {
+    oauth_redirect(&query, state, session, id, RedditAuthProvider)
 }
 
 fn oauth_redirect(query: &OAuthRedirectQuery, state: web::Data<AppState>, session: Session, id: Identity, provider: impl AuthProvider)

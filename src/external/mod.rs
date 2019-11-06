@@ -12,6 +12,7 @@ use crate::data::PlayerId;
 
 pub mod discord;
 pub mod google;
+pub mod reddit;
 
 pub trait UserInfo {
     fn update_existing_player(&self, txn: &Transaction, mod_date: DateTime<Utc>)
