@@ -19,6 +19,7 @@ pub struct Player {
     discord_avatar: Option<String>,
     discord_discriminator: Option<String>,
     google_picture: Option<String>,
+    reddit_icon: Option<String>,
 }
 
 impl Player {
@@ -54,6 +55,7 @@ impl Player {
             discord_avatar: row.get("discord_avatar")?,
             discord_discriminator: row.get("discord_discriminator")?,
             google_picture: row.get("google_picture")?,
+            reddit_icon: row.get("reddit_icon")?,
         })
     }
 
@@ -75,6 +77,8 @@ impl Player {
                 &self.discord_discriminator.as_ref().unwrap_or(&"0".to_string()),
                 discord::ImageExt::PNG,
                 discord::ImageSize::TINY).to_string()
+        } else if let Some(icon) = &self.reddit_icon {
+            Url::parse(&icon).map(|url| url.to_string()).unwrap_or_else(|_| DEFAULT.to_owned())
         } else if let Some(picture) = &self.google_picture {
             Url::parse(&picture).map(|url| url.to_string()).unwrap_or_else(|_| DEFAULT.to_owned())
         } else {
