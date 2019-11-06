@@ -15,7 +15,7 @@
         {% if basho.has_started() %}
             <section id="next-basho">
                 <h2>The Current Basho is {{basho.id}}</h2>
-                <a class="button-link" href="{{basho.id.url_path()}}">View Results</a>
+                <a class="button-link" href="{{basho.link_url()}}">View Results</a>
 
                 {% if base.is_admin() %}
                     <p>Admin: <a href="{{next_basho_id.url_path()}}/edit">enter banzuke for {{next_basho_id}}</a></p>
@@ -28,7 +28,7 @@
                 <p id="basho-count-down" data-start-date="{{basho.start_date.timestamp_millis()}}">
                     Time remaining: <span id="basho-count-down-time"></span>
                 </p>
-                <a class="button-link" href="{{basho.id.url_path()}}">Click here to enter {{basho.id}}!</a>
+                <a class="button-link" href="{{basho.link_url()}}">Click here to enter {{basho.id}}!</a>
             </section>
         {% endif %}
     {% when None %}
@@ -46,7 +46,7 @@
                 {% for basho in basho_list -%}
                     {% if !basho.winners.is_empty() %}
                         <tr>
-                            <td><a href="{{basho.id.url_path()}}">{{basho.id}}</a></td>
+                            <td><a href="{{basho.link_url()}}">{{basho.id}}</a></td>
                             <td>{{basho.player_count}}</td>
                             <td>
                                 {% for player in basho.winners -%}

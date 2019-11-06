@@ -16,6 +16,7 @@ pub struct BashoInfo {
     pub id: BashoId,
     pub start_date: DateTime<Utc>,
     pub venue: String,
+    pub external_link: Option<String>,
     pub player_count: u32,
     pub winners: Vec<Player>,
 }
@@ -27,6 +28,7 @@ impl BashoInfo {
                 COUNT(*) AS n,
                 basho.start_date,
                 basho.venue,
+                basho.external_link,
                 COUNT(DISTINCT pick.player_id) AS player_count
             FROM basho
             LEFT JOIN pick ON pick.basho_id = basho.id
@@ -40,6 +42,7 @@ impl BashoInfo {
                                  id,
                                  start_date: row.get("start_date")?,
                                  venue: row.get("venue")?,
+                                 external_link: row.get("external_link")?,
                                  player_count: row.get("player_count")?,
                                  winners: BashoInfo::fetch_basho_winners(&db, id)?,
                              }))
@@ -55,6 +58,7 @@ impl BashoInfo {
                     basho.id,
                     basho.start_date,
                     basho.venue,
+                    basho.external_link,
                     COUNT(DISTINCT pick.player_id) AS player_count
                 FROM basho
                 LEFT JOIN pick ON pick.basho_id = basho.id
@@ -68,6 +72,7 @@ impl BashoInfo {
                         id: basho_id,
                         start_date: row.get("start_date")?,
                         venue: row.get("venue")?,
+                        external_link: row.get("external_link")?,
                         player_count: row.get("player_count")?,
                         winners: winners.remove(&basho_id).unwrap_or_else(|| vec![]),
                     })
@@ -78,6 +83,14 @@ impl BashoInfo {
 
     pub fn has_started(&self) -> bool {
         self.start_date < Utc::now()
+    }
+
+    pub fn link_url(&self) -> String {
+        if let Some(str) = &self.external_link {
+            str.to_owned()
+        } else {
+            self.id.url_path()
+        }
     }
 
     fn fetch_basho_winners(db: &Connection, basho_id: BashoId) -> SqlResult<Vec<Player>> {
