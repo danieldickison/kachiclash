@@ -47,7 +47,7 @@
                     {% if !basho.winners.is_empty() %}
                         <tr>
                             <td><a href="{{basho.link_url()}}">{{basho.id}}</a></td>
-                            <td>{{basho.player_count}}</td>
+                            <td>{% if basho.external_link.is_none() %}{{basho.player_count}}{% endif %}</td>
                             <td>
                                 {% for player in basho.winners -%}
                                     {% include "player_listing.html" %}
