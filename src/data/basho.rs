@@ -152,11 +152,13 @@ impl BashoId {
             7 => "Nagoya".to_string(),
             9 => "Aki".to_string(),
             11 => "Kyushu".to_string(),
-            _ => {
-                let date = NaiveDate::from_ymd(self.year, self.month.into(), 1);
-                format!("{}", date.format("%B"))
-            }
+            _ => self.month_name()
         }
+    }
+
+    fn month_name(self) -> String {
+        let date = NaiveDate::from_ymd(self.year, self.month.into(), 1);
+        format!("{}", date.format("%B"))
     }
 
     pub fn next_honbasho(self) -> BashoId {
@@ -177,7 +179,7 @@ impl BashoId {
 
 impl fmt::Display for BashoId {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(f, "{} {:04}", self.season(), self.year)
+        write!(f, "{} – {} {:04}", self.season(), self.month_name(), self.year)
     }
 }
 
