@@ -8,4 +8,14 @@
             border: solid 1px var(--color-border);
         }
     }
+
+    #prev-winners {
+        .basho-list {
+            border: 3px solid var(--color-mauve);
+
+            td {
+                padding: 0.25rem 0.5rem;
+            }
+        }
+    }
 }

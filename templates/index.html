@@ -39,21 +39,21 @@
         <table class="basho-list">
             <thead>
                 <th>Basho</th>
-                <th>Players</th>
                 <th>Winner</th>
+                <!--th>Players</th-->
             </thead>
             <tbody>
                 {% for basho in basho_list -%}
                     {% if !basho.winners.is_empty() %}
                         <tr>
-                            <td><a href="{{basho.link_url()}}">{{basho.id}}</a></td>
-                            <td>{% if basho.external_link.is_none() %}{{basho.player_count}}{% endif %}</td>
-                            <td>
+                            <td class="basho"><a href="{{basho.link_url()}}">{{basho.id}}</a></td>
+                            <td class="winner">
                                 {% for player in basho.winners -%}
                                     {% include "player_listing.html" %}
                                     {%- if loop.first && !loop.last %}, {% endif %}
                                 {%- endfor %}
                             </td>
+                            <!--td>{% if basho.external_link.is_none() %}{{basho.player_count}}{% endif %}</td-->
                         </tr>
                         {% endif %}
                 {%- endfor %}
