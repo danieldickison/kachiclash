@@ -72,7 +72,7 @@ impl BashoInfo {
                         winners: winners.remove(&basho_id).unwrap_or(vec![]),
                     })
                 })?
-            .collect::<SqlResult<Vec<BashoInfo>>>()
+            .collect::<SqlResult<_>>()
             .map_err(|e| e.into())
     }
 
