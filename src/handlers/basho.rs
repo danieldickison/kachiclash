@@ -181,16 +181,13 @@ fn fetch_leaders<'a>(db: &Connection, basho_id: BashoId, player_id: Option<Playe
             let mut picks = [None; 5];
             let mut days = [None; 15];
             let mut total_validation = 0;
-            for rikishi_id in picks_str.split(",").map(|id| id.parse().unwrap()) {
+            for rikishi_id in picks_str.split(',').map(|id| id.parse().unwrap()) {
                 if let Some(r) = rikishi.get(&rikishi_id) {
                     picks[*r.rank.group() as usize - 1] = Some(r);
                     for (day, win) in r.results.iter().enumerate() {
-                        match win {
-                            Some(true) => {
-                                days[day] = Some(days[day].unwrap_or(0) + 1);
-                                total_validation += 1;
-                            },
-                            _ => ()
+                        if let Some(true) = win {
+                            days[day] = Some(days[day].unwrap_or(0) + 1);
+                            total_validation += 1;
                         }
                     }
                 }
@@ -203,7 +200,7 @@ fn fetch_leaders<'a>(db: &Connection, basho_id: BashoId, player_id: Option<Playe
             }
         })
         .collect();
-    leaders.sort_by_key(|p| -(p.total as i16));
+    leaders.sort_by_key(|p| -i16::from(p.total));
     let mut last_total = 0;
     let mut last_rank = 1;
     let count = leaders.len();

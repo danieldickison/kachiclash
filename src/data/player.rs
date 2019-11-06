@@ -66,7 +66,7 @@ impl Player {
     }
 
     pub fn tiny_thumb(&self) -> String {
-        const DEFAULT: &'static str = "/static/img/oicho-silhouette.png";
+        const DEFAULT: &str = "/static/img/oicho-silhouette.png";
 
         if let Some(user_id) = &self.discord_user_id {
             discord::avatar_url(
@@ -76,7 +76,7 @@ impl Player {
                 discord::ImageExt::PNG,
                 discord::ImageSize::TINY).to_string()
         } else if let Some(picture) = &self.google_picture {
-            Url::parse(&picture).map(|url| url.to_string()).unwrap_or(DEFAULT.to_owned())
+            Url::parse(&picture).map(|url| url.to_string()).unwrap_or_else(|_| DEFAULT.to_owned())
         } else {
             DEFAULT.to_owned()
         }

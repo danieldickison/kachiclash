@@ -69,7 +69,7 @@ impl BashoInfo {
                         start_date: row.get("start_date")?,
                         venue: row.get("venue")?,
                         player_count: row.get("player_count")?,
-                        winners: winners.remove(&basho_id).unwrap_or(vec![]),
+                        winners: winners.remove(&basho_id).unwrap_or_else(|| vec![]),
                     })
                 })?
             .collect::<SqlResult<_>>()
@@ -107,10 +107,7 @@ impl BashoInfo {
             })?;
         for res in rows {
             let (basho_id, player) = res?;
-            if !map.contains_key(&basho_id) {
-                map.insert(basho_id, Vec::new());
-            }
-            let vec = map.get_mut(&basho_id).unwrap();
+            let vec = map.entry(basho_id).or_insert_with(Vec::new);
             vec.push(player);
         }
         Ok(map)

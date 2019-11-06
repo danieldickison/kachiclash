@@ -23,6 +23,8 @@ pub fn index(state: Data<AppState>, identity: Identity) -> Result<AskamaResponde
         base: BaseTemplate::new(&db, &identity)?,
         leaders: Player::list_all(&db)?,
         basho_list,
-        next_basho_id: current_basho_id.map(|id| id.next_honbasho()).unwrap_or("201911".parse().unwrap()),
+        next_basho_id: current_basho_id
+            .map(|id| id.next_honbasho())
+            .unwrap_or_else(|| "201911".parse().unwrap()),
     }.into())
 }

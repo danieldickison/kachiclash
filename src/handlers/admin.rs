@@ -143,7 +143,7 @@ pub fn torikumi_page(path: web::Path<(BashoId, u8)>, state: web::Data<AppState>,
     admin_base(&db, &identity).into_future()
         .and_then(move |base| {
             fetch_sumo_db_torikumi(basho_id, day)
-                .map(|txt| Some(txt))
+                .map(Some)
                 .or_else(|e| {
                     warn!("failed to fetch sumodb data: {}", e);
                     Ok(None)
@@ -151,12 +151,7 @@ pub fn torikumi_page(path: web::Path<(BashoId, u8)>, state: web::Data<AppState>,
                 .map(|opt_txt| (base, opt_txt))
         })
         .map(move |(base, sumo_db_text)| {
-            TorikumiTemplate {
-                base: base,
-                basho_id: basho_id,
-                day: day,
-                sumo_db_text: sumo_db_text,
-            }.into()
+            TorikumiTemplate { base, basho_id, day, sumo_db_text}.into()
         })
 }
 
