@@ -9,13 +9,13 @@ use crate::data::{PlayerId};
 use super::AuthProvider;
 use crate::external::UserInfo;
 
-
+#[derive(Debug)]
 pub struct RedditAuthProvider;
 
 impl AuthProvider for RedditAuthProvider {
     type UserInfo = RedditUserInfo;
-    const SCOPES: &'static [&'static str] = &[];
-    const USER_INFO_URL: &'static str = "https://www.reddit.com/api/v1/me";
+    const SCOPES: &'static [&'static str] = &["identity"];
+    const USER_INFO_URL: &'static str = "https://oauth.reddit.com/api/v1/me";
 
     fn make_oauth_client(&self, config: &Config) -> BasicClient {
         let mut redirect_url = config.url();
@@ -34,8 +34,8 @@ impl AuthProvider for RedditAuthProvider {
 #[derive(Debug, Deserialize, Clone)]
 pub struct RedditUserInfo {
     pub id: String,
-    pub username: String,
-    pub picture: Option<String>, // url
+    pub name: String,
+    pub icon_img: Option<String>, // url
 }
 
 impl UserInfo for RedditUserInfo {
@@ -45,27 +45,27 @@ impl UserInfo for RedditUserInfo {
         debug!("reddit user info: {:?}", self);
 
         match txn
-            .prepare("SELECT player_id, username, picture FROM player_reddit WHERE id = ?")?
+            .prepare("SELECT player_id, name, icon_img FROM player_reddit WHERE id = ?")?
             .query_map(
                 params![self.id],
                 |row| -> Result<(PlayerId, String, Option<String>), _> {
                     Ok((row.get("player_id")?,
                         row.get("name")?,
-                        row.get("picture")?,
+                        row.get("icon_img")?,
                     ))
                 }
             )?
             .next() {
 
             None => Ok(None),
-            Some(Ok((player_id, username, picture))) => {
-                if username != self.username || picture != self.picture {
+            Some(Ok((player_id, name, icon_img))) => {
+                if name != self.name || icon_img != self.icon_img {
                     txn.execute("
                             UPDATE player_reddit
-                            SET username = ?, picture = ?, mod_date = ?
-                            WHERE user_id = ?
+                            SET name = ?, icon_img = ?, mod_date = ?
+                            WHERE id = ?
                         ",
-                                params![self.username, self.picture, mod_date, self.id])?;
+                                params![self.name, self.icon_img, mod_date, self.id])?;
                 }
                 Ok(Some(player_id))
             },
@@ -77,12 +77,12 @@ impl UserInfo for RedditUserInfo {
     fn insert_into_db(&self, txn: &Transaction, mod_date: DateTime<Utc>, player_id: PlayerId)
         -> Result<usize, rusqlite::Error> {
         txn.execute("
-            INSERT INTO player_reddit (player_id, id, username, picture, mod_date)
+            INSERT INTO player_reddit (player_id, id, name, icon_img, mod_date)
             VALUES (?, ?, ?, ?, ?)",
-        params![player_id, self.id, self.username, self.picture, mod_date])
+        params![player_id, self.id, self.name, self.icon_img, mod_date])
     }
 
     fn name_suggestion(&self) -> String {
-        self.username.to_owned()
+        self.name.to_owned()
     }
 }

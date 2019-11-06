@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block main_id %}p-login{% endblock %}
+{% block subtitle %}login{% endblock %}
 
 {% block head %}
     <link rel="stylesheet" href="/static/css/login.css">
@@ -10,5 +11,6 @@
     <section id="external-providers">
         <a class="discord-login" href="/login/discord">Login with Discord</a>
         <a class="google-login" href="/login/google">Login with Google</a>
+        <a class="reddit-login" href="/login/reddit">Login with Reddit</a>
     </section>
 {% endblock %}

@@ -9,6 +9,7 @@ use rand;
 
 use crate::Config;
 use crate::data::PlayerId;
+use std::fmt::Debug;
 
 pub mod discord;
 pub mod google;
@@ -28,7 +29,7 @@ pub trait UserInfo {
     }
 }
 
-pub trait AuthProvider {
+pub trait AuthProvider: Debug {
     type UserInfo: UserInfo + DeserializeOwned;
     const SCOPES: &'static [&'static str];
     const USER_INFO_URL: &'static str;

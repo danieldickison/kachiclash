@@ -9,7 +9,7 @@ use crate::data::{PlayerId};
 use super::AuthProvider;
 use crate::external::UserInfo;
 
-
+#[derive(Debug)]
 pub struct GoogleAuthProvider;
 
 impl AuthProvider for GoogleAuthProvider {

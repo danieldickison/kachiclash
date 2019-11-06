@@ -82,23 +82,27 @@ fn oauth_redirect(query: &OAuthRedirectQuery, state: web::Data<AppState>, sessio
 
     match session.get::<String>("oauth_csrf").unwrap_or(None) {
         Some(ref session_csrf) if *session_csrf == query.state => {
+            debug!("exchanging oauth code for access token from {:?}", provider);
             let auth_code = AuthorizationCode::new(query.code.to_owned());
             let token_res = provider.exchange_code(&state.config, auth_code)
                 .map_err(|e| {
-                    warn!("error exchanging auth code for access token from discord: {:?}", e);
+                    warn!("error exchanging auth code for access token from {:?}: {:?}", provider, e);
                     HandlerError::ExternalServiceError
                 })?;
+
+            debug!("getting logged in user info from {:?}", provider);
             let user_info = provider.get_logged_in_user_info(token_res.access_token())
                 .map_err(|e| {
-                    warn!("error getting logged in user info from discord: {:?}", e);
+                    warn!("error getting logged in user info from {:?}: {:?}", provider, e);
                     HandlerError::ExternalServiceError
                 })?;
             let (player_id, is_new) = player::player_id_with_external_user(&mut db, user_info)
                 .map_err(|err| {
-                    warn!("error creating player for discord login: {:?}", err);
+                    warn!("error creating player for {:?} login: {:?}", provider, err);
                     HandlerError::DatabaseError(err.into())
                 })?;
 
+            debug!("logged in as player {}, is_new: {}", player_id, is_new);
             id.remember(player_id.to_string());
             session.remove("oauth_csrf");
 
@@ -107,7 +111,7 @@ fn oauth_redirect(query: &OAuthRedirectQuery, state: web::Data<AppState>, sessio
                 .finish())
         },
         Some(_) | None => {
-            warn!("bad CSRF token received in discord oauth redirect endpoint");
+            warn!("bad CSRF token received in {:?} oauth redirect endpoint", provider);
             Err(HandlerError::CSRFError.into())
         }
     }

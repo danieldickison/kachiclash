@@ -19,6 +19,7 @@ use crate::data::PlayerId;
 
 const IMG_BASE: &str = "https://cdn.discordapp.com/";
 
+#[derive(Debug)]
 pub struct DiscordAuthProvider;
 
 impl AuthProvider for DiscordAuthProvider {
