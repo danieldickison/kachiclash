@@ -68,7 +68,7 @@ section {
 }
 
 #g-header {
-    position: relative;
+    position: fixed;
     width: 100%;
     min-height: var(--header-height);
     margin: 0;
@@ -110,7 +110,7 @@ section {
 body > main {
     width: 950px;
     flex-grow: 1;
-    margin: 0 auto;
+    margin: 4rem auto 15rem auto;
 }
 
 #g-hero {
@@ -135,7 +135,7 @@ body > main {
 
 #g-footer {
     width: 100%;
-    margin: 15rem 0 0 0;
+    margin: 0;
     padding: 10px;
     background: #662045;
     border-top: solid 1px #33002a;
