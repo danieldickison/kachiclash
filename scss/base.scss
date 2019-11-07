@@ -63,6 +63,7 @@ button {
 section {
     border: solid 1px var(--color-border);
     padding: var(--section-padding);
+    margin: 2rem 0;
     background: var(--color-light-bg);
 }
 
@@ -134,7 +135,7 @@ body > main {
 
 #g-footer {
     width: 100%;
-    margin: 0;
+    margin: 15rem 0 0 0;
     padding: 10px;
     background: #662045;
     border-top: solid 1px #33002a;
