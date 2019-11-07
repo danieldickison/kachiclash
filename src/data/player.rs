@@ -78,9 +78,14 @@ impl Player {
                 discord::ImageExt::PNG,
                 discord::ImageSize::TINY).to_string()
         } else if let Some(icon) = &self.reddit_icon {
-            Url::parse(&icon).map(|url| url.to_string()).unwrap_or_else(|_| DEFAULT.to_owned())
+            // It's unclear why, but reddit html-escapes the icon_img value in its api return value so we need to unescape it here. In practice, only &amp; appears in the URL so I'm doing a simple replacement.
+            Url::parse(&icon.replace("&amp;", "&"))
+                .map(|url| url.to_string())
+                .unwrap_or_else(|_| DEFAULT.to_owned())
         } else if let Some(picture) = &self.google_picture {
-            Url::parse(&picture).map(|url| url.to_string()).unwrap_or_else(|_| DEFAULT.to_owned())
+            Url::parse(&picture)
+                .map(|url| url.to_string())
+                .unwrap_or_else(|_| DEFAULT.to_owned())
         } else {
             DEFAULT.to_owned()
         }
