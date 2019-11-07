@@ -13,32 +13,6 @@ use askama::Template;
 use failure::_core::cmp::max;
 
 
-mod filters {
-    use chrono::{DateTime, Utc, FixedOffset};
-
-    static JST_OFFSET: i32 = 9 * 3600;
-
-    pub fn jst_month_day(s: &DateTime<Utc>) -> askama::Result<String> {
-        Ok(s.with_timezone(&FixedOffset::east(JST_OFFSET)).format("%B %-d").to_string())
-    }
-}
-
-#[derive(Template)]
-#[template(path = "basho_list.html")]
-pub struct BashoListTemplate {
-    base: BaseTemplate,
-    basho_list: Vec<BashoInfo>,
-}
-
-pub fn basho_list(state: web::Data<AppState>, identity: Identity) -> Result<AskamaResponder<BashoListTemplate>> {
-    let db = state.db.lock().unwrap();
-    let base = BaseTemplate::new(&db, &identity)?;
-    Ok(BashoListTemplate {
-        base,
-        basho_list: BashoInfo::list_all(&db)?,
-    }.into())
-}
-
 #[derive(Template)]
 #[template(path = "basho.html")]
 struct BashoTemplate<'a> {

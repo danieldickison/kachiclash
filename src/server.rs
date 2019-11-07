@@ -66,7 +66,6 @@ pub fn run(config: Config) -> std::io::Result<()> {
 
         .service(
             web::scope("/basho")
-                .service(web::resource("").to(handlers::basho::basho_list))
                 .service(web::resource("/{basho_id}").to(handlers::basho::basho))
                 .service(web::resource("/{basho_id}/edit")
                     .route(web::get().to(handlers::admin::edit_basho_page))
