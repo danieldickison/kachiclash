@@ -1,7 +1,6 @@
 #p-basho {
     #leaderboard {
-        background: #e8faff;
-        padding: var(--section-padding);
+        background: var(--color-light-blue-bg);
 
         table {
             border-collapse: collapse;
@@ -48,8 +47,7 @@
     }
     
     #banzuke {
-        background: #fff8e8;
-        padding: var(--section-padding);
+        background: var(--color-light-yellow-bg);
 
         .save-picks-button,
         .change-picks-button {

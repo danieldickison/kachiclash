@@ -61,13 +61,15 @@
         </table>
     </section>
 
-    <h2 class="leaderboard-heading">Leaderboard</h2>
-    <ol class="leaderboard">
-    {% for player in leaders %}
-        <li class="leaderboard__item">
-            {% include "player_listing.html" %}
-            joined {{player.join_date.format("%Y-%m-%d")}}
-        </li>
-    {% endfor %}
-    </ol>
+    <section id="leaderboard">
+        <h2 class="leaderboard-heading">Leaderboard</h2>
+        <ol class="leaderboard">
+        {% for player in leaders %}
+            <li class="leaderboard__item">
+                {% include "player_listing.html" %}
+                joined {{player.join_date.format("%Y-%m-%d")}}
+            </li>
+        {% endfor %}
+        </ol>
+    </section>
 {% endblock %}
