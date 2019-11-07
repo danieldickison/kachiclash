@@ -4,7 +4,7 @@ use actix_identity::Identity;
 use itertools::Itertools;
 use rusqlite::{Connection, Result as SqlResult};
 
-use super::{BaseTemplate, Result, HandlerError, AskamaResponder};
+use super::{BaseTemplate, Result, HandlerError};
 use crate::data::{self, Rank, RankSide, RankGroup, BashoId, BashoInfo, PlayerId, RikishiId, Day, Player};
 use crate::AppState;
 
