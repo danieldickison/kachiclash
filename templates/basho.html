@@ -55,9 +55,13 @@
         <form id="banzuke-select-rikishi-form" action="{{basho.id.url_path()}}/picks">
             <table>
                 <thead>
-                    <th colspan="2">East</th>
+                    <th>East</th>
+                    <th>Picks</th>
+                    <th></th>
                     <th class="rank">Rank</th>
-                    <th colspan="2">West</th>
+                    <th>West</th>
+                    <th>Picks</th>
+                    <th></th>
                 </thead>
                 <tbody>
                     {% for rr in rikishi_by_rank -%}
@@ -159,6 +163,9 @@
                 {{- rikishi.name -}}
             </label>
         </td>
+        <td class="pick-count">
+            {{rikishi.picks}}
+        </td>
         <td class="hoshi">
             {% if basho.has_started() %}
                 {%- for day in rikishi.results -%}
@@ -171,6 +178,7 @@
             {% endif %}
         </td>
     {%- when None -%}
+        <td></td>
         <td></td>
         <td></td>
     {%- endmatch -%}

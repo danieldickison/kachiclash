@@ -107,6 +107,11 @@
                     font-size: 1.25rem;
                 }
 
+                &.pick-count {
+                    text-align: right;
+                    padding-right: 0.5rem;
+                }
+
                 label {
                     display: block;
                     padding: 0 5px;

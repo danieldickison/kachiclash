@@ -67,6 +67,7 @@ struct BashoRikishi {
     results: [Option<bool>; 15],
     wins: u8,
     losses: u8,
+    picks: u16,
     is_player_pick: bool,
 }
 
@@ -218,8 +219,6 @@ fn fetch_leaders<'a>(db: &Connection, basho_id: BashoId, player_id: Option<Playe
     Ok(leaders)
 }
 
-struct FetchedRikishiRow(Rank, RikishiId, String, Option<Day>, Option<bool>);
-
 struct FetchRikishiResult {
     by_rank: Vec<BashoRikishiByRank>,
     by_id: HashMap<RikishiId, BashoRikishi>,
@@ -229,13 +228,21 @@ fn fetch_rikishi(db: &Connection, basho_id: BashoId, picks: &HashSet<RikishiId>)
     -> Result<FetchRikishiResult> {
 
     debug!("fetching rikishi results for basho {}", basho_id);
+    struct FetchedRikishiRow(Rank, RikishiId, String, Option<Day>, Option<bool>, u16);
     let vec: Vec<BashoRikishiByRank> = db.prepare("
             SELECT
                 banzuke.rank,
                 banzuke.rikishi_id,
                 banzuke.family_name,
                 torikumi.day,
-                torikumi.win
+                torikumi.win,
+                (
+                    SELECT COUNT(DISTINCT player_id)
+                    FROM pick AS p
+                    WHERE
+                        p.rikishi_id = banzuke.rikishi_id
+                        AND p.basho_id = banzuke.basho_id
+                ) AS picks
             FROM banzuke
             LEFT NATURAL JOIN torikumi
             WHERE
@@ -251,6 +258,7 @@ fn fetch_rikishi(db: &Connection, basho_id: BashoId, picks: &HashSet<RikishiId>)
                     row.get("family_name")?,
                     row.get("day")?,
                     row.get("win")?,
+                    row.get("picks")?,
                 ))
             }
         )?
@@ -278,9 +286,10 @@ fn fetch_rikishi(db: &Connection, basho_id: BashoId, picks: &HashSet<RikishiId>)
                     results: [None; 15],
                     wins: 0,
                     losses: 0,
+                    picks: arow.5,
                     is_player_pick: picks.contains(&arow.1),
                 };
-                for FetchedRikishiRow(_, _, _, day, win) in rows {
+                for FetchedRikishiRow(_, _, _, day, win, _) in rows {
                     match win {
                         Some(true) => rikishi.wins += 1,
                         Some(false) => rikishi.losses += 1,
