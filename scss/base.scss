@@ -72,8 +72,9 @@ section {
     width: 100%;
     min-height: var(--header-height);
     margin: 0;
-    background: url(/static/img/banner-bg.png) var(--color-navy);
-    background-size: contain;
+    background: url(/static/img/header-bg.jpg) var(--color-navy);
+    background-repeat: repeat-x;
+    background-size: auto 100%;
     color: var(--color-light-fg);
     border-bottom: solid 1px var(--color-border);
     z-index: 1;
