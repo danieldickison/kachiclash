@@ -145,7 +145,7 @@ pub fn player_id_with_external_user(db: &mut Connection, user_info: impl externa
     }
 }
 
-fn name_is_valid(name: &str) -> bool {
+pub fn name_is_valid(name: &str) -> bool {
     lazy_static! {
         static ref RE: Regex =
             RegexBuilder::new(NAME_REGEX)

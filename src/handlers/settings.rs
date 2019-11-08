@@ -5,7 +5,7 @@ use askama::Template;
 use crate::AppState;
 use super::askama_responder::AskamaResponder;
 use super::{BaseTemplate, Result, HandlerError};
-use crate::data::{PlayerId};
+use crate::data::{PlayerId, player};
 
 
 #[derive(Template)]
@@ -36,6 +36,7 @@ pub fn settings_page(state: web::Data<AppState>, identity: Identity) -> Result<A
 }
 
 pub fn settings_post(form: web::Form<FormData>, state: web::Data<AppState>, identity: Identity) -> Result<AskamaResponder<SettingsTemplate>> {
+
     let player_id: PlayerId = match identity.identity() {
         Some(id) => match id.parse() {
             Ok(player_id) => player_id,
@@ -43,7 +44,17 @@ pub fn settings_post(form: web::Form<FormData>, state: web::Data<AppState>, iden
         },
         None => return Err(HandlerError::MustBeLoggedIn.into()),
     };
+
     let db = state.db.lock().unwrap();
+
+    if !player::name_is_valid(&form.name) {
+        return Ok(SettingsTemplate {
+            base: BaseTemplate::new(&db, &identity)?,
+            message: None,
+            error: Some(format!("Invalid name: {}", form.name)),
+        }.into());
+    }
+
     let result = db.execute(
         "UPDATE player SET name = ? WHERE id = ?",
         params![form.name, player_id]
