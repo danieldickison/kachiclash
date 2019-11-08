@@ -80,11 +80,7 @@ impl UserInfo for GoogleUserInfo {
         params![player_id, self.id, self.name, self.picture, mod_date])
     }
 
-    fn name_suggestion(&self) -> String {
-        self.name.as_ref()
-            .map_or_else(
-                || self.anon_name_suggestion(),
-                |name| name.to_lowercase().replace(" ", "")
-            )
+    fn name_suggestion(&self) -> Option<String> {
+        self.name.to_owned()
     }
 }

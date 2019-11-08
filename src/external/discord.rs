@@ -92,8 +92,8 @@ impl UserInfo for DiscordUserInfo {
         params![player_id, self.id, self.username, self.discriminator, self.avatar, mod_date])
     }
 
-    fn name_suggestion(&self) -> String {
-        self.username.to_owned()
+    fn name_suggestion(&self) -> Option<String> {
+        Some(self.username.to_owned())
     }
 }
 

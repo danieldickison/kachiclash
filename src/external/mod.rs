@@ -22,7 +22,7 @@ pub trait UserInfo {
     fn insert_into_db(&self, txn: &Transaction, mod_date: DateTime<Utc>, player_id: PlayerId)
         -> Result<usize, rusqlite::Error>;
 
-    fn name_suggestion(&self) -> String;
+    fn name_suggestion(&self) -> Option<String>;
 
     fn anon_name_suggestion(&self) -> String {
         format!("anon{:05}", rand::random::<u16>())

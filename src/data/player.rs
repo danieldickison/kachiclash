@@ -5,8 +5,13 @@ use crate::external::{self, discord};
 use super::{DataError};
 use rand::random;
 use url::Url;
+use std::ops::RangeInclusive;
+use regex::{Regex, RegexBuilder};
 
 pub type PlayerId = i64;
+
+pub const NAME_LENGTH: RangeInclusive<usize> = (4..=14);
+pub const NAME_REGEX: &str = "^[a-zA-Z][a-zA-Z0-9]+$";
 
 #[derive(Debug, Clone)]
 pub struct Player {
@@ -102,9 +107,21 @@ pub fn player_id_with_external_user(db: &mut Connection, user_info: impl externa
     let existing_player = user_info.update_existing_player(&txn, now)?;
     match existing_player {
         None => {
+            let name_suggestion = match user_info.name_suggestion() {
+                None => user_info.anon_name_suggestion(),
+                Some(name) => {
+                    let name = name.replace(" ", "");
+                    if name_is_valid(&name) {
+                        name
+                    } else {
+                        user_info.anon_name_suggestion()
+                    }
+                }
+            };
             let mut name_suffix = "".to_string();
             loop {
-                let name = format!("{}{}", user_info.name_suggestion(), name_suffix);
+
+                let name = format!("{}{}", name_suggestion, name_suffix);
                 match txn.execute("INSERT INTO player (join_date, name) VALUES (?, ?)",
                                   params![now, name]) {
                     Err(SqlError::SqliteFailure(rusqlite::ffi::Error { code: ErrorCode::ConstraintViolation, .. }, Some(ref str)))
@@ -126,4 +143,15 @@ pub fn player_id_with_external_user(db: &mut Connection, user_info: impl externa
             Ok((player_id, false))
         }
     }
+}
+
+fn name_is_valid(name: &str) -> bool {
+    lazy_static! {
+        static ref RE: Regex =
+            RegexBuilder::new(NAME_REGEX)
+                .build()
+                .unwrap();
+    }
+
+    NAME_LENGTH.contains(&name.len()) && RE.is_match(&name)
 }

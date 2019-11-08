@@ -82,7 +82,7 @@ impl UserInfo for RedditUserInfo {
         params![player_id, self.id, self.name, self.icon_img, mod_date])
     }
 
-    fn name_suggestion(&self) -> String {
-        self.name.to_owned()
+    fn name_suggestion(&self) -> Option<String> {
+        Some(self.name.to_owned())
     }
 }
