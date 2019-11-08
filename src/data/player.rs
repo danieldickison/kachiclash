@@ -110,7 +110,8 @@ pub fn player_id_with_external_user(db: &mut Connection, user_info: impl externa
             let name_suggestion = match user_info.name_suggestion() {
                 None => user_info.anon_name_suggestion(),
                 Some(name) => {
-                    let name = name.replace(" ", "");
+                    let mut name = name.replace(" ", "").replace("_", "");
+                    name.truncate(*NAME_LENGTH.end());
                     if name_is_valid(&name) {
                         name
                     } else {
