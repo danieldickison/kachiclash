@@ -21,40 +21,31 @@ type Result<T> = std::result::Result<T, failure::Error>;
 impl error::ResponseError for HandlerError {
     fn error_response(&self) -> HttpResponse {
         match self {
-            HandlerError::NotFound(thing) => HttpResponse::NotFound()
-                .content_type("text/plain")
-                .body(format!("{} not found", thing)),
-            HandlerError::ExternalServiceError =>
-                HttpResponse::InternalServerError()
-                .content_type("text/plain")
-                .body(format!("{}", self)),
-            HandlerError::DatabaseError(_) =>
-                HttpResponse::InternalServerError()
-                .content_type("text/plain")
-                .body(format!("{}", self)),
-            HandlerError::CSRFError | HandlerError::MustBeLoggedIn =>
-                HttpResponse::Forbidden()
-                .content_type("text/plain")
-                .body(format!("{}", self)),
+            HandlerError::NotFound(_) => HttpResponse::NotFound(),
+            HandlerError::ExternalServiceError => HttpResponse::InternalServerError(),
+            HandlerError::DatabaseError(_) => HttpResponse::InternalServerError(),
+            HandlerError::CSRFError | HandlerError::MustBeLoggedIn => HttpResponse::Forbidden(),
         }
+            .content_type("text/plain")
+            .body(self.to_string())
     }
 }
 
 #[derive(Fail, Debug)]
 pub enum HandlerError {
-    #[fail(display = "Not Found")]
+    #[fail(display = "{} not found", _0)]
     NotFound(String),
 
     #[fail(display = "Must be logged in")]
     MustBeLoggedIn,
 
-    #[fail(display = "External Service Error")]
+    #[fail(display = "External service error")]
     ExternalServiceError,
 
-    #[fail(display = "Database Error: {}", _0)]
+    #[fail(display = "Database error: {}", _0)]
     DatabaseError(DataError),
 
-    #[fail(display = "CSRF Error")]
+    #[fail(display = "CSRF error")]
     CSRFError,
 }
 
