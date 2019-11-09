@@ -61,6 +61,7 @@
         </table>
     </section>
 
+    {% if base.is_admin() %}
     <section id="leaderboard">
         <h2 class="leaderboard-heading">Leaderboard</h2>
         <ol class="leaderboard">
@@ -72,4 +73,5 @@
         {% endfor %}
         </ol>
     </section>
+    {% endif %}
 {% endblock %}
