@@ -7,7 +7,13 @@
     <p>During the basho, players are ranked according to their # of wins, and first-place will earn a coveted 🏆 EMPEROR'S CUP 🏆 next to your name for all future Kachi Clash contests.</p>
 
     {% if !basho.has_started() %}
-        <p>You can freely change your picks until the basho starts on {{basho.start_date.format("%Y-%m-%d %H:%M")}} JST.</p>
+        <p>
+            You can freely change your picks until the basho starts on
+            <time class="js-local-datetime"
+                datetime="{{basho.start_date.to_rfc3339()}}"
+                data-timestamp="{{basho.start_date.timestamp_millis()}}">
+                {{basho.start_date.format("%Y-%m-%d %H:%M")}} UTC</time>.
+        </p>
     {% endif %}
 
     <p>Join the Kachi Clash discussion in our <a target="_blank" href="https://discordapp.com/invite/Wg4DsMt">Discord Channel</a>!</p>

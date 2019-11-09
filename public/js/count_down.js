@@ -1,4 +1,4 @@
-
+(function () {
 const countDown = document.getElementById('basho-count-down');
 if (countDown) {
     const startTimestamp = parseInt(countDown.dataset.startDate);
@@ -33,3 +33,20 @@ if (countDown) {
     updateTimeRemaining();
     setInterval(updateTimeRemaining, 1000);
 }
+
+const DATETIME_FORMAT = new Intl.DateTimeFormat(undefined, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    timeZoneName: 'short',
+});
+document.querySelectorAll('.js-local-datetime').forEach(el => {
+    const timestamp = parseInt(el.dataset.timestamp);
+    if (timestamp && !isNaN(timestamp)) {
+        const date = new Date(timestamp);
+        el.innerText = DATETIME_FORMAT.format(date);
+    }
+});
+})();
