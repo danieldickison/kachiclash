@@ -118,7 +118,7 @@ fn fetch_player_picks(db: &Connection, player_id: Option<PlayerId>, basho_id: Ba
 fn fetch_leaders<'a>(db: &Connection, basho_id: BashoId, player_id: Option<PlayerId>, rikishi: &'a HashMap<RikishiId, BashoRikishi>)
     -> Result<Vec<BashoPlayerResults<'a>>> {
 
-    const LIMIT: usize = 100;
+    const LIMIT: usize = 300;
     debug!("fetching {} leaders for basho {}", LIMIT, basho_id);
     let mut leaders: Vec<BashoPlayerResults<'a>> = db.prepare("
             SELECT
