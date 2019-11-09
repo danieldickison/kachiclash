@@ -11,7 +11,7 @@ use regex::{Regex, RegexBuilder};
 pub type PlayerId = i64;
 
 pub const NAME_LENGTH: RangeInclusive<usize> = (3..=14);
-pub const NAME_REGEX: &str = "^[a-zA-Z][a-zA-Z0-9]+$";
+pub const NAME_REGEX: &str = "^[a-zA-Z][a-zA-Z0-9]*$";
 
 #[derive(Debug, Clone)]
 pub struct Player {
