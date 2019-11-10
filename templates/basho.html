@@ -106,7 +106,9 @@
                 <tr {% if leader.is_self %}class="self"{% endif %}>
                     <td class="rank">
                         {% if basho.has_started() %}
-                            {{leader.rank}}
+                            {% if leader.rank == 0 %} &gt;{{leaders.len()}}
+                            {% else %} {{leader.rank}}
+                            {% endif %}
                         {% else %}
                             {{loop.index}}
                         {% endif %}
