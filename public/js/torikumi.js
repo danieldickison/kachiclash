@@ -25,7 +25,7 @@ function torikumiFormInput() {
 }
 
 // Maches rank, name, record, kimarite, rank, name, record
-const TORIKUMI_REGEX = /^ *\w{1,2}\d{1,3}[ew] +(\w+) +\(\d+.\d+\) +\w+ *\w{1,2}\d{1,3}[ew] +(\w+) +\(\d+.\d+\) *$/gm
+const TORIKUMI_REGEX = /^ *[a-z]{1,2}\d{1,3}[ew] +([a-z]+) +\(\d+.\d+\) +[a-z]+ *[a-z]{1,2}\d{1,3}[ew] +([a-z]+) +\(\d+.\d+\) *$/gim
 
 function parseTorikumi(str) {
     console.log("parsing torikumi");
