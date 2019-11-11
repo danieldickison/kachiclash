@@ -27,7 +27,7 @@ struct BashoTemplate<'a> {
 struct BashoPlayerResults<'a> {
     player: Player,
     total: u8,
-    days: [Option<i8>; 15],
+    days: [Option<u8>; 15],
     picks: [Option<&'a BashoRikishi>; 5],
     rank: usize,
     is_self: bool,
@@ -160,9 +160,10 @@ fn fetch_leaders<'a>(db: &Connection, basho_id: BashoId, player_id: Option<Playe
                 if let Some(r) = rikishi.get(&rikishi_id) {
                     picks[*r.rank.group() as usize - 1] = Some(r);
                     for (day, win) in r.results.iter().enumerate() {
-                        if let Some(true) = win {
-                            days[day] = Some(days[day].unwrap_or(0) + 1);
-                            total_validation += 1;
+                        if let Some(win) = win {
+                            let incr = if *win {1} else {0};
+                            days[day] = Some(days[day].unwrap_or(0) + incr);
+                            total_validation += incr;
                         }
                     }
                 }
@@ -175,6 +176,8 @@ fn fetch_leaders<'a>(db: &Connection, basho_id: BashoId, player_id: Option<Playe
             }
         })
         .collect();
+
+    // Sort and assign ranks
     leaders.sort_by_key(|p| -i16::from(p.total));
     let mut last_total = 0;
     let mut last_rank = 1;
@@ -190,6 +193,7 @@ fn fetch_leaders<'a>(db: &Connection, basho_id: BashoId, player_id: Option<Playe
             p.rank = last_rank;
         }
     }
+
     Ok(leaders)
 }
 

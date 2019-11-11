@@ -114,6 +114,7 @@
                         {% endif %}
                     </td>
                     <td class="name">{% include "player_listing.html" %}</td>
+
                     {% for rikishi in leader.picks %}
                         <td class="pick">
                         {%- match rikishi -%}
@@ -121,8 +122,8 @@
                         {%- when None -%}
                         {%- endmatch -%}
                         </td>
-
                     {% endfor %}
+
                     {% for wins in leader.days -%}
                         <td class="score">
                         {%- match wins -%}
@@ -131,7 +132,9 @@
                         {%- endmatch -%}
                         </td>
                     {% endfor -%}
+
                     <td class="score">{{leader.total}}</td>
+                    
                     {% if base.is_admin() && basho.has_started() && leader.rank == 1 %}
                         <td>
                             <button class="bestow-emperors-cup-button" data-player-id="{{player.id}}">
