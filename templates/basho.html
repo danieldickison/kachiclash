@@ -57,11 +57,15 @@
                 <thead>
                     <th>East</th>
                     <th>Picks</th>
-                    <th></th>
+                    {% if basho.has_started() %}
+                        <th colspan="15"></th>
+                    {% endif %}
                     <th class="rank">Rank</th>
                     <th>West</th>
                     <th>Picks</th>
-                    <th></th>
+                    {% if basho.has_started() %}
+                        <th colspan="15"></th>
+                    {% endif %}
                 </thead>
                 <tbody>
                     {% for rr in rikishi_by_rank -%}
@@ -134,7 +138,7 @@
                     {% endfor -%}
 
                     <td class="score">{{leader.total}}</td>
-                    
+
                     {% if base.is_admin() && basho.has_started() && leader.rank == 1 %}
                         <td>
                             <button class="bestow-emperors-cup-button" data-player-id="{{player.id}}">
@@ -171,20 +175,22 @@
         <td class="pick-count">
             {{rikishi.picks}}
         </td>
-        <td class="hoshi">
-            {% if basho.has_started() %}
-                {%- for day in rikishi.results -%}
+        {% if basho.has_started() %}
+            {%- for day in rikishi.results -%}
+                <td class="hoshi">
                     {%- match day -%}
-                        {%- when Some with (true) -%}⚪️
-                        {%- when Some with (false) -%}⚫️
-                        {%- when None -%}—
+                        {%- when Some with (true) -%}   ⚪️
+                        {%- when Some with (false) -%}  ⚫️
+                        {%- when None -%}               –
                     {%- endmatch -%}
-                {%- endfor -%}
-            {% endif %}
-        </td>
+                </td>
+            {%- endfor -%}
+        {% endif %}
     {%- when None -%}
         <td></td>
         <td></td>
-        <td></td>
+        {% if basho.has_started() %}
+            {% for _ in 1..=15 %}<td></td>{% endfor %}
+        {% endif %}
     {%- endmatch -%}
 {%- endmacro -%}

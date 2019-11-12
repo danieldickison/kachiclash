@@ -110,6 +110,12 @@
                     padding-right: 0.5rem;
                 }
 
+                &.hoshi {
+                    font-size: 0.75rem;
+                    font-family: monospace;
+                    width: 2ch;
+                }
+
                 label {
                     display: block;
                     padding: 0 5px;
