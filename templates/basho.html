@@ -105,19 +105,25 @@
             </thead>
             <tbody>
             {% for leader in leaders -%}
-                {# TODO: we want to do `let player = &leader.player' but not sure askama provides a way to create a reference like that. Any way to avoid cloning here for passing player into the player_listing.html template? #}
-                {% let player = leader.player.clone() %}
                 <tr {% if leader.is_self %}class="self"{% endif %}>
-                    <td class="rank">
-                        {% if basho.has_started() %}
-                            {% if leader.rank == 0 %} &gt;{{leaders.len()}}
-                            {% else %} {{leader.rank}}
+                    {% match leader.player -%}
+                    {%- when ResultPlayer::Max %}
+                        <td class="min-max-name" colspan="2">Best Possible</td>
+                    {%- when ResultPlayer::Min %}
+                        <td class="min-max-name" colspan="2">Worst Possible</td>
+
+                    {%- when ResultPlayer::RealPlayer with (player) %}
+                        <td class="rank">
+                            {% if basho.has_started() %}
+                                {% if leader.rank == 0 %} &gt;{{leaders.len()}}
+                                {% else %} {{leader.rank}}
+                                {% endif %}
+                            {% else %}
+                                {{loop.index}}
                             {% endif %}
-                        {% else %}
-                            {{loop.index}}
-                        {% endif %}
-                    </td>
-                    <td class="name">{% include "player_listing.html" %}</td>
+                        </td>
+                        <td class="name">{% include "player_listing.html" %}</td>
+                    {%- endmatch -%}
 
                     {% for rikishi in leader.picks %}
                         <td class="pick">
@@ -140,14 +146,19 @@
                     <td class="score">{{leader.total}}</td>
 
                     {% if base.is_admin() && basho.has_started() && leader.rank == 1 %}
-                        <td>
-                            <button class="bestow-emperors-cup-button" data-player-id="{{player.id}}">
-                                🏆
-                            </button>
-                            <button class="revoke-emperors-cup-button" data-player-id="{{player.id}}">
-                                <s>🏆</s>
-                            </button>
-                        </td>
+                        {%- match leader.player -%}
+                        {%- when ResultPlayer::RealPlayer with (player) -%}
+                            <td>
+                                <button class="bestow-emperors-cup-button" data-player-id="{{player.id}}">
+                                    🏆
+                                </button>
+                                <button class="revoke-emperors-cup-button" data-player-id="{{player.id}}">
+                                    <s>🏆</s>
+                                </button>
+                            </td>
+                        {%- when ResultPlayer::Max -%}
+                        {%- when ResultPlayer::Min -%}
+                        {%- endmatch -%}
                     {% endif %}
                 </tr>
             {%- endfor %}

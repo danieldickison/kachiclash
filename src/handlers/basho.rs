@@ -25,12 +25,18 @@ struct BashoTemplate<'a> {
 }
 
 struct BashoPlayerResults<'a> {
-    player: Player,
+    player: ResultPlayer,
     total: u8,
     days: [Option<u8>; 15],
     picks: [Option<&'a BashoRikishi>; 5],
     rank: usize,
     is_self: bool,
+}
+
+enum ResultPlayer {
+    RealPlayer(Player),
+    Max,
+    Min,
 }
 
 #[derive(Clone)]
@@ -152,27 +158,17 @@ fn fetch_leaders<'a>(db: &Connection, basho_id: BashoId, player_id: Option<Playe
         .collect::<SqlResult<Vec<(Player, u8, String)>>>()?
         .into_iter()
         .map(|(player, total, picks_str)| {
-            ;
             let mut picks = [None; 5];
-            let mut days = [None; 15];
-            let mut total_validation = 0;
-            for rikishi_id in picks_str.split(',').map(|id| id.parse().unwrap()) {
-                if let Some(r) = rikishi.get(&rikishi_id) {
-                    picks[*r.rank.group() as usize - 1] = Some(r);
-                    for (day, win) in r.results.iter().enumerate() {
-                        if let Some(win) = win {
-                            let incr = if *win {1} else {0};
-                            days[day] = Some(days[day].unwrap_or(0) + incr);
-                            total_validation += incr;
-                        }
-                    }
-                }
+            for r in picks_str.split(',').filter_map(|id| rikishi.get(&id.parse().unwrap())) {
+                picks[*r.rank.group() as usize - 1] = Some(r);
             }
+            let (days, total_validation) = picks_to_days(&picks);
             assert_eq!(total, total_validation);
             BashoPlayerResults {
                 is_self: player_id.map_or(false, |id| player.id == id),
                 rank: 0, // populated later
-                player, picks, total, days,
+                player: ResultPlayer::RealPlayer(player),
+                picks, total, days,
             }
         })
         .collect();
@@ -194,7 +190,65 @@ fn fetch_leaders<'a>(db: &Connection, basho_id: BashoId, player_id: Option<Playe
         }
     }
 
+    let (min, max) = make_min_max_results(&rikishi);
+    leaders.insert(0, max);
+    leaders.push(min);
+
     Ok(leaders)
+}
+
+fn make_min_max_results<'a>(rikishi: &'a HashMap<RikishiId, BashoRikishi>)
+    -> (BashoPlayerResults<'a>, BashoPlayerResults<'a>) {
+
+    let mut mins = [None; 5];
+    let mut maxes = [None; 5];
+    for r in rikishi.values() {
+        let group = *r.rank.group() as usize - 1;
+        mins[group] = mins[group].map_or(Some(r), |min: &BashoRikishi| {
+            Some(if r.wins < min.wins {r} else {min})
+        });
+        maxes[group] = maxes[group].map_or(Some(r), |max: &BashoRikishi| {
+            Some(if r.wins > max.wins {r} else {max})
+        });
+    }
+    let (min_days, min_total) = picks_to_days(&mins);
+    let (max_days, max_total) = picks_to_days(&maxes);
+
+    (
+        BashoPlayerResults {
+            is_self: false,
+            rank: 0, // n/a
+            player: ResultPlayer::Min,
+            picks: mins,
+            total: min_total,
+            days: min_days,
+        },
+        BashoPlayerResults {
+            is_self: false,
+            rank: 0, // n/a
+            player: ResultPlayer::Max,
+            picks: maxes,
+            total: max_total,
+            days: max_days,
+        },
+    )
+}
+
+fn picks_to_days(picks: &[Option<&BashoRikishi>; 5]) -> ([Option<u8>; 15], u8) {
+    let mut days = [None; 15];
+    let mut total_validation = 0;
+    for pick in picks {
+        if let Some(r) = pick {
+            for (day, win) in r.results.iter().enumerate() {
+                if let Some(win) = win {
+                    let incr = if *win {1} else {0};
+                    days[day] = Some(days[day].unwrap_or(0) + incr);
+                    total_validation += incr;
+                }
+            }
+        }
+    }
+    (days, total_validation)
 }
 
 struct FetchRikishiResult {

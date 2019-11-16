@@ -11,6 +11,10 @@
                 background: var(--color-table-highlight-bg);
                 outline: solid 2px var(--color-table-highlight-outline);
             }
+            tr:first-child, tr:last-child {
+                color: var(--color-gray-fg);
+                font-weight: 300;
+            }
 
             th {
                 font-weight: bold;
@@ -31,6 +35,11 @@
 
             td.name {
                 padding-top: 3px; /* adjust baseline alignment of name cell with others */
+            }
+
+            td.min-max-name {
+                font-style: italic;
+                padding: 0.75rem 0;
             }
 
             td.pick {
