@@ -49,8 +49,13 @@
                 text-overflow: ellipsis;
             }
 
-            td.score {
+            td.score,
+            th.day {
                 text-align: right;
+            }
+
+            td.total {
+                font-weight: bold;
             }
         }
     }

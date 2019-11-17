@@ -98,7 +98,7 @@
                     <th>Player</th>
                     <th colspan="5">Picks</th>
                     {% for day in 1..16 -%}
-                        <th>{{day}}</th>
+                        <th class="day">{{day}}</th>
                     {% endfor -%}
                     <th>Total</th>
                 </tr>
@@ -143,7 +143,7 @@
                         </td>
                     {% endfor -%}
 
-                    <td class="score">{{leader.total}}</td>
+                    <td class="score total">{{leader.total}}</td>
 
                     {% if base.is_admin() && basho.has_started() && leader.rank == 1 %}
                         {%- match leader.player -%}
