@@ -10,10 +10,12 @@ pub mod player;
 pub use player::{PlayerId, Player};
 
 pub mod basho;
-pub use basho::{BashoId, BashoInfo};
+pub use basho::{BashoId, BashoInfo, BashoRikishi, BashoRikishiByRank, FetchBashoRikishi};
 
 pub mod award;
 pub use award::Award;
+
+pub mod leaders;
 
 pub type RikishiId = u32;
 pub type Day = u8;

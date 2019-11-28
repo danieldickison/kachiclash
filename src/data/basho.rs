@@ -1,7 +1,8 @@
 use std::str::FromStr;
 use std::convert::From;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt;
+use std::cmp::max;
 use rusqlite::{Connection, NO_PARAMS, Result as SqlResult};
 use rusqlite::types::{ToSql, ToSqlOutput, ValueRef, FromSql, FromSqlResult};
 use chrono::naive::{NaiveDate, NaiveDateTime};
@@ -10,7 +11,7 @@ use chrono::{DateTime, Datelike};
 use serde::{Deserialize, Deserializer};
 use itertools::Itertools;
 
-use super::{DataError, PlayerId, Player, RikishiId, Rank, RankGroup, Day, Award};
+use super::{DataError, PlayerId, Player, RikishiId, Rank, RankGroup, RankSide, Day, Award};
 
 pub struct BashoInfo {
     pub id: BashoId,
@@ -422,4 +423,147 @@ pub fn update_torikumi(db: &mut Connection, basho_id: BashoId, day: Day, torikum
     txn.commit()?;
 
     Ok(())
+}
+
+
+#[derive(Clone)]
+pub struct BashoRikishi {
+    pub id: RikishiId,
+    pub name: String,
+    pub rank: Rank,
+    pub results: [Option<bool>; 15],
+    pub wins: u8,
+    pub losses: u8,
+    pub picks: u16,
+    pub is_player_pick: bool,
+}
+
+impl BashoRikishi {
+    fn next_day(&self) -> u8 {
+        for (i, win) in self.results.iter().enumerate().rev() {
+            if win.is_some() {
+                return (i + 2) as u8;
+            }
+        }
+        1
+    }
+}
+
+pub struct BashoRikishiByRank {
+    pub rank: String,
+    pub rank_group: RankGroup,
+    pub east: Option<BashoRikishi>,
+    pub west: Option<BashoRikishi>,
+}
+
+impl BashoRikishiByRank {
+    pub fn next_day(&self) -> u8 {
+        max(self.east.as_ref().map_or(1, |r| r.next_day()),
+            self.west.as_ref().map_or(1, |r| r.next_day()))
+    }
+}
+
+pub struct FetchBashoRikishi {
+    pub by_rank: Vec<BashoRikishiByRank>,
+    pub by_id: HashMap<RikishiId, BashoRikishi>,
+}
+
+impl FetchBashoRikishi {
+    pub fn with_db(db: &Connection, basho_id: BashoId, picks: &HashSet<RikishiId>)
+                     -> SqlResult<Self> {
+        debug!("fetching rikishi results for basho {}", basho_id);
+        struct FetchedRikishiRow(Rank, RikishiId, String, Option<Day>, Option<bool>, u16);
+        let vec: Vec<BashoRikishiByRank> = db.prepare("
+            SELECT
+                banzuke.rank,
+                banzuke.rikishi_id,
+                banzuke.family_name,
+                torikumi.day,
+                torikumi.win,
+                (
+                    SELECT COUNT(DISTINCT player_id)
+                    FROM pick AS p
+                    WHERE
+                        p.rikishi_id = banzuke.rikishi_id
+                        AND p.basho_id = banzuke.basho_id
+                ) AS picks
+            FROM banzuke
+            LEFT NATURAL JOIN torikumi
+            WHERE
+                banzuke.basho_id = ?
+            ORDER BY banzuke.rank DESC, banzuke.rikishi_id, torikumi.day
+        ").unwrap()
+            .query_map(
+                params![basho_id],
+                |row| -> SqlResult<FetchedRikishiRow> {
+                    Ok(FetchedRikishiRow(
+                        row.get("rank")?,
+                        row.get("rikishi_id")?,
+                        row.get("family_name")?,
+                        row.get("day")?,
+                        row.get("win")?,
+                        row.get("picks")?,
+                    ))
+                }
+            )?
+            .collect::<SqlResult<Vec<FetchedRikishiRow>>>()?
+            .into_iter()
+            .filter(|row| row.0.is_makuuchi())
+            .group_by(|row| (row.0.name, row.0.number)) // rank name and number but group east/west together
+            .into_iter()
+            .sorted_by(|(rank1, _), (rank2, _)| rank1.cmp(rank2))
+            .map(|(rank, pair)| {
+                let mut out = BashoRikishiByRank {
+                    rank: format!("{}{}", rank.0, rank.1),
+                    rank_group: RankGroup::for_rank(rank.0, rank.1),
+                    east: None,
+                    west: None,
+                };
+                for (_, rows) in &pair.group_by(|row| row.0) {
+                    let mut rows = rows.peekable();
+                    let arow = rows.peek().unwrap();
+                    let side = arow.0.side;
+                    let mut rikishi = BashoRikishi {
+                        id: arow.1,
+                        name: arow.2.to_string(),
+                        rank: arow.0,
+                        results: [None; 15],
+                        wins: 0,
+                        losses: 0,
+                        picks: arow.5,
+                        is_player_pick: picks.contains(&arow.1),
+                    };
+                    for FetchedRikishiRow(_, _, _, day, win, _) in rows {
+                        match win {
+                            Some(true) => rikishi.wins += 1,
+                            Some(false) => rikishi.losses += 1,
+                            None => ()
+                        }
+                        if let Some(day) = day {
+                            rikishi.results[day as usize - 1] = win
+                        }
+                    }
+                    match side {
+                        RankSide::East => out.east = Some(rikishi),
+                        RankSide::West => out.west = Some(rikishi),
+                    }
+                }
+                out
+            })
+            .collect();
+        let mut map = HashMap::with_capacity(2 * vec.len());
+        for brr in &vec {
+            if let Some(r) = &brr.east {
+                // TODO: how can I specify lifetimes so the HashMap has references to values owned by the Vec to avoid cloning here?
+                map.insert(r.id, r.clone());
+            }
+            if let Some(r) = &brr.west {
+                map.insert(r.id, r.clone());
+            }
+        }
+        Ok(Self {
+            by_rank: vec,
+            by_id: map,
+        })
+    }
 }
