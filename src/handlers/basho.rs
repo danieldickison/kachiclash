@@ -5,7 +5,7 @@ use rusqlite::Connection;
 
 use super::{BaseTemplate, Result, HandlerError};
 use crate::data::{self, RankGroup, BashoId, BashoInfo, BashoRikishiByRank, FetchBashoRikishi, PlayerId, RikishiId};
-use crate::data::leaders::{fetch_basho_leaders, BashoPlayerResults, ResultPlayer};
+use crate::data::leaders::{BashoPlayerResults, ResultPlayer};
 use crate::AppState;
 
 use actix_web::{web, HttpResponse, Responder};
@@ -33,7 +33,7 @@ pub fn basho(path: web::Path<BashoId>, state: web::Data<AppState>, identity: Ide
     let basho = BashoInfo::with_id(&db, basho_id)?
             .ok_or_else(|| HandlerError::NotFound("basho".to_string()))?;
     let s = BashoTemplate {
-        leaders: fetch_basho_leaders(&db, basho_id, player_id, &rikishi.by_id)?,
+        leaders: BashoPlayerResults::fetch(&db, basho_id, player_id, &rikishi.by_id)?,
         next_day: rikishi.by_rank.iter()
             .map(|rr| rr.next_day())
             .max()
