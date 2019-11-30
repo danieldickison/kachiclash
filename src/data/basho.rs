@@ -11,7 +11,7 @@ use chrono::{DateTime, Datelike};
 use serde::{Deserialize, Deserializer};
 use itertools::Itertools;
 
-use super::{DataError, PlayerId, Player, RikishiId, Rank, RankGroup, RankSide, Day, Award};
+use super::{DataError, PlayerId, Player, RikishiId, Rank, RankGroup, RankSide, Day, Award, leaders};
 
 pub struct BashoInfo {
     pub id: BashoId,
@@ -566,4 +566,42 @@ impl FetchBashoRikishi {
             by_id: map,
         })
     }
+}
+
+pub fn finalize_basho(db: &mut Connection, basho_id: BashoId) -> SqlResult<()> {
+    debug!("finalizing basho {}", basho_id);
+    let rikishi = FetchBashoRikishi::with_db(&db, basho_id, &HashSet::new())?;
+    let results = leaders::BashoPlayerResults::fetch(&db, basho_id, Some(0), &rikishi.by_id)?;
+    let txn = db.transaction()?;
+    {
+        // Delete previously awarded emperor's cups
+        txn.prepare("
+                DELETE FROM award
+                WHERE basho_id = ? AND type = ?
+            ")?
+            .execute(params![basho_id, Award::EmperorsCup])?;
+
+        // For each player, upsert basho_result and award emperor's cup if they ranked #1
+        let mut insert_result_stmt = txn.prepare("
+                INSERT INTO basho_result (basho_id, player_id, wins, rank) VALUES (?, ?, ?, ?)
+                ON CONFLICT (basho_id, player_id) DO UPDATE
+                SET wins = excluded.wins,
+                    rank = excluded.rank
+            ")?;
+        let mut insert_award_stmt = txn.prepare("
+                INSERT INTO award (basho_id, player_id, type)
+                VALUES (?, ?, ?)
+            ")?;
+        for pr in results {
+            if let leaders::ResultPlayer::RealPlayer(p) = pr.player {
+                debug!("- rank {} player {} ({}) with {} wins", pr.rank, p.name, p.id, pr.total);
+                insert_result_stmt.execute(params![basho_id, p.id, pr.total, pr.rank as u32])?;
+                if pr.rank == 1 {
+                    insert_award_stmt.execute(params![basho_id, p.id, Award::EmperorsCup])?;
+                }
+            }
+        }
+    }
+    debug!("committing");
+    txn.commit()
 }

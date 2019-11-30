@@ -1,9 +1,9 @@
 
-use crate::data::{self, Rank, BashoId, PlayerId, Award};
+use crate::data::{self, basho, Rank, BashoId, PlayerId, Award};
 use crate::AppState;
 use super::{HandlerError, BaseTemplate, Result, AskamaResponder};
 
-use actix_web::web;
+use actix_web::{web, http, HttpResponse, Responder};
 use actix_identity::Identity;
 use actix_web::client::Client;
 use rusqlite::{Connection, Result as SqlResult, OptionalExtension};
@@ -223,4 +223,16 @@ pub fn revoke_emperors_cup(path: web::Path<BashoId>, award: web::Json<AwardData>
     admin_base(&db, &identity)?;
     Award::EmperorsCup.revoke(&mut db, *path, award.player_id)
         .map_err(|e| e.into())
+}
+
+pub fn finalize_basho(path: web::Path<BashoId>, state: web::Data<AppState>, identity: Identity)
+    -> Result<impl Responder> {
+    let mut db = state.db.lock().unwrap();
+    admin_base(&db, &identity)?;
+    basho::finalize_basho(&mut db, *path)?;
+    Ok(
+        HttpResponse::SeeOther()
+            .set_header(http::header::LOCATION, &*path.url_path())
+            .finish()
+    )
 }

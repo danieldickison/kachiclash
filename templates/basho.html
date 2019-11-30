@@ -18,8 +18,12 @@
         <section id="admin">
             <h2>Admin Controls</h2>
             <ul>
-                <li><a href="{{basho.id.url_path()}}/edit">edit basho</a></li>
-                <li><a href="{{basho.id.url_path()}}/day/{{next_day}}">enter day {{next_day}} results</a></li>
+                <li><a href="{{basho.id.url_path()}}/edit">edit basho banzuke</a></li>
+                {% if next_day <= 15 %}
+                    <li><a href="{{basho.id.url_path()}}/day/{{next_day}}">enter day {{next_day}} results</a></li>
+                {% else %}
+                    <li><form method="post" action="{{basho.id.url_path()}}/finalize"><button>finalize basho</button></form></li>
+                {% endif %}
             </ul>
         </section>
     {% endif %}

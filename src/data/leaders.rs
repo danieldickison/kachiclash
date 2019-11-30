@@ -20,7 +20,7 @@ pub enum ResultPlayer {
 
 impl <'a> BashoPlayerResults<'a> {
     pub fn fetch(db: &Connection, basho_id: BashoId, player_id: Option<PlayerId>, rikishi: &'a HashMap<RikishiId, BashoRikishi>)
-                     -> Result<Vec<Self>, failure::Error> {
+                     -> SqlResult<Vec<Self>> {
         const LIMIT: usize = 300;
         debug!("fetching {} leaders for basho {}", LIMIT, basho_id);
         let mut leaders: Vec<BashoPlayerResults<'a>> = db.prepare("
