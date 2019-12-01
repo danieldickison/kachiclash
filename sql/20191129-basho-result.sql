@@ -16,7 +16,6 @@ CREATE TABLE external_basho_result (
     winning_score   INTEGER
 );
 
-#ALTER TABLE basho DROP COLUMN external_link;
 UPDATE basho SET external_link = NULL;
 
 INSERT INTO external_basho_result (basho_id, url, players, winning_score)
