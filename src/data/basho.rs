@@ -20,6 +20,7 @@ pub struct BashoInfo {
     pub external_link: Option<String>,
     pub player_count: u32,
     pub winners: Vec<Player>,
+    pub winning_score: Option<u8>,
 }
 
 impl BashoInfo {
@@ -29,10 +30,15 @@ impl BashoInfo {
                 COUNT(*) AS n,
                 basho.start_date,
                 basho.venue,
-                basho.external_link,
-                COUNT(DISTINCT pick.player_id) AS player_count
+                ebr.url AS external_link,
+                CASE
+                    WHEN ebr.basho_id IS NULL THEN COUNT(DISTINCT br.player_id)
+                    ELSE ebr.players
+                END AS player_count,
+                COALESCE(MAX(br.wins), ebr.winning_score) AS winning_score
             FROM basho
-            LEFT JOIN pick ON pick.basho_id = basho.id
+            LEFT JOIN basho_result AS br ON br.basho_id = basho.id
+            LEFT JOIN external_basho_result AS ebr ON ebr.basho_id = basho.id
             WHERE basho.id = ?",
                      params![id],
                      |row| {
@@ -45,6 +51,7 @@ impl BashoInfo {
                                  venue: row.get("venue")?,
                                  external_link: row.get("external_link")?,
                                  player_count: row.get("player_count")?,
+                                 winning_score: row.get("winning_score")?,
                                  winners: BashoInfo::fetch_basho_winners(&db, id)?,
                              }))
                          }
@@ -59,10 +66,15 @@ impl BashoInfo {
                     basho.id,
                     basho.start_date,
                     basho.venue,
-                    basho.external_link,
-                    COUNT(DISTINCT pick.player_id) AS player_count
+                    ebr.url AS external_link,
+                    CASE
+                        WHEN ebr.basho_id IS NULL THEN COUNT(DISTINCT br.player_id)
+                        ELSE ebr.players
+                    END AS player_count,
+                    COALESCE(MAX(br.wins), ebr.winning_score) AS winning_score
                 FROM basho
-                LEFT JOIN pick ON pick.basho_id = basho.id
+                LEFT JOIN basho_result AS br ON br.basho_id = basho.id
+                LEFT JOIN external_basho_result AS ebr ON ebr.basho_id = basho.id
                 GROUP BY basho.id
                 ORDER BY basho.id DESC")?
             .query_map(
@@ -75,6 +87,7 @@ impl BashoInfo {
                         venue: row.get("venue")?,
                         external_link: row.get("external_link")?,
                         player_count: row.get("player_count")?,
+                        winning_score: row.get("winning_score")?,
                         winners: winners.remove(&basho_id).unwrap_or_else(|| vec![]),
                     })
                 })?
