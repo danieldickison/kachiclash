@@ -584,7 +584,7 @@ impl FetchBashoRikishi {
 pub fn finalize_basho(db: &mut Connection, basho_id: BashoId) -> SqlResult<()> {
     debug!("finalizing basho {}", basho_id);
     let rikishi = FetchBashoRikishi::with_db(&db, basho_id, &HashSet::new())?;
-    let results = leaders::BashoPlayerResults::fetch(&db, basho_id, Some(0), &rikishi.by_id)?;
+    let results = leaders::BashoPlayerResults::fetch(&db, basho_id, Some(0), &rikishi.by_id, false)?;
     let txn = db.transaction()?;
     {
         // Delete previously awarded emperor's cups

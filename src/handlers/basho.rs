@@ -33,7 +33,7 @@ pub fn basho(path: web::Path<BashoId>, state: web::Data<AppState>, identity: Ide
     let basho = BashoInfo::with_id(&db, basho_id)?
             .ok_or_else(|| HandlerError::NotFound("basho".to_string()))?;
     let s = BashoTemplate {
-        leaders: BashoPlayerResults::fetch(&db, basho_id, player_id, &rikishi.by_id)?,
+        leaders: BashoPlayerResults::fetch(&db, basho_id, player_id, &rikishi.by_id, basho.has_started())?,
         next_day: rikishi.by_rank.iter()
             .map(|rr| rr.next_day())
             .max()

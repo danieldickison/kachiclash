@@ -19,7 +19,7 @@ pub enum ResultPlayer {
 }
 
 impl <'a> BashoPlayerResults<'a> {
-    pub fn fetch(db: &Connection, basho_id: BashoId, player_id: Option<PlayerId>, rikishi: &'a HashMap<RikishiId, BashoRikishi>)
+    pub fn fetch(db: &Connection, basho_id: BashoId, player_id: Option<PlayerId>, rikishi: &'a HashMap<RikishiId, BashoRikishi>, include_best_worst: bool)
                      -> SqlResult<Vec<Self>> {
         const LIMIT: usize = 300;
         debug!("fetching {} leaders for basho {}", LIMIT, basho_id);
@@ -89,9 +89,11 @@ impl <'a> BashoPlayerResults<'a> {
             }
         }
 
-        let (min, max) = make_min_max_results(&rikishi);
-        leaders.insert(0, max);
-        leaders.push(min);
+        if include_best_worst {
+            let (min, max) = make_min_max_results(&rikishi);
+            leaders.insert(0, max);
+            leaders.push(min);
+        }
 
         Ok(leaders)
     }
