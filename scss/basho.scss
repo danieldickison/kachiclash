@@ -11,7 +11,7 @@
                 background: var(--color-table-highlight-bg);
                 outline: solid 2px var(--color-table-highlight-outline);
             }
-            tr:first-child, tr:last-child {
+            tr.min-max {
                 color: var(--color-gray-fg);
                 font-weight: 300;
             }

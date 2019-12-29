@@ -109,7 +109,15 @@
             </thead>
             <tbody>
             {% for leader in leaders -%}
-                <tr {% if leader.is_self %}class="self"{% endif %}>
+                <tr class="
+                    {% if leader.is_self %} self {% endif %}
+                    {% match leader.player -%}
+                    {%- when ResultPlayer::Max -%}
+                    {%- when ResultPlayer::Min -%} min-max
+                    {%- when _ -%}
+                    {%- endmatch %}
+                    "
+                >
                     {% match leader.player -%}
                     {%- when ResultPlayer::Max %}
                         <td class="min-max-name" colspan="2">Best Possible</td>
