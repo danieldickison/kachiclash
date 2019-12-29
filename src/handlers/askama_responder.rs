@@ -1,6 +1,4 @@
-use futures::future::err;
-use futures::future::ok;
-use futures::future::FutureResult;
+use futures::future::{err, ok, Ready};
 use askama::Template;
 use actix_web::{HttpRequest, HttpResponse, Responder};
 use actix_web::http::StatusCode;
@@ -16,7 +14,7 @@ impl<T: Template> From<T> for AskamaResponder<T> {
 
 impl<T: Template> Responder for AskamaResponder<T> {
     type Error = Error;
-    type Future = FutureResult<HttpResponse, Error>;
+    type Future = Ready<Result<HttpResponse, Error>>;
 
     fn respond_to(self, _: &HttpRequest) -> Self::Future {
 

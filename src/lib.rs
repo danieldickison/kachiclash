@@ -91,7 +91,7 @@ pub struct AppState {
     db: data::DbConn,
 }
 
-pub fn run_server() -> std::io::Result<()> {
+pub async fn run_server() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "info,kachiclash=debug");
     //std::env::set_var("RUST_LOG", "debug");
     env_logger::init();
@@ -100,9 +100,6 @@ pub fn run_server() -> std::io::Result<()> {
     if config.env != "dev" && config.session_secret == "abcdefghijklmnopqrstuvwxyz012345" {
         panic!("default session_secret specified for non-dev deployment");
     }
-    if config.discord_client_secret == "" {
-        panic!("DISCORD_CLIENT_SECRET not specified");
-    }
     
-    server::run(config)
+    server::run(config).await
 }

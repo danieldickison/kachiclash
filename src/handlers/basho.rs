@@ -23,7 +23,7 @@ struct BashoTemplate<'a> {
     initially_selectable: bool,
 }
 
-pub fn basho(path: web::Path<BashoId>, state: web::Data<AppState>, identity: Identity) -> Result<impl Responder> {
+pub async fn basho(path: web::Path<BashoId>, state: web::Data<AppState>, identity: Identity) -> Result<impl Responder> {
     let basho_id = path.into_inner();
     let db = state.db.lock().unwrap();
     let base = BaseTemplate::new(&db, &identity)?;
@@ -79,7 +79,7 @@ pub struct SavePicksFormData {
     rank_group_5: Option<RikishiId>,
 }
 
-pub fn save_picks(path: web::Path<BashoId>, form: web::Form<SavePicksFormData>, state: web::Data<AppState>, identity: Identity)
+pub async fn save_picks(path: web::Path<BashoId>, form: web::Form<SavePicksFormData>, state: web::Data<AppState>, identity: Identity)
     -> Result<impl Responder> {
 
     let player_id = identity
@@ -88,6 +88,8 @@ pub fn save_picks(path: web::Path<BashoId>, form: web::Form<SavePicksFormData>, 
         .parse()?;
     let picks = &[form.rank_group_1, form.rank_group_2, form.rank_group_3, form.rank_group_4, form.rank_group_5];
     let mut db = state.db.lock().unwrap();
-    data::basho::save_player_picks(&mut db, player_id, path.into_inner(), *picks)
-        .map_err(|e| e.into())
+    match data::basho::save_player_picks(&mut db, player_id, path.into_inner(), *picks) {
+        Ok(_) => Ok(HttpResponse::Ok()),
+        Err(e) => Err(e.into())
+    }
 }

@@ -1,7 +1,6 @@
 use rusqlite::types::{FromSql, ValueRef, FromSqlResult, FromSqlError, ToSqlOutput};
 use rusqlite::{ToSql, Connection};
-use super::PlayerId;
-use crate::data::BashoId;
+use super::{PlayerId, BashoId, DataError};
 
 #[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Copy, Clone)]
 pub enum Award {
@@ -15,16 +14,17 @@ impl Award {
         }
     }
 
-    pub fn bestow(self, db: &mut Connection, basho_id: BashoId, player_id: PlayerId) -> rusqlite::Result<()> {
+    pub fn bestow(self, db: &mut Connection, basho_id: BashoId, player_id: PlayerId) -> Result<(), DataError> {
         db.prepare("
                 INSERT INTO award (basho_id, type, player_id)
                 VALUES (?, ?, ?)
             ")?
             .execute(params![basho_id, self, player_id])
             .map(|_| ())
+            .map_err(|e| e.into())
     }
 
-    pub fn revoke(self, db: &mut Connection, basho_id: BashoId, player_id: PlayerId) -> rusqlite::Result<()> {
+    pub fn revoke(self, db: &mut Connection, basho_id: BashoId, player_id: PlayerId) -> Result<(), DataError> {
         db.prepare("
                 DELETE FROM award
                 WHERE basho_id = ? AND type = ? AND player_id = ?
@@ -34,6 +34,7 @@ impl Award {
                 1 => Ok(()),
                 n => Err(rusqlite::Error::StatementChangedRows(n))
             })
+            .map_err(|e| e.into())
     }
 }
 

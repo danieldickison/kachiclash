@@ -1,5 +1,5 @@
 
-use crate::data::{self, basho, Rank, BashoId, PlayerId, Award};
+use crate::data::{self, basho, Rank, BashoId, PlayerId, Award, DataError};
 use crate::AppState;
 use super::{HandlerError, BaseTemplate, Result, AskamaResponder};
 
@@ -20,7 +20,7 @@ pub struct EditBashoTemplate {
     basho: Option<BashoData>,
 }
 
-pub fn edit_basho_page(path: web::Path<BashoId>, state: web::Data<AppState>, identity: Identity) -> Result<AskamaResponder<EditBashoTemplate>> {
+pub async fn edit_basho_page(path: web::Path<BashoId>, state: web::Data<AppState>, identity: Identity) -> Result<AskamaResponder<EditBashoTemplate>> {
     let db = state.db.lock().unwrap();
     Ok(EditBashoTemplate {
         base: admin_base(&db, &identity)?,
@@ -94,7 +94,7 @@ pub struct BanzukeResponseData {
     basho_url: String,
 }
 
-pub fn edit_basho_post(path: web::Path<BashoId>, basho: web::Json<BashoData>, state: web::Data<AppState>, identity: Identity)
+pub async fn edit_basho_post(path: web::Path<BashoId>, basho: web::Json<BashoData>, state: web::Data<AppState>, identity: Identity)
 -> Result<web::Json<BanzukeResponseData>> {
     let mut db = state.db.lock().unwrap();
     admin_base(&db, &identity)?;
@@ -134,29 +134,24 @@ pub struct TorikumiTemplate {
     sumo_db_text: Option<String>,
 }
 
-pub fn torikumi_page(path: web::Path<(BashoId, u8)>, state: web::Data<AppState>, identity: Identity)
-    -> impl Future<Item = AskamaResponder<TorikumiTemplate>, Error = failure::Error> {
+pub async fn torikumi_page(path: web::Path<(BashoId, u8)>, state: web::Data<AppState>, identity: Identity)
+    -> Result<AskamaResponder<TorikumiTemplate>> {
 
     let basho_id = path.0;
     let day = path.1;
     let db = state.db.lock().unwrap();
-    admin_base(&db, &identity).into_future()
-        .and_then(move |base| {
-            fetch_sumo_db_torikumi(basho_id, day)
-                .map(Some)
-                .or_else(|e| {
-                    warn!("failed to fetch sumodb data: {}", e);
-                    Ok(None)
-                })
-                .map(|opt_txt| (base, opt_txt))
-        })
-        .map(move |(base, sumo_db_text)| {
-            TorikumiTemplate { base, basho_id, day, sumo_db_text}.into()
-        })
+    let base = async { admin_base(&db, &identity) }.await?;
+    let sumo_db_text = fetch_sumo_db_torikumi(basho_id, day)
+        .map_ok(Some)
+        .or_else(|e| async move {
+            warn!("failed to fetch sumodb data: {}", e);
+            Ok::<_, failure::Error>(None)
+        }).await?;
+    Ok(TorikumiTemplate { base, basho_id, day, sumo_db_text}.into())
 }
 
-fn fetch_sumo_db_torikumi(basho_id: BashoId, day: u8)
-    -> impl Future<Item = String, Error = failure::Error> {
+async fn fetch_sumo_db_torikumi(basho_id: BashoId, day: u8)
+    -> Result<String> {
 
     lazy_static! {
         static ref RE: Regex =
@@ -168,21 +163,17 @@ fn fetch_sumo_db_torikumi(basho_id: BashoId, day: u8)
 
     let client = Client::default();
     let url = format!("http://sumodb.sumogames.de/Results_text.aspx?b={}&d={}", basho_id.id(), day);
-    client.get(url)
+    let mut response = client.get(url)
         .header("User-Agent", "kachiclash")
         .send()
+        .map_err(|e| format_err!("{}", e)).await?;
+    let body = response.body().map_err(|e| format_err!("{}", e)).await?;
+    String::from_utf8(body.to_vec())
         .map_err(|e| format_err!("{}", e))
-        .and_then(|mut response| {
-            response.body().map_err(|e| format_err!("{}", e))
-        })
-        .and_then(|body| {
-            String::from_utf8(body.to_vec())
-                .map_err(|e| format_err!("{}", e))
-                .and_then(|str| {
-                    RE.captures(str.as_str())
-                        .map(|cap| cap.get(1).unwrap().as_str().to_string())
-                        .ok_or_else(|| format_err!("sumodb response did not match regex"))
-                })
+        .and_then(|str| {
+            RE.captures(str.as_str())
+                .map(|cap| cap.get(1).unwrap().as_str().to_string())
+                .ok_or_else(|| format_err!("sumodb response did not match regex"))
         })
 }
 
@@ -191,16 +182,17 @@ pub struct TorikumiData {
     torikumi: Vec<data::basho::TorikumiMatchUpdateData>,
 }
 
-pub fn torikumi_post(path: web::Path<(BashoId, u8)>, torikumi: web::Json<TorikumiData>, state: web::Data<AppState>, identity: Identity)
--> Result<()> {
+pub async fn torikumi_post(path: web::Path<(BashoId, u8)>, torikumi: web::Json<TorikumiData>, state: web::Data<AppState>, identity: Identity)
+-> Result<impl Responder> {
     let mut db = state.db.lock().unwrap();
     admin_base(&db, &identity)?;
-    data::basho::update_torikumi(
+    let res = data::basho::update_torikumi(
         &mut db,
         path.0,
         path.1,
         &torikumi.torikumi
-    ).map_err(|e| e.into())
+    );
+    map_empty_response(res)
 }
 
 
@@ -209,23 +201,30 @@ pub struct AwardData {
     player_id: PlayerId
 }
 
-pub fn bestow_emperors_cup(path: web::Path<BashoId>, award: web::Json<AwardData>, state: web::Data<AppState>, identity: Identity)
--> Result<()> {
+pub async fn bestow_emperors_cup(path: web::Path<BashoId>, award: web::Json<AwardData>, state: web::Data<AppState>, identity: Identity)
+-> Result<impl Responder> {
     let mut db = state.db.lock().unwrap();
     admin_base(&db, &identity)?;
-    Award::EmperorsCup.bestow(&mut db, *path, award.player_id)
-        .map_err(|e| e.into())
+    let res = Award::EmperorsCup.bestow(&mut db, *path, award.player_id);
+    map_empty_response(res)
 }
 
-pub fn revoke_emperors_cup(path: web::Path<BashoId>, award: web::Json<AwardData>, state: web::Data<AppState>, identity: Identity)
--> Result<()> {
+pub async fn revoke_emperors_cup(path: web::Path<BashoId>, award: web::Json<AwardData>, state: web::Data<AppState>, identity: Identity)
+-> Result<impl Responder> {
     let mut db = state.db.lock().unwrap();
     admin_base(&db, &identity)?;
-    Award::EmperorsCup.revoke(&mut db, *path, award.player_id)
-        .map_err(|e| e.into())
+    let res = Award::EmperorsCup.revoke(&mut db, *path, award.player_id);
+    map_empty_response(res)
 }
 
-pub fn finalize_basho(path: web::Path<BashoId>, state: web::Data<AppState>, identity: Identity)
+fn map_empty_response(res: std::result::Result<(), DataError>) -> Result<impl Responder> {
+    match res {
+        Ok(_) => Ok(HttpResponse::Ok()),
+        Err(e) => Err(e.into())
+    }
+}
+
+pub async fn finalize_basho(path: web::Path<BashoId>, state: web::Data<AppState>, identity: Identity)
     -> Result<impl Responder> {
     let mut db = state.db.lock().unwrap();
     admin_base(&db, &identity)?;

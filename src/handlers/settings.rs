@@ -21,7 +21,7 @@ pub struct FormData {
     name: String,
 }
 
-pub fn settings_page(state: web::Data<AppState>, identity: Identity) -> Result<AskamaResponder<SettingsTemplate>> {
+pub async fn settings_page(state: web::Data<AppState>, identity: Identity) -> Result<AskamaResponder<SettingsTemplate>> {
     let db = state.db.lock().unwrap();
     let base = BaseTemplate::new(&db, &identity)?;
     if base.player.is_some() {
@@ -35,7 +35,7 @@ pub fn settings_page(state: web::Data<AppState>, identity: Identity) -> Result<A
     }
 }
 
-pub fn settings_post(form: web::Form<FormData>, state: web::Data<AppState>, identity: Identity) -> Result<AskamaResponder<SettingsTemplate>> {
+pub async fn settings_post(form: web::Form<FormData>, state: web::Data<AppState>, identity: Identity) -> Result<AskamaResponder<SettingsTemplate>> {
 
     let player_id: PlayerId = match identity.identity() {
         Some(id) => match id.parse() {

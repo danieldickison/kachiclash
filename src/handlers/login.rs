@@ -6,7 +6,7 @@ use oauth2::{
     TokenResponse
 };
 
-use actix_web::{Responder};
+use actix_web::{Responder, HttpResponse};
 use actix_web::{web, http};
 use actix_identity::Identity;
 use actix_session::Session;
@@ -27,7 +27,7 @@ struct LoginTemplate {
     base: BaseTemplate
 }
 
-pub fn index(state: web::Data<AppState>, identity: Identity) -> Result<impl Responder> {
+pub async fn index(state: web::Data<AppState>, identity: Identity) -> Result<impl Responder> {
     let db = state.db.lock().unwrap();
     let s = LoginTemplate {
         base: BaseTemplate::new(&db, &identity)?
@@ -35,19 +35,19 @@ pub fn index(state: web::Data<AppState>, identity: Identity) -> Result<impl Resp
     Ok(web::HttpResponse::Ok().body(s))
 }
 
-pub fn discord(state: web::Data<AppState>, session: Session) -> impl Responder {
+pub async fn discord(state: web::Data<AppState>, session: Session) -> HttpResponse {
     oauth_login(&state.config, session, DiscordAuthProvider)
 }
 
-pub fn google(state: web::Data<AppState>, session: Session) -> impl Responder {
+pub async fn google(state: web::Data<AppState>, session: Session) -> HttpResponse {
     oauth_login(&state.config, session, GoogleAuthProvider)
 }
 
-pub fn reddit(state: web::Data<AppState>, session: Session) -> impl Responder {
+pub async fn reddit(state: web::Data<AppState>, session: Session) -> HttpResponse {
     oauth_login(&state.config, session, RedditAuthProvider)
 }
 
-fn oauth_login(config: &Config, session: Session, provider: impl AuthProvider) -> impl Responder {
+fn oauth_login(config: &Config, session: Session, provider: impl AuthProvider) -> HttpResponse {
     let (auth_url, csrf_token) = provider.authorize_url(&config);
     session.set("oauth_csrf", csrf_token)
         .expect("could not set oauth_csrf session value");
@@ -63,15 +63,15 @@ pub struct OAuthRedirectQuery {
    state: String,
 }
 
-pub fn discord_redirect(query: web::Query<OAuthRedirectQuery>, state: web::Data<AppState>, session: Session, id: Identity) -> Result<impl Responder> {
+pub async fn discord_redirect(query: web::Query<OAuthRedirectQuery>, state: web::Data<AppState>, session: Session, id: Identity) -> Result<impl Responder> {
     oauth_redirect(&query, state, session, id, DiscordAuthProvider)
 }
 
-pub fn google_redirect(query: web::Query<OAuthRedirectQuery>, state: web::Data<AppState>, session: Session, id: Identity) -> Result<impl Responder> {
+pub async fn google_redirect(query: web::Query<OAuthRedirectQuery>, state: web::Data<AppState>, session: Session, id: Identity) -> Result<impl Responder> {
     oauth_redirect(&query, state, session, id, GoogleAuthProvider)
 }
 
-pub fn reddit_redirect(query: web::Query<OAuthRedirectQuery>, state: web::Data<AppState>, session: Session, id: Identity) -> Result<impl Responder> {
+pub async fn reddit_redirect(query: web::Query<OAuthRedirectQuery>, state: web::Data<AppState>, session: Session, id: Identity) -> Result<impl Responder> {
     oauth_redirect(&query, state, session, id, RedditAuthProvider)
 }
 
@@ -117,7 +117,7 @@ fn oauth_redirect(query: &OAuthRedirectQuery, state: web::Data<AppState>, sessio
     }
 }
 
-pub fn logout(id: Identity) -> impl Responder {
+pub async fn logout(id: Identity) -> impl Responder {
     id.forget();
     web::HttpResponse::SeeOther()
         .set_header(http::header::LOCATION, "/")
