@@ -9,7 +9,15 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
+    
+    - name: Cache rust target files
+      uses: actions/cache@v1
+      with:
+        path: target
+        key: ${{ runner.os }}-rust-target
+
     - run: sudo npm install -g sass
+      
     - name: Build
       run: cargo build --verbose
     - name: Run tests
