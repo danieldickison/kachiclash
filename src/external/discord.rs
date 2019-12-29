@@ -34,10 +34,10 @@ impl AuthProvider for DiscordAuthProvider {
         BasicClient::new(
             ClientId::new(config.discord_client_id.to_owned()),
             Some(ClientSecret::new(config.discord_client_secret.to_owned())),
-            AuthUrl::new(Url::parse("https://discordapp.com/api/oauth2/authorize").unwrap()),
-            Some(TokenUrl::new(Url::parse("https://discordapp.com/api/oauth2/token").unwrap()))
+            AuthUrl::new("https://discordapp.com/api/oauth2/authorize".to_string()).unwrap(),
+            Some(TokenUrl::new("https://discordapp.com/api/oauth2/token".to_string()).unwrap())
         )
-        .set_redirect_url(RedirectUrl::new(redirect_url))
+        .set_redirect_url(RedirectUrl::from_url(redirect_url))
     }
 }
 

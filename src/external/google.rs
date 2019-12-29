@@ -1,4 +1,3 @@
-use url::Url;
 use oauth2::{RedirectUrl, TokenUrl, ClientId, ClientSecret, AuthUrl};
 use oauth2::basic::{BasicClient};
 use rusqlite::{Transaction, Error};
@@ -24,10 +23,10 @@ impl AuthProvider for GoogleAuthProvider {
         BasicClient::new(
             ClientId::new(config.google_client_id.to_owned()),
             Some(ClientSecret::new(config.google_client_secret.to_owned())),
-            AuthUrl::new(Url::parse("https://accounts.google.com/o/oauth2/v2/auth").unwrap()),
-            Some(TokenUrl::new(Url::parse("https://oauth2.googleapis.com/token").unwrap()))
+            AuthUrl::new("https://accounts.google.com/o/oauth2/v2/auth".to_string()).unwrap(),
+            Some(TokenUrl::new("https://oauth2.googleapis.com/token".to_string()).unwrap())
         )
-        .set_redirect_url(RedirectUrl::new(redirect_url))
+        .set_redirect_url(RedirectUrl::from_url(redirect_url))
     }
 }
 

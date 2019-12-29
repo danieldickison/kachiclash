@@ -1,4 +1,3 @@
-use url::Url;
 use oauth2::{RedirectUrl, TokenUrl, ClientId, ClientSecret, AuthUrl};
 use oauth2::basic::{BasicClient};
 use rusqlite::{Transaction, Error};
@@ -24,10 +23,10 @@ impl AuthProvider for RedditAuthProvider {
         BasicClient::new(
             ClientId::new(config.reddit_client_id.to_owned()),
             Some(ClientSecret::new(config.reddit_client_secret.to_owned())),
-            AuthUrl::new(Url::parse("https://www.reddit.com/api/v1/authorize?duration=temporary").unwrap()),
-            Some(TokenUrl::new(Url::parse("https://www.reddit.com/api/v1/access_token").unwrap()))
+            AuthUrl::new("https://www.reddit.com/api/v1/authorize?duration=temporary".to_string()).unwrap(),
+            Some(TokenUrl::new("https://www.reddit.com/api/v1/access_token".to_string()).unwrap())
         )
-        .set_redirect_url(RedirectUrl::new(redirect_url))
+        .set_redirect_url(RedirectUrl::from_url(redirect_url))
     }
 }
 
