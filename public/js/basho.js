@@ -44,7 +44,7 @@ function savePicks() {
         } else {
             response.text().then(text => {
                 alert("Error saving your picks: " + text);
-                banzukeSection.classList.toggle('selectable', true);
+                setSelectable(true);
             });
         }
     });
