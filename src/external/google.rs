@@ -60,7 +60,7 @@ impl UserInfo for GoogleUserInfo {
                     txn.execute("
                             UPDATE player_google
                             SET name = ?, picture = ?, mod_date = ?
-                            WHERE user_id = ?
+                            WHERE id = ?
                         ",
                                 params![self.name, self.picture, mod_date, self.id])?;
                 }
