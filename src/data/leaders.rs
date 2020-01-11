@@ -1,13 +1,14 @@
 use std::collections::HashMap;
 use rusqlite::{Connection, Result as SqlResult};
 
-use super::{PlayerId, Player, RikishiId, BashoId, BashoRikishi};
+use super::{Result, PlayerId, Player, RikishiId, BashoId, BashoRikishi};
 
 pub struct BashoPlayerResults<'a> {
     pub player: ResultPlayer,
     pub total: u8,
     pub days: [Option<u8>; 15],
-    pub picks: [Option<&'a BashoRikishi>; 5],
+    picks: [Option<RikishiId>; 5],
+    rikishi_by_id: &'a HashMap<RikishiId, BashoRikishi>,
     pub rank: usize,
     pub is_self: bool,
 }
@@ -19,8 +20,12 @@ pub enum ResultPlayer {
 }
 
 impl <'a> BashoPlayerResults<'a> {
+    pub fn picks(&self) -> impl Iterator<Item = Option<&BashoRikishi>> {
+        self.picks.iter().map(move |opt_id| opt_id.and_then(move |id| self.rikishi_by_id.get(&id)))
+    }
+
     pub fn fetch(db: &Connection, basho_id: BashoId, player_id: Option<PlayerId>, rikishi: &'a HashMap<RikishiId, BashoRikishi>, include_best_worst: bool)
-                     -> SqlResult<Vec<Self>> {
+                     -> Result<Vec<Self>> {
         const LIMIT: usize = 300;
         debug!("fetching {} leaders for basho {}", LIMIT, basho_id);
         let mut leaders: Vec<BashoPlayerResults<'a>> = db.prepare("
@@ -56,15 +61,19 @@ impl <'a> BashoPlayerResults<'a> {
             .into_iter()
             .map(|(player, total, picks_str)| {
                 let mut picks = [None; 5];
+                let mut pick_rikishi = [None; 5];
                 for r in picks_str.split(',').filter_map(|id| rikishi.get(&id.parse().unwrap())) {
-                    picks[*r.rank.group() as usize - 1] = Some(r);
+                    let group = *r.rank.group() as usize - 1;
+                    picks[group] = Some(r.id);
+                    pick_rikishi[group] = Some(r);
                 }
-                let (days, total_validation) = picks_to_days(&picks);
+                let (days, total_validation) = picks_to_days(&pick_rikishi);
                 assert_eq!(total, total_validation);
                 BashoPlayerResults {
                     is_self: player_id.map_or(false, |id| player.id == id),
                     rank: 0, // populated later
                     player: ResultPlayer::RealPlayer(player),
+                    rikishi_by_id: rikishi,
                     picks,
                     total,
                     days,
@@ -99,8 +108,8 @@ impl <'a> BashoPlayerResults<'a> {
     }
 }
 
-fn make_min_max_results<'a>(rikishi: &'a HashMap<RikishiId, BashoRikishi>)
-                            -> (BashoPlayerResults<'a>, BashoPlayerResults<'a>) {
+fn make_min_max_results(rikishi: &HashMap<RikishiId, BashoRikishi>)
+                        -> (BashoPlayerResults, BashoPlayerResults) {
     let mut mins = [None; 5];
     let mut maxes = [None; 5];
     for r in rikishi.values() {
@@ -114,13 +123,20 @@ fn make_min_max_results<'a>(rikishi: &'a HashMap<RikishiId, BashoRikishi>)
     }
     let (min_days, min_total) = picks_to_days(&mins);
     let (max_days, max_total) = picks_to_days(&maxes);
+    let mut min_ids = [None; 5];
+    let mut max_ids = [None; 5];
+    for i in 0..5 {
+        min_ids[i] = mins[i].map(|r| r.id);
+        max_ids[i] = maxes[i].map(|r| r.id);
+    }
 
     (
         BashoPlayerResults {
             is_self: false,
             rank: 0, // n/a
             player: ResultPlayer::Min,
-            picks: mins,
+            picks: min_ids,
+            rikishi_by_id: rikishi,
             total: min_total,
             days: min_days,
         },
@@ -128,7 +144,8 @@ fn make_min_max_results<'a>(rikishi: &'a HashMap<RikishiId, BashoRikishi>)
             is_self: false,
             rank: 0, // n/a
             player: ResultPlayer::Max,
-            picks: maxes,
+            picks: max_ids,
+            rikishi_by_id: rikishi,
             total: max_total,
             days: max_days,
         },

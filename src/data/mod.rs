@@ -30,6 +30,8 @@ pub fn make_conn(path: &Path) -> DbConn {
     Arc::new(Mutex::new(conn))
 }
 
+type Result<T> = std::result::Result<T, DataError>;
+
 #[derive(Fail, Debug)]
 pub enum DataError {
     #[fail(display = "Basho has already started")]

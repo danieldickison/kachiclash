@@ -137,7 +137,7 @@
                         <td class="name">{% include "player_listing.html" %}</td>
                     {%- endmatch -%}
 
-                    {% for rikishi in leader.picks %}
+                    {% for rikishi in leader.picks() %}
                         <td class="pick">
                         {%- match rikishi -%}
                         {%- when Some with (r) %}{{r.name}}

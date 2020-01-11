@@ -5,7 +5,8 @@ use askama::Template;
 use crate::AppState;
 use super::askama_responder::AskamaResponder;
 use super::{BaseTemplate, Result, HandlerError};
-use crate::data::{PlayerId, player};
+use crate::data::player;
+use crate::handlers::IdentityExt;
 
 
 #[derive(Template)]
@@ -37,14 +38,7 @@ pub async fn settings_page(state: web::Data<AppState>, identity: Identity) -> Re
 
 pub async fn settings_post(form: web::Form<FormData>, state: web::Data<AppState>, identity: Identity) -> Result<AskamaResponder<SettingsTemplate>> {
 
-    let player_id: PlayerId = match identity.identity() {
-        Some(id) => match id.parse() {
-            Ok(player_id) => player_id,
-            Err(_) => return Err(HandlerError::MustBeLoggedIn.into()),
-        },
-        None => return Err(HandlerError::MustBeLoggedIn.into()),
-    };
-
+    let player_id = identity.require_player_id()?;
     let db = state.db.lock().unwrap();
 
     if !player::name_is_valid(&form.name) {
