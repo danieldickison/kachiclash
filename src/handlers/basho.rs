@@ -1,10 +1,10 @@
 extern crate itertools;
-use std::collections::{HashSet, HashMap};
+use std::collections::HashSet;
 use actix_identity::Identity;
 use rusqlite::Connection;
 
 use super::{BaseTemplate, Result, HandlerError, AskamaResponder, IdentityExt};
-use crate::data::{self, RankGroup, BashoId, BashoInfo, BashoRikishiByRank, FetchBashoRikishi, PlayerId, RikishiId, DataError, BashoRikishi};
+use crate::data::{self, RankGroup, BashoId, BashoInfo, BashoRikishiByRank, FetchBashoRikishi, PlayerId, RikishiId, DataError};
 use crate::data::leaders::{BashoPlayerResults, ResultPlayer};
 use crate::AppState;
 
@@ -14,18 +14,17 @@ use askama::Template;
 
 #[derive(Template)]
 #[template(path = "basho.html")]
-struct BashoTemplate<'a> {
+struct BashoTemplate {
     base: BaseTemplate,
     basho: BashoInfo,
-    leaders: Vec<BashoPlayerResults<'a>>,
-    rikishi_by_id: HashMap<RikishiId, BashoRikishi>,
+    leaders: Vec<BashoPlayerResults>,
     rikishi_by_rank: Vec<BashoRikishiByRank>,
     next_day: u8,
     initially_selectable: bool,
 }
 
-pub async fn basho<'a>(path: web::Path<BashoId>, state: web::Data<AppState>, identity: Identity)
-    -> Result<AskamaResponder<BashoTemplate<'a>>> {
+pub async fn basho(path: web::Path<BashoId>, state: web::Data<AppState>, identity: Identity)
+    -> Result<AskamaResponder<BashoTemplate>> {
 
     let basho_id = path.into_inner();
     let db = state.db.lock().unwrap();
@@ -35,9 +34,8 @@ pub async fn basho<'a>(path: web::Path<BashoId>, state: web::Data<AppState>, ide
     let FetchBashoRikishi {by_id: rikishi_by_id, by_rank: rikishi_by_rank} = FetchBashoRikishi::with_db(&db, basho_id, &picks)?;
     let basho = BashoInfo::with_id(&db, basho_id)?
             .ok_or_else(|| HandlerError::NotFound("basho".to_string()))?;
-    let mut templ = BashoTemplate {
-        rikishi_by_id,
-        leaders: vec![],
+    Ok(BashoTemplate {
+        leaders: BashoPlayerResults::fetch(&db, basho_id, player_id, rikishi_by_id, basho.has_started())?,
         next_day: rikishi_by_rank.iter()
             .map(|rr| rr.next_day())
             .max()
@@ -46,9 +44,7 @@ pub async fn basho<'a>(path: web::Path<BashoId>, state: web::Data<AppState>, ide
         initially_selectable: !basho.has_started() && base.player.is_some() && picks.len() < RankGroup::count(),
         basho,
         base,
-    };
-    templ.leaders = BashoPlayerResults::fetch(&db, basho_id, player_id, &templ.rikishi_by_id, basho.has_started())?;
-    Ok(templ.into())
+    }.into())
 }
 
 fn fetch_player_picks(db: &Connection, player_id: Option<PlayerId>, basho_id: BashoId) -> Result<HashSet<RikishiId>> {

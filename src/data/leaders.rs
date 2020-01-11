@@ -2,13 +2,14 @@ use std::collections::HashMap;
 use rusqlite::{Connection, Result as SqlResult};
 
 use super::{Result, PlayerId, Player, RikishiId, BashoId, BashoRikishi};
+use std::sync::Arc;
 
-pub struct BashoPlayerResults<'a> {
+pub struct BashoPlayerResults {
     pub player: ResultPlayer,
     pub total: u8,
     pub days: [Option<u8>; 15],
     picks: [Option<RikishiId>; 5],
-    rikishi_by_id: &'a HashMap<RikishiId, BashoRikishi>,
+    rikishi_by_id: Arc<HashMap<RikishiId, BashoRikishi>>,
     pub rank: usize,
     pub is_self: bool,
 }
@@ -19,16 +20,18 @@ pub enum ResultPlayer {
     Min,
 }
 
-impl <'a> BashoPlayerResults<'a> {
+impl BashoPlayerResults {
     pub fn picks(&self) -> impl Iterator<Item = Option<&BashoRikishi>> {
         self.picks.iter().map(move |opt_id| opt_id.and_then(move |id| self.rikishi_by_id.get(&id)))
     }
 
-    pub fn fetch(db: &Connection, basho_id: BashoId, player_id: Option<PlayerId>, rikishi: &'a HashMap<RikishiId, BashoRikishi>, include_best_worst: bool)
+    pub fn fetch(db: &Connection, basho_id: BashoId, player_id: Option<PlayerId>, rikishi: HashMap<RikishiId, BashoRikishi>, include_best_worst: bool)
                      -> Result<Vec<Self>> {
         const LIMIT: usize = 300;
         debug!("fetching {} leaders for basho {}", LIMIT, basho_id);
-        let mut leaders: Vec<BashoPlayerResults<'a>> = db.prepare("
+
+        let rikishi = Arc::new(rikishi);
+        let mut leaders: Vec<BashoPlayerResults> = db.prepare("
                 SELECT
                     player.*,
                     bs.wins,
@@ -73,7 +76,7 @@ impl <'a> BashoPlayerResults<'a> {
                     is_self: player_id.map_or(false, |id| player.id == id),
                     rank: 0, // populated later
                     player: ResultPlayer::RealPlayer(player),
-                    rikishi_by_id: rikishi,
+                    rikishi_by_id: rikishi.clone(),
                     picks,
                     total,
                     days,
@@ -99,7 +102,7 @@ impl <'a> BashoPlayerResults<'a> {
         }
 
         if include_best_worst {
-            let (min, max) = make_min_max_results(&rikishi);
+            let (min, max) = make_min_max_results(rikishi);
             leaders.insert(0, max);
             leaders.push(min);
         }
@@ -108,7 +111,7 @@ impl <'a> BashoPlayerResults<'a> {
     }
 }
 
-fn make_min_max_results(rikishi: &HashMap<RikishiId, BashoRikishi>)
+fn make_min_max_results(rikishi: Arc<HashMap<RikishiId, BashoRikishi>>)
                         -> (BashoPlayerResults, BashoPlayerResults) {
     let mut mins = [None; 5];
     let mut maxes = [None; 5];
@@ -136,7 +139,7 @@ fn make_min_max_results(rikishi: &HashMap<RikishiId, BashoRikishi>)
             rank: 0, // n/a
             player: ResultPlayer::Min,
             picks: min_ids,
-            rikishi_by_id: rikishi,
+            rikishi_by_id: rikishi.clone(),
             total: min_total,
             days: min_days,
         },
@@ -145,7 +148,7 @@ fn make_min_max_results(rikishi: &HashMap<RikishiId, BashoRikishi>)
             rank: 0, // n/a
             player: ResultPlayer::Max,
             picks: max_ids,
-            rikishi_by_id: rikishi,
+            rikishi_by_id: rikishi.clone(),
             total: max_total,
             days: max_days,
         },
