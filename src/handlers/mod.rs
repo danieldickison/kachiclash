@@ -74,10 +74,13 @@ impl BaseTemplate {
         let player = match identity.player_id() {
             Some(id) => {
                 let player = Player::with_id(&db, id)?;
-                if player.is_none() {
-                    error!("identity player id {} not found; forcing log out", id);
-                    identity.forget();
-                }
+                match player.as_ref() {
+                    Some(p) => debug!("Logged in player: {} ({})", p.name, p.id),
+                    None => {
+                        error!("identity player id {} not found; forcing log out", id);
+                        identity.forget();
+                    }
+                };
                 player
             },
             None => None,
