@@ -29,18 +29,19 @@ pub enum HandlerError {
     #[fail(display = "External service error")]
     ExternalServiceError,
 
-    #[fail(display = "Database error: {}", _0)]
+    #[fail(display = "Database error")]
     DatabaseError(DataError),
 
     #[fail(display = "CSRF error")]
     CSRFError,
 
-    #[fail(display = "Unexpected failure: {}", _0)]
+    #[fail(display = "Unexpected failure")]
     Failure(failure::Error),
 }
 
 impl error::ResponseError for HandlerError {
     fn error_response(&self) -> HttpResponse {
+        debug!("HandlerError {:?}, responding with error message: {}", self, self);
         match self {
             HandlerError::NotFound(_) => HttpResponse::NotFound(),
             HandlerError::ExternalServiceError => HttpResponse::InternalServerError(),
