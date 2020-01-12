@@ -51,8 +51,8 @@
             </p>
 
             {%- if base.player.is_some() -%}
-                <button class="save-picks-button">Save Picks</button>
-                <button class="change-picks-button">Change Picks</button>
+                <button class="g-big-button save-picks-button">Save Picks</button>
+                <button class="g-big-button change-picks-button">Change Picks</button>
             {%- endif -%}
         {%- endif %}
         
@@ -84,8 +84,8 @@
         </form>
 
         {% if !basho.has_started() && base.player.is_some() -%}
-            <button class="save-picks-button">Save Picks</button>
-            <button class="change-picks-button">Change Picks</button>
+            <button class="g-big-button save-picks-button">Save Picks</button>
+            <button class="g-big-button change-picks-button">Change Picks</button>
         {% endif %}
     </section>
 

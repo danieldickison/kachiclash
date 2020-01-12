@@ -65,16 +65,7 @@
 
         .save-picks-button,
         .change-picks-button {
-            font-size: 1.5rem;
-            background: var(--color-navy);
-            color: var(--color-light-fg);
-            border: solid 2px var(--color-border);
-            border-radius: 5px;
             margin: 1rem auto;
-
-            &:active {
-                background: var(--color-navy-highlight);
-            }
         }
 
         .save-picks-button {

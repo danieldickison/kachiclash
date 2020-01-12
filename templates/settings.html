@@ -7,22 +7,24 @@
 {% endblock %}
 
 {% block main %}
-    {% match message %}
-    {% when Some with (msg) %}
-        <div class="message">{{msg}}</div>
-    {% when None %}
-    {% endmatch %}
-    {% match error %}
-    {% when Some with (err) %}
-        <div class="error">{{err}}</div>
-    {% when None %}
-    {% endmatch %}
+    <div id="messages">
+        {% match message %}
+        {% when Some with (msg) %}
+            <div class="message">{{msg}}</div>
+        {% when None %}
+        {% endmatch %}
+        {% match error %}
+        {% when Some with (err) %}
+            <div class="error">{{err}}</div>
+        {% when None %}
+        {% endmatch %}
+    </div>
 
     <section id="profile">
         <h2>Profile</h2>
         <form method="POST">
             <label>
-                Display Name (letters and numbers only):
+                Display Name:
                 <input name="name" type="text"
                     required
                     minlength="{{player::NAME_LENGTH.start()}}"
@@ -30,8 +32,9 @@
                     pattern="{{player::NAME_REGEX}}"
                     value="{{base.player.as_ref().unwrap().name}}"
                 >
+                <span class="hint">(letters and numbers only)</span>
             </label>
-            <button>Save</button>
+            <button class="g-big-button">Save</button>
         </form>
     </section>
 {% endblock %}

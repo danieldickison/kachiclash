@@ -1,0 +1,28 @@
+#p-settings {
+    #messages {
+        > div {
+            background: var(--color-light-yellow-bg);
+            border: solid 2px var(--color-border);
+            padding: var(--section-padding);
+            font-size: 1.25rem;
+            font-style: italic;
+        }
+        .message {
+            border-color: var(--color-border-message);
+        }
+        .error {
+            border-color: var(--color-border-error);
+        }
+    }
+
+    #profile {
+        input[name="name"] {
+            font-size: 1.5rem;
+            padding: 0.25rem;
+        }
+
+        .hint {
+            color: var(--color-gray-fg);
+        }
+    }
+}
