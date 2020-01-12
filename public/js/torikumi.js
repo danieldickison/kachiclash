@@ -53,6 +53,7 @@ torikumiForm.addEventListener('submit', event => {
         headers: new Headers({
             'Content-Type': 'application/json'
         }),
+        credentials: 'same-origin',
     })
     .then(response => {
         if (response.ok) {

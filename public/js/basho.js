@@ -36,6 +36,7 @@ function savePicks() {
     return fetch(url, {
         method: 'POST',
         body: data,
+        credentials: 'same-origin',
     })
     .then(response => {
         if (response.ok) {
@@ -68,6 +69,7 @@ function postCup(button, bestow) {
         headers: new Headers({
             'Content-Type': 'application/json'
         }),
+        credentials: 'same-origin',
     })
     .then(response => {
         if (response.ok) {
