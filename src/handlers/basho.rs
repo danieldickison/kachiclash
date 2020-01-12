@@ -11,10 +11,9 @@ use crate::AppState;
 use actix_web::{web, HttpResponse, Responder};
 use askama::Template;
 
-
 #[derive(Template)]
 #[template(path = "basho.html")]
-struct BashoTemplate {
+pub struct BashoTemplate {
     base: BaseTemplate,
     basho: BashoInfo,
     leaders: Vec<BashoPlayerResults>,

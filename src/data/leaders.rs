@@ -21,8 +21,12 @@ pub enum ResultPlayer {
 }
 
 impl BashoPlayerResults {
-    pub fn picks(&self) -> impl Iterator<Item = Option<&BashoRikishi>> {
-        self.picks.iter().map(move |opt_id| opt_id.and_then(move |id| self.rikishi_by_id.get(&id)))
+    // how to make this work with askama borrow semantics with -> impl Iterator<Item = Option<&BashoRikishi>>
+    pub fn picks(&self) -> Vec<Option<&BashoRikishi>> {
+        self.picks
+            .iter()
+            .map(move |opt_id| opt_id.and_then(move |id| self.rikishi_by_id.get(&id)))
+            .collect()
     }
 
     pub fn fetch(db: &Connection, basho_id: BashoId, player_id: Option<PlayerId>, rikishi: HashMap<RikishiId, BashoRikishi>, include_best_worst: bool)
