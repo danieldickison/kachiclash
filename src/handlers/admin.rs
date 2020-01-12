@@ -55,7 +55,7 @@ impl BashoData {
                  })
             })
             .optional()
-            .map_err(|e| e.into())
+            .map_err(|e| DataError::from(e).into())
     }
 
     fn fetch_banzuke(db: &Connection, id: BashoId) -> SqlResult<Vec<BanzukeRikishi>> {
@@ -168,13 +168,11 @@ async fn fetch_sumo_db_torikumi(basho_id: BashoId, day: u8)
         .send()
         .map_err(|e| format_err!("{}", e)).await?;
     let body = response.body().map_err(|e| format_err!("{}", e)).await?;
-    String::from_utf8(body.to_vec())
-        .map_err(|e| format_err!("{}", e))
-        .and_then(|str| {
-            RE.captures(str.as_str())
-                .map(|cap| cap.get(1).unwrap().as_str().to_string())
-                .ok_or_else(|| format_err!("sumodb response did not match regex"))
-        })
+    let str = String::from_utf8(body.to_vec())
+        .map_err(|e| format_err!("{}", e))?;
+    RE.captures(str.as_str())
+        .map(|cap| cap.get(1).unwrap().as_str().to_string())
+        .ok_or_else(|| format_err!("sumodb response did not match regex").into())
 }
 
 #[derive(Debug, Deserialize)]

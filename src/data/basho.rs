@@ -3,6 +3,7 @@ use std::convert::From;
 use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::cmp::max;
+use std::result::Result as StdResult;
 use rusqlite::{Connection, NO_PARAMS, Result as SqlResult};
 use rusqlite::types::{ToSql, ToSqlOutput, ValueRef, FromSql, FromSqlResult};
 use chrono::naive::{NaiveDate, NaiveDateTime};
@@ -11,7 +12,7 @@ use chrono::{DateTime, Datelike};
 use serde::{Deserialize, Deserializer};
 use itertools::Itertools;
 
-use super::{DataError, PlayerId, Player, RikishiId, Rank, RankGroup, RankSide, Day, Award, leaders};
+use super::{Result, DataError, PlayerId, Player, RikishiId, Rank, RankGroup, RankSide, Day, Award, leaders};
 
 pub struct BashoInfo {
     pub id: BashoId,
@@ -24,7 +25,7 @@ pub struct BashoInfo {
 }
 
 impl BashoInfo {
-    pub fn with_id(db: &Connection, id: BashoId) -> Result<Option<BashoInfo>, DataError> {
+    pub fn with_id(db: &Connection, id: BashoId) -> Result<Option<BashoInfo>> {
         db.query_row("
             SELECT
                 COUNT(*) AS n,
@@ -59,7 +60,7 @@ impl BashoInfo {
             .map_err(|e| e.into())
     }
 
-    pub fn list_all(db: &Connection) -> Result<Vec<BashoInfo>, DataError> {
+    pub fn list_all(db: &Connection) -> Result<Vec<BashoInfo>> {
         let mut winners = BashoInfo::fetch_all_winners(&db)?;
         db.prepare("
                 SELECT
@@ -192,14 +193,14 @@ impl BashoId {
 }
 
 impl fmt::Display for BashoId {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> StdResult<(), fmt::Error> {
         write!(f, "{} – {} {:04}", self.season(), self.month_name(), self.year)
     }
 }
 
 impl FromStr for BashoId {
     type Err = chrono::format::ParseError;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> StdResult<Self, Self::Err> {
         let with_day = format!("{}01", s);
         NaiveDate::parse_from_str(&with_day, "%Y%m%d").map(|date| date.into())
     }
@@ -216,7 +217,7 @@ impl From<NaiveDate> for BashoId {
 
 impl<'de> Deserialize<'de> for BashoId {
     fn deserialize<D>(deserializer: D)
-        -> Result<Self, D::Error> where D: Deserializer<'de> {
+        -> StdResult<Self, D::Error> where D: Deserializer<'de> {
 
         let s = String::deserialize(deserializer)?;
         s.parse().map_err(serde::de::Error::custom)
@@ -245,7 +246,7 @@ impl ToSql for BashoId {
     }
 }
 
-pub fn save_player_picks(db: &mut Connection, player_id: PlayerId, basho_id: BashoId, picks: [Option<RikishiId>; 5]) -> Result<(), DataError> {
+pub fn save_player_picks(db: &mut Connection, player_id: PlayerId, basho_id: BashoId, picks: [Option<RikishiId>; 5]) -> Result<()> {
     let txn = db.transaction()?;
     let start_date: DateTime<Utc> = txn.query_row("
         SELECT start_date
@@ -288,7 +289,7 @@ pub fn save_player_picks(db: &mut Connection, player_id: PlayerId, basho_id: Bas
 }
 
 
-pub fn update_basho(db: &mut Connection, basho_id: BashoId, venue: &str, start_date: &NaiveDateTime, banzuke: &[(String, Rank)]) -> Result<BashoId, DataError> {
+pub fn update_basho(db: &mut Connection, basho_id: BashoId, venue: &str, start_date: &NaiveDateTime, banzuke: &[(String, Rank)]) -> Result<BashoId> {
     let txn = db.transaction()?;
     txn.execute("
         INSERT INTO basho (id, start_date, venue)
@@ -324,7 +325,7 @@ pub fn update_basho(db: &mut Connection, basho_id: BashoId, venue: &str, start_d
                 Ok(())
             })?
         // force evaluation of mapping function and collapse errors into one Result
-        .collect::<Result<(), rusqlite::Error>>()
+        .collect::<SqlResult<()>>()
         .map_err(DataError::from)?;
     if !ambiguous_shikona.is_empty() {
         return Err(DataError::AmbiguousShikona {family_names: ambiguous_shikona});
@@ -364,7 +365,7 @@ pub struct TorikumiMatchUpdateData {
     loser: String,
 }
 
-pub fn update_torikumi(db: &mut Connection, basho_id: BashoId, day: Day, torikumi: &[TorikumiMatchUpdateData]) -> Result<(), DataError> {
+pub fn update_torikumi(db: &mut Connection, basho_id: BashoId, day: Day, torikumi: &[TorikumiMatchUpdateData]) -> Result<()> {
 
     debug!("updating torikumi for {} day {}", basho_id, day);
 
@@ -393,7 +394,7 @@ pub fn update_torikumi(db: &mut Connection, basho_id: BashoId, day: Day, torikum
                 Ok(())
             })?
         // force evaluation of mapping function and collapse errors into one Result
-        .collect::<Result<(), rusqlite::Error>>()
+        .collect::<SqlResult<()>>()
         .map_err(DataError::from)?;
     if !ambiguous_shikona.is_empty() {
         return Err(DataError::AmbiguousShikona {family_names: ambiguous_shikona});
@@ -483,7 +484,7 @@ pub struct FetchBashoRikishi {
 
 impl FetchBashoRikishi {
     pub fn with_db(db: &Connection, basho_id: BashoId, picks: &HashSet<RikishiId>)
-                     -> SqlResult<Self> {
+                     -> Result<Self> {
         debug!("fetching rikishi results for basho {}", basho_id);
         struct FetchedRikishiRow(Rank, RikishiId, String, Option<Day>, Option<bool>, u16);
         let vec: Vec<BashoRikishiByRank> = db.prepare("
@@ -581,10 +582,10 @@ impl FetchBashoRikishi {
     }
 }
 
-pub fn finalize_basho(db: &mut Connection, basho_id: BashoId) -> SqlResult<()> {
+pub fn finalize_basho(db: &mut Connection, basho_id: BashoId) -> Result<()> {
     debug!("finalizing basho {}", basho_id);
     let rikishi = FetchBashoRikishi::with_db(&db, basho_id, &HashSet::new())?;
-    let results = leaders::BashoPlayerResults::fetch(&db, basho_id, Some(0), &rikishi.by_id, false)?;
+    let results = leaders::BashoPlayerResults::fetch(&db, basho_id, Some(0), rikishi.by_id, false)?;
     let txn = db.transaction()?;
     {
         // Delete previously awarded emperor's cups
@@ -616,5 +617,6 @@ pub fn finalize_basho(db: &mut Connection, basho_id: BashoId) -> SqlResult<()> {
         }
     }
     debug!("committing");
-    txn.commit()
+    txn.commit()?;
+    Ok(())
 }
