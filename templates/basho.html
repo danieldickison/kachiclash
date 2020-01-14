@@ -112,7 +112,7 @@
                 <tr class="
                     {% if leader.is_self %} self {% endif %}
                     {% match leader.player -%}
-                    {%- when ResultPlayer::Max -%}
+                    {%- when ResultPlayer::Max -%} min-max
                     {%- when ResultPlayer::Min -%} min-max
                     {%- when _ -%}
                     {%- endmatch %}
