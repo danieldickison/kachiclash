@@ -157,7 +157,7 @@
 
                     <td class="score total">{{leader.total}}</td>
 
-                    {% if base.is_admin() && basho.has_started() && leader.rank == 1 %}
+                    {% if base.is_admin() && basho.has_started() && leader.rank == 1 && next_day > 15 %}
                         {%- match leader.player -%}
                         {%- when ResultPlayer::RealPlayer with (player) -%}
                             <td>
