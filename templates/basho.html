@@ -91,22 +91,28 @@
         {% endif %}
     </section>
 
-    <section id="leaderboard">
+    <section id="leaderboard"
+        class="{% if basho.has_started() %} has-started {% endif %}"
+    >
         <h2>Leaderboard</h2>
         <table>
             <thead>
-                <tr>
-                    <th colspan="7"></th>
-                    <th class="day-heading" colspan="15">Day</th>
-                </tr>
+                {% if basho.has_started() %}
+                    <tr>
+                        <th colspan="7"></th>
+                        <th class="day-heading" colspan="15">Day</th>
+                    </tr>
+                {% endif %}
                 <tr>
                     <th class="rank">#</th>
                     <th>Player</th>
                     <th class="pick" colspan="5">Picks</th>
-                    {% for day in 1..16 -%}
-                        <th class="day">{{day}}</th>
-                    {% endfor -%}
-                    <th>Total</th>
+                    {% if basho.has_started() %}
+                        {% for day in 1..16 -%}
+                            <th class="day">{{day}}</th>
+                        {% endfor -%}
+                        <th>Total</th>
+                    {% endif %}
                 </tr>
             </thead>
             <tbody>
@@ -148,16 +154,18 @@
                         </td>
                     {% endfor %}
 
-                    {% for wins in leader.days -%}
-                        <td class="score day">
-                        {%- match wins -%}
-                        {%- when Some with (num) %}{{num}}
-                        {%- when None %}-
-                        {%- endmatch -%}
-                        </td>
-                    {% endfor -%}
+                    {% if basho.has_started() %}
+                        {% for wins in leader.days -%}
+                            <td class="score day">
+                            {%- match wins -%}
+                            {%- when Some with (num) %}{{num}}
+                            {%- when None %}-
+                            {%- endmatch -%}
+                            </td>
+                        {% endfor -%}
 
-                    <td class="score total">{{leader.total}}</td>
+                        <td class="score total">{{leader.total}}</td>
+                    {% endif %}
 
                     {% if base.is_admin() && basho.has_started() && leader.rank == 1 && next_day > 15 %}
                         {%- match leader.player -%}

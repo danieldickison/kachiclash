@@ -54,6 +54,10 @@
                 max-width: 5rem;
                 overflow: hidden;
                 text-overflow: ellipsis;
+
+                @media (max-width: media.$narrow) {
+                    max-width: 4rem;
+                }
             }
 
             td.score,
@@ -66,11 +70,17 @@
             }
 
             @media (max-width: media.$narrow) {
-                .pick {
-                    display: none;
-                }
                 .day {
                     font-size: 0.75rem;
+                }
+            }
+        }
+
+        /* hide picks on mobile after basho starts, to make room for day results */
+        &.has-started {
+            @media (max-width: media.$narrow) {
+                 table .pick {
+                    display: none;
                 }
             }
         }
