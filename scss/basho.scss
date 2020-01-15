@@ -30,12 +30,13 @@
 
             th, td {
                 min-width: 1rem;
+                @media (max-width: media.$narrow) {
+                    min-width: 0.75rem;
+                }
             }
 
             td.rank, th.rank {
                 text-align: right;
-            }
-            td.rank {
                 padding-right: 0.25rem;
             }
 
@@ -62,6 +63,15 @@
 
             td.total {
                 font-weight: bold;
+            }
+
+            @media (max-width: media.$narrow) {
+                .pick {
+                    display: none;
+                }
+                .day {
+                    font-size: 0.75rem;
+                }
             }
         }
     }

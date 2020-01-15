@@ -97,12 +97,12 @@
             <thead>
                 <tr>
                     <th colspan="7"></th>
-                    <th colspan="15">Day</th>
+                    <th class="day-heading" colspan="15">Day</th>
                 </tr>
                 <tr>
-                    <th class="rank">{% if basho.has_started() %}Rank{% else %}Entry{% endif %}</th>
+                    <th class="rank">#</th>
                     <th>Player</th>
-                    <th colspan="5">Picks</th>
+                    <th class="pick" colspan="5">Picks</th>
                     {% for day in 1..16 -%}
                         <th class="day">{{day}}</th>
                     {% endfor -%}
@@ -149,7 +149,7 @@
                     {% endfor %}
 
                     {% for wins in leader.days -%}
-                        <td class="score">
+                        <td class="score day">
                         {%- match wins -%}
                         {%- when Some with (num) %}{{num}}
                         {%- when None %}-
