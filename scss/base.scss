@@ -131,7 +131,7 @@ body > main {
     width: 100%;
     max-width: 950px;
     flex-grow: 1;
-    margin: 4rem auto 15rem auto;
+    margin: var(--header-height) auto 15rem auto;
 }
 
 #g-hero {
