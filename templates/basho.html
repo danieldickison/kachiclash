@@ -94,7 +94,13 @@
     <section id="leaderboard"
         class="{% if basho.has_started() %} has-started {% endif %}"
     >
-        <h2>Leaderboard</h2>
+        <h2>
+            {% if basho.has_started() %}
+                Leaderboard
+            {% else %}
+                Entries
+            {% endif %}
+        </h2>
         <table>
             <thead>
                 {% if basho.has_started() %}
