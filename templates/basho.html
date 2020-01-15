@@ -59,16 +59,18 @@
         <form id="banzuke-select-rikishi-form" action="{{basho.id.url_path()}}/picks">
             <table>
                 <thead>
-                    <th>East</th>
-                    <th>Picks</th>
+                    <th class="rikishi">East</th>
+                    <th class="pick-count">Picks</th>
                     {% if basho.has_started() %}
-                        <th colspan="15"></th>
+                        <th class="hoshi" colspan="15"></th>
+                        <th class="win-loss"></th>
                     {% endif %}
                     <th class="rank">Rank</th>
-                    <th>West</th>
-                    <th>Picks</th>
+                    <th class="rikishi">West</th>
+                    <th class="pick-count">Picks</th>
                     {% if basho.has_started() %}
-                        <th colspan="15"></th>
+                        <th class="hoshi" colspan="15"></th>
+                        <th class="win-loss"></th>
                     {% endif %}
                 </thead>
                 <tbody>
@@ -208,12 +210,14 @@
                     {%- endmatch -%}
                 </td>
             {%- endfor -%}
+            <td class="win-loss">{{rikishi.wins}}-{{rikishi.losses}}</td>
         {% endif %}
     {%- when None -%}
-        <td></td>
-        <td></td>
+        <td class="rikishi"></td>
+        <td class="pick-count"></td>
         {% if basho.has_started() %}
-            {% for _ in 1..=15 %}<td></td>{% endfor %}
+            {% for _ in 1..=15 %}<td class="hoshi"></td>{% endfor %}
+            <td class="win-loss"></td>
         {% endif %}
     {%- endmatch -%}
 {%- endmacro -%}

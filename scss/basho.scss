@@ -110,10 +110,18 @@
                 text-align: center;
             }
 
+            .win-loss {
+                padding: 0 0.5rem;
+                text-align: right;
+                white-space: nowrap;
+            }
+
             td {
                 &.rikishi {
                     font-weight: bold;
-                    font-size: 1.25rem;
+                    @media (min-width: media.$wide) {
+                        font-size: 1.25rem;
+                    }
                 }
 
                 &.pick-count {
@@ -130,13 +138,20 @@
 
                 label {
                     display: block;
-                    padding: 0 5px;
+                    padding: 0 0.25rem;
+                }
+            }
+
+            @media (max-width: media.$narrow) {
+                .hoshi,
+                .pick-count {
+                    display: none;
                 }
             }
 
             .select-radio {
                 vertical-align: middle;
-                margin-right: 5px;
+                margin-right: 0.25rem;
                 display: none;
             }
 
