@@ -1,4 +1,10 @@
+@use 'media';
+
 #p-basho {
+    h1 {
+        margin: var(--section-padding);
+    }
+
     #leaderboard {
         background: var(--color-light-blue-bg);
 
