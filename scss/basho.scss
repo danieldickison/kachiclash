@@ -51,13 +51,6 @@
 
             td.pick {
                 padding: 0 0.125rem;
-                max-width: 5rem;
-                overflow: hidden;
-                text-overflow: ellipsis;
-
-                @media (max-width: media.$narrow) {
-                    max-width: 4rem;
-                }
             }
 
             td.score,
@@ -77,9 +70,15 @@
         }
 
         /* hide picks on mobile after basho starts, to make room for day results */
-        &.has-started {
+        &.has-started table {
+            td.pick {
+                max-width: 5rem;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            
             @media (max-width: media.$narrow) {
-                 table .pick {
+                 .pick {
                     display: none;
                 }
             }
