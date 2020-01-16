@@ -1,4 +1,6 @@
 (function () {
+"use strict";
+
 const countDown = document.getElementById('basho-count-down');
 if (countDown) {
     const startTimestamp = parseInt(countDown.dataset.startDate);
