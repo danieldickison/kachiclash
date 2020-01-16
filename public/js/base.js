@@ -1,6 +1,7 @@
 (function () {
 "use strict";
 
+// Init basho start count down clock
 document.querySelectorAll('.js-basho-count-down').forEach(timeSpan => {
     const startTimestamp = parseInt(timeSpan.dataset.startDate);
     const updateTimeRemaining = function () {
@@ -33,6 +34,7 @@ document.querySelectorAll('.js-basho-count-down').forEach(timeSpan => {
     setInterval(updateTimeRemaining, 1000);
 });
 
+// Show local time of basho start times
 const DATETIME_FORMAT = new Intl.DateTimeFormat(undefined, {
     year: 'numeric',
     month: 'long',
@@ -48,4 +50,10 @@ document.querySelectorAll('.js-local-datetime').forEach(el => {
         el.innerText = DATETIME_FORMAT.format(date);
     }
 });
+
+// Show standard placeholder for broken player avatar images
+document.querySelectorAll('img.js-player-img').forEach(img => {
+    img.addEventListener('error', () => img.src = '/static/img/oicho-silhouette.png');
+});
+
 })();
