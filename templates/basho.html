@@ -45,8 +45,9 @@
                 <p><a href="/login">Log in or sign up</a> to play!</p>
             {%- endif -%}
 
-            <p id="basho-count-down" data-start-date="{{basho.start_date.timestamp_millis()}}">
-                Time remaining: <span id="basho-count-down-time"></span>
+            <p>
+                Time remaining:
+                <span class="js-basho-count-down" data-start-date="{{basho.start_date.timestamp_millis()}}"></span>
             </p>
 
             {%- if base.player.is_some() -%}

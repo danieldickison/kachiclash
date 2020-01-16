@@ -24,8 +24,9 @@
             {% include "rules.html" %}
             <section id="next-basho">
                 <h2>The Next Basho is {{basho.id}}</h2>
-                <p id="basho-count-down" data-start-date="{{basho.start_date.timestamp_millis()}}">
-                    Time remaining: <span id="basho-count-down-time"></span>
+                <p>
+                    Time remaining:
+                    <span class="js-basho-count-down" data-start-date="{{basho.start_date.timestamp_millis()}}"></span>
                 </p>
                 <a class="button-link" href="{{basho.link_url()}}">Click here to enter {{basho.id}}!</a>
             </section>

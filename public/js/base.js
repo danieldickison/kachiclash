@@ -1,11 +1,8 @@
 (function () {
 "use strict";
 
-const countDown = document.getElementById('basho-count-down');
-if (countDown) {
-    const startTimestamp = parseInt(countDown.dataset.startDate);
-    const timeSpan = document.getElementById('basho-count-down-time');
-
+document.querySelectorAll('.js-basho-count-down').forEach(timeSpan => {
+    const startTimestamp = parseInt(timeSpan.dataset.startDate);
     const updateTimeRemaining = function () {
         const remaining = (startTimestamp - Date.now()) / 1000;
         const seconds = Math.floor(remaining % 60);
@@ -34,7 +31,7 @@ if (countDown) {
     
     updateTimeRemaining();
     setInterval(updateTimeRemaining, 1000);
-}
+});
 
 const DATETIME_FORMAT = new Intl.DateTimeFormat(undefined, {
     year: 'numeric',
