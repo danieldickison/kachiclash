@@ -1,4 +1,10 @@
+@use 'media';
+
 #p-basho {
+    h1 {
+        margin: var(--section-padding);
+    }
+
     #leaderboard {
         background: var(--color-light-blue-bg);
 
@@ -24,12 +30,13 @@
 
             th, td {
                 min-width: 1rem;
+                @media (max-width: media.$narrow) {
+                    min-width: 0.75rem;
+                }
             }
 
             td.rank, th.rank {
                 text-align: right;
-            }
-            td.rank {
                 padding-right: 0.25rem;
             }
 
@@ -44,9 +51,6 @@
 
             td.pick {
                 padding: 0 0.125rem;
-                max-width: 5rem;
-                overflow: hidden;
-                text-overflow: ellipsis;
             }
 
             td.score,
@@ -56,6 +60,27 @@
 
             td.total {
                 font-weight: bold;
+            }
+
+            @media (max-width: media.$narrow) {
+                .day {
+                    font-size: 0.75rem;
+                }
+            }
+        }
+
+        /* hide picks on mobile after basho starts, to make room for day results */
+        &.has-started table {
+            td.pick {
+                max-width: 5rem;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            
+            @media (max-width: media.$narrow) {
+                 .pick {
+                    display: none;
+                }
             }
         }
     }
@@ -104,10 +129,18 @@
                 text-align: center;
             }
 
+            .win-loss {
+                padding: 0 0.5rem;
+                text-align: right;
+                white-space: nowrap;
+            }
+
             td {
                 &.rikishi {
                     font-weight: bold;
-                    font-size: 1.25rem;
+                    @media (min-width: media.$wide) {
+                        font-size: 1.25rem;
+                    }
                 }
 
                 &.pick-count {
@@ -124,13 +157,20 @@
 
                 label {
                     display: block;
-                    padding: 0 5px;
+                    padding: 0 0.25rem;
+                }
+            }
+
+            @media (max-width: media.$narrow) {
+                .hoshi,
+                .pick-count {
+                    display: none;
                 }
             }
 
             .select-radio {
                 vertical-align: middle;
-                margin-right: 5px;
+                margin-right: 0.25rem;
                 display: none;
             }
 

@@ -11,7 +11,7 @@
 
 {% block main %}
 
-    <h2>{{basho.id}} in {{basho.venue}}</h2>
+    <h1>{{basho.id}} in {{basho.venue}}</h1>
 
     {% if base.is_admin() %}
         <section id="admin">
@@ -58,16 +58,18 @@
         <form id="banzuke-select-rikishi-form" action="{{basho.id.url_path()}}/picks">
             <table>
                 <thead>
-                    <th>East</th>
-                    <th>Picks</th>
+                    <th class="rikishi">East</th>
+                    <th class="pick-count">Picks</th>
                     {% if basho.has_started() %}
-                        <th colspan="15"></th>
+                        <th class="hoshi" colspan="15"></th>
+                        <th class="win-loss"></th>
                     {% endif %}
                     <th class="rank">Rank</th>
-                    <th>West</th>
-                    <th>Picks</th>
+                    <th class="rikishi">West</th>
+                    <th class="pick-count">Picks</th>
                     {% if basho.has_started() %}
-                        <th colspan="15"></th>
+                        <th class="hoshi" colspan="15"></th>
+                        <th class="win-loss"></th>
                     {% endif %}
                 </thead>
                 <tbody>
@@ -88,22 +90,34 @@
         {% endif %}
     </section>
 
-    <section id="leaderboard">
-        <h2>Leaderboard</h2>
+    <section id="leaderboard"
+        class="{% if basho.has_started() %} has-started {% endif %}"
+    >
+        <h2>
+            {% if basho.has_started() %}
+                Leaderboard
+            {% else %}
+                Entries
+            {% endif %}
+        </h2>
         <table>
             <thead>
+                {% if basho.has_started() %}
+                    <tr>
+                        <th colspan="7"></th>
+                        <th class="day-heading" colspan="15">Day</th>
+                    </tr>
+                {% endif %}
                 <tr>
-                    <th colspan="7"></th>
-                    <th colspan="15">Day</th>
-                </tr>
-                <tr>
-                    <th class="rank">{% if basho.has_started() %}Rank{% else %}Entry{% endif %}</th>
+                    <th class="rank">#</th>
                     <th>Player</th>
-                    <th colspan="5">Picks</th>
-                    {% for day in 1..16 -%}
-                        <th class="day">{{day}}</th>
-                    {% endfor -%}
-                    <th>Total</th>
+                    <th class="pick" colspan="5">Picks</th>
+                    {% if basho.has_started() %}
+                        {% for day in 1..16 -%}
+                            <th class="day">{{day}}</th>
+                        {% endfor -%}
+                        <th>Total</th>
+                    {% endif %}
                 </tr>
             </thead>
             <tbody>
@@ -145,16 +159,18 @@
                         </td>
                     {% endfor %}
 
-                    {% for wins in leader.days -%}
-                        <td class="score">
-                        {%- match wins -%}
-                        {%- when Some with (num) %}{{num}}
-                        {%- when None %}-
-                        {%- endmatch -%}
-                        </td>
-                    {% endfor -%}
+                    {% if basho.has_started() %}
+                        {% for wins in leader.days -%}
+                            <td class="score day">
+                            {%- match wins -%}
+                            {%- when Some with (num) %}{{num}}
+                            {%- when None %}-
+                            {%- endmatch -%}
+                            </td>
+                        {% endfor -%}
 
-                    <td class="score total">{{leader.total}}</td>
+                        <td class="score total">{{leader.total}}</td>
+                    {% endif %}
 
                     {% if base.is_admin() && basho.has_started() && leader.rank == 1 && next_day > 15 %}
                         {%- match leader.player -%}
@@ -207,12 +223,14 @@
                     {%- endmatch -%}
                 </td>
             {%- endfor -%}
+            <td class="win-loss">{{rikishi.wins}}-{{rikishi.losses}}</td>
         {% endif %}
     {%- when None -%}
-        <td></td>
-        <td></td>
+        <td class="rikishi"></td>
+        <td class="pick-count"></td>
         {% if basho.has_started() %}
-            {% for _ in 1..=15 %}<td></td>{% endfor %}
+            {% for _ in 1..=15 %}<td class="hoshi"></td>{% endfor %}
+            <td class="win-loss"></td>
         {% endif %}
     {%- endmatch -%}
 {%- endmacro -%}
