@@ -26,7 +26,7 @@
             <thead>
                 <tr>
                     <th>Basho</th>
-                    <th colspan="5">Rikishi</th>
+                    <th colspan="5">Picks</th>
                     <th>Score</th>
                     <th>Rank</th>
                 </tr>
@@ -39,17 +39,17 @@
                     {% for rikishi in basho.rikishi %}
                     <td>
                         {% match rikishi %}
-                        {% when Some with (_) %} some rikishi
+                        {% when Some with (r) %} {{r.name}} <span class="win-loss">({{r.wins}}-{{r.losses}})</span>
                         {% when None %}
                         {% endmatch %}
                     </td>
                     {% endfor %}
 
-                    <td>{{basho.wins}}</td>
-                    <td>
-                        {{basho.rank}}
-                        {% if basho.rank == 1 %}{{crate::data::award::Award::EmperorsCup.emoji()}}{% endif %}
-                    </td>
+                    <td class="numeric">{{basho.wins}}</td>
+                    <td class="numeric">{{basho.rank}}</td>
+                    {% if basho.rank == 1 %}
+                        <td>{{crate::data::award::Award::EmperorsCup.emoji()}}</td>
+                    {% endif %}
                 </tr>
                 {% endfor %}
             </tbody>

@@ -31,7 +31,7 @@ impl BashoPlayerResults {
 
     pub fn fetch(db: &Connection, basho_id: BashoId, player_id: Option<PlayerId>, rikishi: HashMap<RikishiId, BashoRikishi>, include_best_worst: bool)
                      -> Result<Vec<Self>> {
-        const LIMIT: usize = 500;
+        const LIMIT: usize = 200;
         debug!("fetching {} leaders for basho {}", LIMIT, basho_id);
 
         let rikishi = Arc::new(rikishi);
@@ -69,7 +69,7 @@ impl BashoPlayerResults {
                 let mut picks = [None; 5];
                 let mut pick_rikishi = [None; 5];
                 for r in picks_str.split(',').filter_map(|id| rikishi.get(&id.parse().unwrap())) {
-                    let group = *r.rank.group() as usize - 1;
+                    let group = r.rank.group().as_index();
                     picks[group] = Some(r.id);
                     pick_rikishi[group] = Some(r);
                 }
@@ -119,7 +119,7 @@ fn make_min_max_results(rikishi: Arc<HashMap<RikishiId, BashoRikishi>>)
     let mut mins = [None; 5];
     let mut maxes = [None; 5];
     for r in rikishi.values() {
-        let group = *r.rank.group() as usize - 1;
+        let group = r.rank.group().as_index();
         mins[group] = mins[group].map_or(Some(r), |min: &BashoRikishi| {
             Some(if r.wins < min.wins { r } else { min })
         });

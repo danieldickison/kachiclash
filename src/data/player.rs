@@ -2,7 +2,7 @@ use rusqlite::{Row, Connection, OptionalExtension, ErrorCode, Error as SqlError,
 use chrono::{DateTime, Utc};
 
 use crate::external::{self, discord, ImageSize, AuthProvider};
-use super::{Result, BashoId};
+use super::{Result, BashoId, Rank};
 use rand::random;
 use url::Url;
 use std::ops::RangeInclusive;
@@ -10,6 +10,7 @@ use regex::{Regex, RegexBuilder};
 use crate::external::discord::DiscordAuthProvider;
 use crate::external::google::GoogleAuthProvider;
 use crate::external::reddit::RedditAuthProvider;
+use std::collections::HashMap;
 
 pub type PlayerId = i64;
 
@@ -190,6 +191,49 @@ pub struct BashoScore {
 
 impl BashoScore {
     pub fn with_player_id(db: &Connection, player_id: PlayerId) -> Result<Vec<Self>> {
+        // Build mapping of bashi_id => PlayerBashoRikishi that can be inserted into the BashoScores later
+        let mut basho_rikishi = HashMap::new();
+        {
+            struct RikishiRow(BashoId, String, Rank, u8, u8);
+            let mut stmt = db.prepare("
+                    SELECT
+                        b.basho_id,
+                        b.rikishi_id,
+                        b.family_name,
+                        b.rank,
+                        SUM(t.win = 1) AS wins,
+                        SUM(t.win = 0) AS losses
+                    FROM pick AS p
+                    JOIN banzuke AS b
+                        ON b.basho_id = p.basho_id
+                        AND b.rikishi_id = p.rikishi_id
+                    LEFT NATURAL JOIN torikumi AS t
+                    WHERE p.player_id = ?
+                    GROUP BY b.basho_id, b.rikishi_id
+                ").unwrap();
+            let rikishi_rows = stmt.query_map(
+                    params![player_id],
+                    |row| Ok(RikishiRow(
+                        row.get("basho_id")?,
+                        row.get("family_name")?,
+                        row.get("rank")?,
+                        row.get("wins")?,
+                        row.get("losses")?
+                    ))
+                )?;
+            for rr in rikishi_rows {
+                let rr = rr?;
+                let picks = basho_rikishi
+                    .entry(rr.0)
+                    .or_insert_with(|| [None, None, None, None, None]);
+                picks[rr.2.group().as_index()] = Some(PlayerBashoRikishi {
+                    name: rr.1,
+                    wins: rr.3,
+                    losses: rr.4,
+                });
+            }
+        }
+
         db.prepare("
                 SELECT r.basho_id, r.wins, r.rank
                 FROM basho_result AS r
@@ -199,9 +243,10 @@ impl BashoScore {
             .query_map(
                 params![player_id],
                 |row| -> SqlResult<Self> {
+                    let basho_id = row.get("basho_id")?;
                     Ok(BashoScore {
-                        basho_id: row.get("basho_id")?,
-                        rikishi: [None, None, None, None, None],
+                        basho_id,
+                        rikishi: basho_rikishi.remove(&basho_id).unwrap_or_default(),
                         wins: row.get("wins")?,
                         rank: row.get("rank")?,
                     })
@@ -211,7 +256,9 @@ impl BashoScore {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct PlayerBashoRikishi {
-
+    pub name: String,
+    pub wins: u8,
+    pub losses: u8,
 }

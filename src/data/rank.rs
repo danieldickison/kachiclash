@@ -126,6 +126,10 @@ impl RankGroup {
     pub fn count() -> usize {
         5
     }
+
+    pub fn as_index(self) -> usize {
+        (self.0 - 1) as usize
+    }
 }
 
 impl Deref for RankGroup {
