@@ -12,7 +12,7 @@ use oauth2::{
     TokenUrl
 };
 use oauth2::basic::{BasicClient};
-use super::{AuthProvider, UserInfo};
+use super::{AuthProvider, UserInfo, ImageSize};
 use rusqlite::Transaction;
 use chrono::{DateTime, Utc};
 use crate::data::PlayerId;
@@ -109,13 +109,6 @@ impl fmt::Display for ImageExt {
             // ImageExt::JPEG => "jpg",
         })
     }
-}
-
-pub enum ImageSize {
-    TINY    = 64,
-    // SMALL   = 128,
-    // MEDIUM  = 512,
-    // LARGE   = 1024,
 }
 
 pub fn avatar_url(user_id: &str, avatar: &Option<String>, discriminator: &str, ext: ImageExt, size: ImageSize) -> Url {

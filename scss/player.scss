@@ -1,0 +1,44 @@
+@use 'media';
+
+#p-player {
+    #profile {
+        &::after {
+            content: '';
+            clear: both;
+            display: block;
+        }
+
+        .img-wrapper {
+            float: left;
+            margin-right: 1rem;
+            width: 8rem;
+            height: 8rem;
+            border-radius: 4rem;
+            overflow: hidden;
+            position: relative;
+
+            &::after {
+                content: '';
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                border-radius: 4rem;
+                border: 1px solid rgba(0, 0, 0, 0.25);
+            }
+
+            img {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+            }
+        }
+
+        .name {
+            font-size: 2rem;
+            line-height: 3rem;
+            margin-top: 2.5rem;
+        }
+    }
+}

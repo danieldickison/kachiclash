@@ -15,6 +15,13 @@ pub mod discord;
 pub mod google;
 pub mod reddit;
 
+pub enum ImageSize {
+    TINY    = 64,
+    // SMALL   = 128,
+    MEDIUM  = 512,
+    // LARGE   = 1024,
+}
+
 pub trait UserInfo {
     fn update_existing_player(&self, txn: &Transaction, mod_date: DateTime<Utc>)
         -> Result<Option<PlayerId>, rusqlite::Error>;

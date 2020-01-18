@@ -83,6 +83,11 @@ pub async fn run(config: Config) -> std::io::Result<()> {
                     .route(web::post().to(handlers::admin::finalize_basho)))
         )
 
+        .service(
+            web::scope("/player")
+                .service(web::resource("/{player_id}").to(handlers::player::player))
+        )
+
         .default_service(web::route().to(default_not_found));
 
         if config.is_dev() {

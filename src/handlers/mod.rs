@@ -12,6 +12,7 @@ pub mod basho;
 pub mod login;
 pub mod admin;
 pub mod settings;
+pub mod player;
 
 type Result<T> = std::result::Result<T, HandlerError>;
 

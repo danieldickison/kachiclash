@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block main_id %}p-player{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet" href="/static/css/player.css">
+{% endblock %}
+
+{% block main %}
+
+    <section id="profile">
+        <span class="img-wrapper"><img class="js-player-img" src="{{player.medium_thumb()}}"></span>
+        <div class="name">
+            {{player.name}}
+            {% if player.has_emperors_cup() -%}
+                {{crate::data::award::Award::EmperorsCup.emoji()}}
+            {%- endif %}
+        </div>
+        <div class="join-date">
+            Joined: {{player.join_date.format("%Y-%m-%d")}}
+        </div>
+    </section>
+
+    <section id="history">
+        <table class="basho-list">
+            <thead>
+                <tr>
+                    <th>Basho</th>
+                    <th colspan="5">Rikishi</th>
+                    <th>Score</th>
+                    <th>Rank</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><a href="/basho/202001">Hatsu 2020</a></td>
+
+                    <td>Hakuho (12-3)</td>
+                    <td>Takakeisho (12-3)</td>
+                    <td>Mitakeumi (8-7)</td>
+                    <td>Chiyomaru (1-14)</td>
+                    <td>Ichinojo (3-12)</td>
+
+                    <td>36</td>
+                    <td>1 {{crate::data::award::Award::EmperorsCup.emoji()}}</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+{% endblock %}

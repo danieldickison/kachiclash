@@ -1,7 +1,7 @@
 use rusqlite::{Row, Connection, OptionalExtension, ErrorCode, Error as SqlError, NO_PARAMS};
 use chrono::{DateTime, Utc};
 
-use crate::external::{self, discord};
+use crate::external::{self, discord, ImageSize};
 use super::{DataError};
 use rand::random;
 use url::Url;
@@ -73,6 +73,14 @@ impl Player {
     }
 
     pub fn tiny_thumb(&self) -> String {
+        self.image_url(ImageSize::TINY)
+    }
+
+    pub fn medium_thumb(&self) -> String {
+        self.image_url(ImageSize::MEDIUM)
+    }
+
+    fn image_url(&self, size: ImageSize) -> String {
         const DEFAULT: &str = "/static/img/oicho-silhouette.png";
 
         if let Some(user_id) = &self.discord_user_id {
@@ -81,7 +89,7 @@ impl Player {
                 &self.discord_avatar,
                 &self.discord_discriminator.as_ref().unwrap_or(&"0".to_string()),
                 discord::ImageExt::PNG,
-                discord::ImageSize::TINY).to_string()
+                size).to_string()
         } else if let Some(icon) = &self.reddit_icon {
             // It's unclear why, but reddit html-escapes the icon_img value in its api return value so we need to unescape it here. In practice, only &amp; appears in the URL so I'm doing a simple replacement.
             Url::parse(&icon.replace("&amp;", "&"))
