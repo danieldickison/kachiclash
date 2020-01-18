@@ -3,7 +3,7 @@ use actix_web::web;
 use actix_identity::Identity;
 
 use super::{Result, BaseTemplate, HandlerError};
-use crate::data::{PlayerId, Player};
+use crate::data::{PlayerId, Player, player::BashoScore};
 use crate::AppState;
 
 #[derive(Template)]
@@ -11,6 +11,7 @@ use crate::AppState;
 pub struct PlayerTemplate {
     base: BaseTemplate,
     player: Player,
+    basho_scores: Vec<BashoScore>,
 }
 
 pub async fn player(path: web::Path<PlayerId>, state: web::Data<AppState>, identity: Identity)
@@ -21,8 +22,10 @@ pub async fn player(path: web::Path<PlayerId>, state: web::Data<AppState>, ident
     let player = Player::with_id(&db, player_id)?
         .ok_or_else(|| HandlerError::NotFound("player".to_string()))?;
     let base = BaseTemplate::new(&db, &identity)?;
+    let basho_scores = BashoScore::with_player_id(&db, player_id)?;
     Ok(PlayerTemplate {
         base,
-        player
+        player,
+        basho_scores,
     })
 }

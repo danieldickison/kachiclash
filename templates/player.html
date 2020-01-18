@@ -32,18 +32,26 @@
                 </tr>
             </thead>
             <tbody>
+                {% for basho in basho_scores -%}
                 <tr>
-                    <td><a href="/basho/202001">Hatsu 2020</a></td>
+                    <td><a href="{{basho.basho_id.url_path()}}">{{basho.basho_id}}</a></td>
 
-                    <td>Hakuho (12-3)</td>
-                    <td>Takakeisho (12-3)</td>
-                    <td>Mitakeumi (8-7)</td>
-                    <td>Chiyomaru (1-14)</td>
-                    <td>Ichinojo (3-12)</td>
+                    {% for rikishi in basho.rikishi %}
+                    <td>
+                        {% match rikishi %}
+                        {% when Some with (_) %} some rikishi
+                        {% when None %}
+                        {% endmatch %}
+                    </td>
+                    {% endfor %}
 
-                    <td>36</td>
-                    <td>1 {{crate::data::award::Award::EmperorsCup.emoji()}}</td>
+                    <td>{{basho.wins}}</td>
+                    <td>
+                        {{basho.rank}}
+                        {% if basho.rank == 1 %}{{crate::data::award::Award::EmperorsCup.emoji()}}{% endif %}
+                    </td>
                 </tr>
+                {% endfor %}
             </tbody>
         </table>
     </section>

@@ -1,8 +1,8 @@
-use rusqlite::{Row, Connection, OptionalExtension, ErrorCode, Error as SqlError, NO_PARAMS};
+use rusqlite::{Row, Connection, OptionalExtension, ErrorCode, Error as SqlError, Result as SqlResult, NO_PARAMS};
 use chrono::{DateTime, Utc};
 
 use crate::external::{self, discord, ImageSize, AuthProvider};
-use super::{DataError};
+use super::{Result, BashoId};
 use rand::random;
 use url::Url;
 use std::ops::RangeInclusive;
@@ -31,7 +31,7 @@ pub struct Player {
 }
 
 impl Player {
-    pub fn with_id(db: &Connection, player_id: PlayerId) -> Result<Option<Self>, DataError> {
+    pub fn with_id(db: &Connection, player_id: PlayerId) -> Result<Option<Self>> {
         db.query_row("
                 SELECT *
                 FROM player_info AS p
@@ -41,7 +41,7 @@ impl Player {
             .map_err(|e| e.into())
     }
 
-    pub fn list_all(db: &Connection) -> Result<Vec<Self>, DataError> {
+    pub fn list_all(db: &Connection) -> Result<Vec<Self>> {
         db.prepare("
                 SELECT * FROM player_info
             ").unwrap()
@@ -52,7 +52,7 @@ impl Player {
             .map_err(|e| e.into())
     }
 
-    pub fn from_row(row: &Row) -> Result<Self, rusqlite::Error> {
+    pub fn from_row(row: &Row) -> SqlResult<Self> {
         Ok(Player {
             id: row.get("id")?,
             name: row.get("name")?,
@@ -124,7 +124,7 @@ impl Player {
     }
 }
 
-pub fn player_id_with_external_user(db: &mut Connection, user_info: impl external::UserInfo) -> Result<(PlayerId, bool), rusqlite::Error> {
+pub fn player_id_with_external_user(db: &mut Connection, user_info: impl external::UserInfo) -> SqlResult<(PlayerId, bool)> {
     let txn = db.transaction()?;
     let now = Utc::now();
     let existing_player = user_info.update_existing_player(&txn, now)?;
@@ -178,4 +178,40 @@ pub fn name_is_valid(name: &str) -> bool {
     }
 
     NAME_LENGTH.contains(&name.len()) && RE.is_match(&name)
+}
+
+#[derive(Debug)]
+pub struct BashoScore {
+    pub basho_id: BashoId,
+    pub rikishi: [Option<PlayerBashoRikishi>; 5],
+    pub wins: u8,
+    pub rank: u16,
+}
+
+impl BashoScore {
+    pub fn with_player_id(db: &Connection, player_id: PlayerId) -> Result<Vec<Self>> {
+        db.prepare("
+                SELECT r.basho_id, r.wins, r.rank
+                FROM basho_result AS r
+                WHERE r.player_id = ?
+                ORDER BY r.basho_id DESC
+            ").unwrap()
+            .query_map(
+                params![player_id],
+                |row| -> SqlResult<Self> {
+                    Ok(BashoScore {
+                        basho_id: row.get("basho_id")?,
+                        rikishi: [None, None, None, None, None],
+                        wins: row.get("wins")?,
+                        rank: row.get("rank")?,
+                    })
+                })?
+            .collect::<SqlResult<_>>()
+            .map_err(|e| e.into())
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct PlayerBashoRikishi {
+
 }
