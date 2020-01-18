@@ -42,6 +42,16 @@ impl Player {
             .map_err(|e| e.into())
     }
 
+    pub fn with_name(db: &Connection, name: String) -> Result<Option<Self>> {
+        db.query_row("
+                SELECT *
+                FROM player_info AS p
+                WHERE p.name = ?
+            ", params![name], |row| Player::from_row(row))
+            .optional()
+            .map_err(|e| e.into())
+    }
+
     pub fn list_all(db: &Connection) -> Result<Vec<Self>> {
         db.prepare("
                 SELECT * FROM player_info
@@ -109,7 +119,7 @@ impl Player {
     }
 
     pub fn url_path(&self) -> String {
-        format!("/player/{}", self.id)
+        format!("/player/{}", self.name)
     }
 
     pub fn login_service_name(&self) -> &'static str {
@@ -201,8 +211,8 @@ impl BashoScore {
                         b.rikishi_id,
                         b.family_name,
                         b.rank,
-                        SUM(t.win = 1) AS wins,
-                        SUM(t.win = 0) AS losses
+                        COALESCE(SUM(t.win = 1), 0) AS wins,
+                        COALESCE(SUM(t.win = 0), 0) AS losses
                     FROM pick AS p
                     JOIN banzuke AS b
                         ON b.basho_id = p.basho_id
