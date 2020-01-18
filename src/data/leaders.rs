@@ -31,7 +31,7 @@ impl BashoPlayerResults {
 
     pub fn fetch(db: &Connection, basho_id: BashoId, player_id: Option<PlayerId>, rikishi: HashMap<RikishiId, BashoRikishi>, include_best_worst: bool)
                      -> Result<Vec<Self>> {
-        const LIMIT: usize = 300;
+        const LIMIT: usize = 500;
         debug!("fetching {} leaders for basho {}", LIMIT, basho_id);
 
         let rikishi = Arc::new(rikishi);
@@ -43,7 +43,6 @@ impl BashoPlayerResults {
                     GROUP_CONCAT(pick.rikishi_id) AS pick_ids
                 FROM basho_score AS bs
                 JOIN player_info AS player ON player.id = bs.player_id
-                LEFT JOIN player_discord AS discord ON discord.player_id = player.id
                 JOIN pick ON pick.player_id = player.id AND pick.basho_id = bs.basho_id
                 WHERE bs.basho_id = :basho_id
                 GROUP BY player.id
