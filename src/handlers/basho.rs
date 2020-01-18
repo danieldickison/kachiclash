@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use actix_identity::Identity;
 use rusqlite::Connection;
 
-use super::{BaseTemplate, Result, HandlerError, AskamaResponder, IdentityExt};
+use super::{BaseTemplate, Result, HandlerError, IdentityExt};
 use crate::data::{self, RankGroup, BashoId, BashoInfo, BashoRikishiByRank, FetchBashoRikishi, PlayerId, RikishiId, DataError};
 use crate::data::leaders::{BashoPlayerResults, ResultPlayer};
 use crate::AppState;
@@ -23,7 +23,7 @@ pub struct BashoTemplate {
 }
 
 pub async fn basho(path: web::Path<BashoId>, state: web::Data<AppState>, identity: Identity)
-    -> Result<AskamaResponder<BashoTemplate>> {
+    -> Result<BashoTemplate> {
 
     let basho_id = path.into_inner();
     let db = state.db.lock().unwrap();

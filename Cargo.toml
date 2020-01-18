@@ -35,5 +35,5 @@ version = "0.21"
 features = ["bundled", "chrono"]
 
 [dependencies.askama]
-version = "0.8"
-# features = ["with-actix-web"]
+version = "0.9"
+features = ["with-actix-web"]

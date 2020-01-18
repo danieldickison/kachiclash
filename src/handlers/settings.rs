@@ -3,7 +3,6 @@ use actix_identity::Identity;
 use askama::Template;
 
 use crate::AppState;
-use super::askama_responder::AskamaResponder;
 use super::{BaseTemplate, Result, HandlerError};
 use crate::data::player;
 use crate::handlers::IdentityExt;
@@ -22,7 +21,7 @@ pub struct FormData {
     name: String,
 }
 
-pub async fn settings_page(state: web::Data<AppState>, identity: Identity) -> Result<AskamaResponder<SettingsTemplate>> {
+pub async fn settings_page(state: web::Data<AppState>, identity: Identity) -> Result<SettingsTemplate> {
     let db = state.db.lock().unwrap();
     let base = BaseTemplate::new(&db, &identity)?;
     if base.player.is_some() {
@@ -36,7 +35,7 @@ pub async fn settings_page(state: web::Data<AppState>, identity: Identity) -> Re
     }
 }
 
-pub async fn settings_post(form: web::Form<FormData>, state: web::Data<AppState>, identity: Identity) -> Result<AskamaResponder<SettingsTemplate>> {
+pub async fn settings_post(form: web::Form<FormData>, state: web::Data<AppState>, identity: Identity) -> Result<SettingsTemplate> {
 
     let player_id = identity.require_player_id()?;
     let db = state.db.lock().unwrap();

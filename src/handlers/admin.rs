@@ -1,7 +1,7 @@
 
 use crate::data::{self, basho, Rank, BashoId, PlayerId, Award, DataError};
 use crate::AppState;
-use super::{HandlerError, BaseTemplate, Result, AskamaResponder};
+use super::{HandlerError, BaseTemplate, Result};
 
 use actix_web::{web, http, HttpResponse, Responder};
 use actix_identity::Identity;
@@ -20,7 +20,7 @@ pub struct EditBashoTemplate {
     basho: Option<BashoData>,
 }
 
-pub async fn edit_basho_page(path: web::Path<BashoId>, state: web::Data<AppState>, identity: Identity) -> Result<AskamaResponder<EditBashoTemplate>> {
+pub async fn edit_basho_page(path: web::Path<BashoId>, state: web::Data<AppState>, identity: Identity) -> Result<EditBashoTemplate> {
     let db = state.db.lock().unwrap();
     Ok(EditBashoTemplate {
         base: admin_base(&db, &identity)?,
@@ -135,7 +135,7 @@ pub struct TorikumiTemplate {
 }
 
 pub async fn torikumi_page(path: web::Path<(BashoId, u8)>, state: web::Data<AppState>, identity: Identity)
-    -> Result<AskamaResponder<TorikumiTemplate>> {
+    -> Result<TorikumiTemplate> {
 
     let basho_id = path.0;
     let day = path.1;

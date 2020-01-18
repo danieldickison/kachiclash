@@ -7,9 +7,6 @@ use actix_identity::Identity;
 use rusqlite::Connection;
 use failure::Fail;
 
-mod askama_responder;
-use askama_responder::AskamaResponder;
-
 pub mod index;
 pub mod basho;
 pub mod login;

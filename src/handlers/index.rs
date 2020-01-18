@@ -1,7 +1,6 @@
 use crate::AppState;
 use crate::data::{BashoId, BashoInfo, Player};
 use super::{BaseTemplate, Result};
-use super::askama_responder::AskamaResponder;
 use actix_web::web::Data;
 use actix_identity::Identity;
 use askama::Template;
@@ -15,7 +14,7 @@ pub struct IndexTemplate {
     next_basho_id: BashoId,
 }
 
-pub async fn index(state: Data<AppState>, identity: Identity) -> Result<AskamaResponder<IndexTemplate>> {
+pub async fn index(state: Data<AppState>, identity: Identity) -> Result<IndexTemplate> {
     let db = state.db.lock().unwrap();
     let basho_list = BashoInfo::list_all(&db)?;
     let current_basho_id = basho_list.first().map(|b| b.id);
