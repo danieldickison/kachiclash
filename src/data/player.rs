@@ -2,7 +2,7 @@ use rusqlite::{Row, Connection, OptionalExtension, ErrorCode, Error as SqlError,
 use chrono::{DateTime, Utc};
 
 use crate::external::{self, discord, ImageSize, AuthProvider};
-use super::{Result, BashoId, Rank};
+use super::{Result, BashoId, Rank, Award};
 use rand::random;
 use url::Url;
 use std::ops::RangeInclusive;
@@ -197,6 +197,7 @@ pub struct BashoScore {
     pub rikishi: [Option<PlayerBashoRikishi>; 5],
     pub wins: u8,
     pub rank: u16,
+    pub awards: Vec<Award>,
 }
 
 impl BashoScore {
@@ -245,7 +246,15 @@ impl BashoScore {
         }
 
         db.prepare("
-                SELECT r.basho_id, r.wins, r.rank
+                SELECT
+                    r.basho_id,
+                    r.wins,
+                    r.rank,
+                    (
+                        SELECT COALESCE(GROUP_CONCAT(a.type), '')
+                        FROM award AS a
+                        WHERE a.basho_id = r.basho_id AND a.player_id = r.player_id
+                    ) AS awards
                 FROM basho_result AS r
                 WHERE r.player_id = ?
                 ORDER BY r.basho_id DESC
@@ -259,6 +268,7 @@ impl BashoScore {
                         rikishi: basho_rikishi.remove(&basho_id).unwrap_or_default(),
                         wins: row.get("wins")?,
                         rank: row.get("rank")?,
+                        awards: Award::parse_list(row.get("awards")?),
                     })
                 })?
             .collect::<SqlResult<_>>()
