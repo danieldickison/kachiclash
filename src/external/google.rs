@@ -15,6 +15,7 @@ impl AuthProvider for GoogleAuthProvider {
     type UserInfo = GoogleUserInfo;
     const SCOPES: &'static [&'static str] = &["https://www.googleapis.com/auth/userinfo.profile"];
     const USER_INFO_URL: &'static str = "https://www.googleapis.com/userinfo/v2/me";
+    const SERVICE_NAME: &'static str = "Google";
 
     fn make_oauth_client(&self, config: &Config) -> BasicClient {
         let mut redirect_url = config.url();

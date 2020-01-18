@@ -17,7 +17,7 @@
             {%- endif %}
         </div>
         <div class="join-date">
-            Joined: {{player.join_date.format("%Y-%m-%d")}}
+            Joined: {{player.join_date.format("%Y-%m-%d")}} via {{player.login_service_name()}}
         </div>
     </section>
 

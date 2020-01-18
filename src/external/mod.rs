@@ -40,6 +40,11 @@ pub trait AuthProvider: Debug {
     type UserInfo: UserInfo + DeserializeOwned;
     const SCOPES: &'static [&'static str];
     const USER_INFO_URL: &'static str;
+    const SERVICE_NAME: &'static str;
+
+    fn service_name(&self) -> &'static str {
+        return Self::SERVICE_NAME
+    }
 
     fn make_oauth_client(&self, config: &Config) -> BasicClient;
 

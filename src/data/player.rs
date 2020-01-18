@@ -1,12 +1,15 @@
 use rusqlite::{Row, Connection, OptionalExtension, ErrorCode, Error as SqlError, NO_PARAMS};
 use chrono::{DateTime, Utc};
 
-use crate::external::{self, discord, ImageSize};
+use crate::external::{self, discord, ImageSize, AuthProvider};
 use super::{DataError};
 use rand::random;
 use url::Url;
 use std::ops::RangeInclusive;
 use regex::{Regex, RegexBuilder};
+use crate::external::discord::DiscordAuthProvider;
+use crate::external::google::GoogleAuthProvider;
+use crate::external::reddit::RedditAuthProvider;
 
 pub type PlayerId = i64;
 
@@ -106,6 +109,18 @@ impl Player {
 
     pub fn url_path(&self) -> String {
         format!("/player/{}", self.id)
+    }
+
+    pub fn login_service_name(&self) -> &'static str {
+        if self.discord_user_id.is_some() {
+            DiscordAuthProvider.service_name()
+        } else if self.google_picture.is_some() {
+            GoogleAuthProvider.service_name()
+        } else if self.reddit_icon.is_some() {
+            RedditAuthProvider.service_name()
+        } else {
+            "unknown"
+        }
     }
 }
 

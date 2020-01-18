@@ -15,6 +15,7 @@ impl AuthProvider for RedditAuthProvider {
     type UserInfo = RedditUserInfo;
     const SCOPES: &'static [&'static str] = &["identity"];
     const USER_INFO_URL: &'static str = "https://oauth.reddit.com/api/v1/me";
+    const SERVICE_NAME: &'static str = "Reddit";
 
     fn make_oauth_client(&self, config: &Config) -> BasicClient {
         let mut redirect_url = config.url();

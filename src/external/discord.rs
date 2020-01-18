@@ -26,6 +26,7 @@ impl AuthProvider for DiscordAuthProvider {
     type UserInfo = DiscordUserInfo;
     const SCOPES: &'static [&'static str] = &["identify"];
     const USER_INFO_URL: &'static str = "https://discordapp.com/api/v6/users/@me";
+    const SERVICE_NAME: &'static str = "Discord";
 
     fn make_oauth_client(&self, config: &Config) -> BasicClient {
         let mut redirect_url = config.url();
