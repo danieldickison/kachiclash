@@ -107,10 +107,6 @@ section {
             height: var(--header-height);
             width: auto;
         }
-
-        @media (max-width: media.$narrow) {
-            display: none;
-        }
     }
 
     .player-menu {

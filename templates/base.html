@@ -24,7 +24,13 @@
             {%- endmatch %}
         </div>
 
-        <a class="logo" href="/"><img src="/static/img/header-logo.png" alt="Kachi Clash"></a>
+        <a class="logo" href="/">
+            <picture>
+                <source srcset="/static/img/favicon.png"
+                        media="(max-width: 600px)">
+                <img src="/static/img/header-logo.png" alt="Kachi Clash">
+            </picture>
+        </a>
     </header>
 
     <main id="{% block main_id %}{% endblock %}">
