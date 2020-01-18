@@ -4,7 +4,7 @@ use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::cmp::max;
 use std::result::Result as StdResult;
-use rusqlite::{Connection, NO_PARAMS, Result as SqlResult};
+use rusqlite::{Connection, NO_PARAMS, Result as SqlResult, Transaction};
 use rusqlite::types::{ToSql, ToSqlOutput, ValueRef, FromSql, FromSqlResult};
 use chrono::naive::{NaiveDate, NaiveDateTime};
 use chrono::offset::Utc;
@@ -434,6 +434,8 @@ pub fn update_torikumi(db: &mut Connection, basho_id: BashoId, day: Day, torikum
         )?;
     }
 
+    upsert_basho_results(&txn, basho_id, false)?;
+
     txn.commit()?;
 
     Ok(())
@@ -584,39 +586,46 @@ impl FetchBashoRikishi {
 
 pub fn finalize_basho(db: &mut Connection, basho_id: BashoId) -> Result<()> {
     debug!("finalizing basho {}", basho_id);
-    let rikishi = FetchBashoRikishi::with_db(&db, basho_id, &HashSet::new())?;
-    let results = leaders::BashoPlayerResults::fetch(&db, basho_id, Some(0), rikishi.by_id, false)?;
     let txn = db.transaction()?;
-    {
+    upsert_basho_results(&txn, basho_id, true)?;
+    debug!("committing");
+    txn.commit()?;
+    Ok(())
+}
+
+fn upsert_basho_results(txn: &Transaction, basho_id: BashoId, bestow_awards: bool) -> Result<()> {
+    let rikishi = FetchBashoRikishi::with_db(&txn, basho_id, &HashSet::new())?;
+    let results = leaders::BashoPlayerResults::fetch(&txn, basho_id, Some(0), rikishi.by_id, false)?;
+
+    if bestow_awards {
         // Delete previously awarded emperor's cups
         txn.prepare("
                 DELETE FROM award
                 WHERE basho_id = ? AND type = ?
             ")?
             .execute(params![basho_id, Award::EmperorsCup])?;
+    }
 
-        // For each player, upsert basho_result and award emperor's cup if they ranked #1
-        let mut insert_result_stmt = txn.prepare("
-                INSERT INTO basho_result (basho_id, player_id, wins, rank) VALUES (?, ?, ?, ?)
-                ON CONFLICT (basho_id, player_id) DO UPDATE
-                SET wins = excluded.wins,
-                    rank = excluded.rank
-            ")?;
-        let mut insert_award_stmt = txn.prepare("
-                INSERT INTO award (basho_id, player_id, type)
-                VALUES (?, ?, ?)
-            ")?;
-        for pr in results {
-            if let leaders::ResultPlayer::RealPlayer(p) = pr.player {
-                debug!("- rank {} player {} ({}) with {} wins", pr.rank, p.name, p.id, pr.total);
-                insert_result_stmt.execute(params![basho_id, p.id, pr.total, pr.rank as u32])?;
-                if pr.rank == 1 {
-                    insert_award_stmt.execute(params![basho_id, p.id, Award::EmperorsCup])?;
-                }
+    // For each player, upsert basho_result and award emperor's cup if they ranked #1
+    let mut insert_result_stmt = txn.prepare("
+            INSERT INTO basho_result (basho_id, player_id, wins, rank) VALUES (?, ?, ?, ?)
+            ON CONFLICT (basho_id, player_id) DO UPDATE
+            SET wins = excluded.wins,
+                rank = excluded.rank
+        ")?;
+    let mut insert_award_stmt = txn.prepare("
+            INSERT INTO award (basho_id, player_id, type)
+            VALUES (?, ?, ?)
+        ")?;
+    for pr in results {
+        if let leaders::ResultPlayer::RealPlayer(p) = pr.player {
+            debug!("- rank {} player {} ({}) with {} wins", pr.rank, p.name, p.id, pr.total);
+            insert_result_stmt.execute(params![basho_id, p.id, pr.total, pr.rank as u32])?;
+            if bestow_awards && pr.rank == 1 {
+                debug!("  ! awarding emperor's cup to {}", p.name);
+                insert_award_stmt.execute(params![basho_id, p.id, Award::EmperorsCup])?;
             }
         }
     }
-    debug!("committing");
-    txn.commit()?;
     Ok(())
 }
