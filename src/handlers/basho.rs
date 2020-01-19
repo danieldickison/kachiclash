@@ -8,7 +8,7 @@ use crate::data::{self, RankGroup, BashoId, BashoInfo, BashoRikishiByRank, Fetch
 use crate::data::leaders::{BashoPlayerResults, ResultPlayer};
 use crate::AppState;
 
-use actix_web::{web, HttpResponse, Responder};
+use actix_web::{web, http, HttpResponse, Responder, Either};
 use askama::Template;
 
 #[derive(Template)]
@@ -23,17 +23,27 @@ pub struct BashoTemplate {
 }
 
 pub async fn basho(path: web::Path<BashoId>, state: web::Data<AppState>, identity: Identity)
-    -> Result<BashoTemplate> {
+    -> Result<Either<BashoTemplate, HttpResponse>> {
 
     let basho_id = path.into_inner();
     let db = state.db.lock().unwrap();
+
+    let basho = BashoInfo::with_id(&db, basho_id)?
+            .ok_or_else(|| HandlerError::NotFound("basho".to_string()))?;
+    if let Some(external_link) = basho.external_link {
+        return Ok(
+            Either::B(
+                HttpResponse::SeeOther()
+                .header(http::header::LOCATION, external_link)
+                .finish()
+            )
+        );
+    }
     let base = BaseTemplate::new(&db, &identity)?;
     let player_id = base.player.as_ref().map(|p| p.id);
     let picks = fetch_player_picks(&db, player_id, basho_id)?;
     let FetchBashoRikishi {by_id: rikishi_by_id, by_rank: rikishi_by_rank} = FetchBashoRikishi::with_db(&db, basho_id, &picks)?;
-    let basho = BashoInfo::with_id(&db, basho_id)?
-            .ok_or_else(|| HandlerError::NotFound("basho".to_string()))?;
-    Ok(BashoTemplate {
+    Ok(Either::A(BashoTemplate {
         leaders: BashoPlayerResults::fetch(&db, basho_id, player_id, rikishi_by_id, basho.has_started())?,
         next_day: rikishi_by_rank.iter()
             .map(|rr| rr.next_day())
@@ -43,7 +53,7 @@ pub async fn basho(path: web::Path<BashoId>, state: web::Data<AppState>, identit
         initially_selectable: !basho.has_started() && base.player.is_some() && picks.len() < RankGroup::count(),
         basho,
         base,
-    }.into())
+    }))
 }
 
 fn fetch_player_picks(db: &Connection, player_id: Option<PlayerId>, basho_id: BashoId) -> Result<HashSet<RikishiId>> {
