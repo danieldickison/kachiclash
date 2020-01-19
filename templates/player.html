@@ -26,9 +26,9 @@
             <thead>
                 <tr>
                     <th>Basho</th>
-                    <th colspan="5">Picks</th>
-                    <th>Score</th>
-                    <th>Rank</th>
+                    <th colspan="5" class="pick">Picks</th>
+                    <th class="numeric">Score</th>
+                    <th class="numeric">Rank</th>
                     <th><!-- awards --></th>
                 </tr>
             </thead>
@@ -38,7 +38,7 @@
                     <td><a href="{{basho.basho_id.url_path()}}">{{basho.basho_id}}</a></td>
 
                     {% for rikishi in basho.rikishi %}
-                    <td>
+                    <td class="pick">
                         {% match rikishi %}
                         {% when Some with (r) %} {{r.name}} <span class="win-loss">({{r.wins}}-{{r.losses}})</span>
                         {% when None %}
