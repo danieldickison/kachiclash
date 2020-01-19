@@ -195,8 +195,8 @@ pub fn name_is_valid(name: &str) -> bool {
 pub struct BashoScore {
     pub basho_id: BashoId,
     pub rikishi: [Option<PlayerBashoRikishi>; 5],
-    pub wins: u8,
-    pub rank: u16,
+    pub wins: Option<u8>,
+    pub rank: Option<u16>,
     pub awards: Vec<Award>,
 }
 
@@ -247,20 +247,20 @@ impl BashoScore {
 
         db.prepare("
                 SELECT
-                    r.basho_id,
+                    b.id AS basho_id,
                     r.wins,
                     r.rank,
                     (
                         SELECT COALESCE(GROUP_CONCAT(a.type), '')
                         FROM award AS a
-                        WHERE a.basho_id = r.basho_id AND a.player_id = r.player_id
+                        WHERE a.basho_id = b.id AND a.player_id = ?
                     ) AS awards
-                FROM basho_result AS r
-                WHERE r.player_id = ?
-                ORDER BY r.basho_id DESC
+                FROM basho AS b
+                LEFT JOIN basho_result AS r ON r.basho_id = b.id AND r.player_id = ?
+                ORDER BY b.id DESC
             ").unwrap()
             .query_map(
-                params![player_id],
+                params![player_id, player_id],
                 |row| -> SqlResult<Self> {
                     let basho_id = row.get("basho_id")?;
                     Ok(BashoScore {

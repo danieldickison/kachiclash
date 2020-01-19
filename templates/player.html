@@ -46,8 +46,18 @@
                     </td>
                     {% endfor %}
 
-                    <td class="numeric">{{basho.wins}}</td>
-                    <td class="numeric">{{basho.rank}}</td>
+                    <td class="numeric">
+                        {%- match basho.wins -%}
+                        {%- when Some with (wins) -%} {{wins}}
+                        {%- when None -%}
+                        {%- endmatch -%}
+                    </td>
+                    <td class="numeric">
+                        {%- match basho.rank -%}
+                        {%- when Some with (rank) -%} #{{rank}}
+                        {%- when None -%}
+                        {%- endmatch -%}
+                    </td>
                     <td>
                         {% for award in basho.awards %}{{award.emoji()}}{% endfor %}
                     </td>
