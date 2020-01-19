@@ -34,7 +34,7 @@
             </thead>
             <tbody>
                 {% for basho in basho_scores -%}
-                <tr>
+                <tr {% if basho.basho_id.month == 1 %} class="first-of-year" {% endif %}>
                     <td><a href="{{basho.basho_id.url_path()}}">{{basho.basho_id}}</a></td>
 
                     {% for rikishi in basho.rikishi %}

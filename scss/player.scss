@@ -48,13 +48,14 @@
             border-collapse: separate;
             border-spacing: 0;
 
-            tr {
-            }
-
             td, th {
                 padding: 0.25rem 0.125rem;
                 border-bottom: 1px solid var(--color-border);
                 text-align: left;
+            }
+
+            .first-of-year td {
+                border-bottom: 3px solid var(--color-border);
             }
 
             .numeric {
