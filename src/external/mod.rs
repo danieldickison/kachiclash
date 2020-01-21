@@ -2,6 +2,7 @@ use rusqlite::Transaction;
 use oauth2::{CsrfToken, AuthorizationCode, AccessToken, Scope};
 use oauth2::basic::{BasicTokenResponse, BasicClient};
 use url::Url;
+use async_trait::async_trait;
 use failure::Error;
 use serde::de::DeserializeOwned;
 use chrono::{DateTime, Utc};
@@ -36,6 +37,7 @@ pub trait UserInfo {
     }
 }
 
+#[async_trait]
 pub trait AuthProvider: Debug {
     type UserInfo: UserInfo + DeserializeOwned;
     const SCOPES: &'static [&'static str];
@@ -64,19 +66,20 @@ pub trait AuthProvider: Debug {
             .map_err(|e| e.into())
     }
 
-    fn get_logged_in_user_info(&self, access_token: &AccessToken) -> Result<Self::UserInfo, Error> {
+    async fn get_logged_in_user_info(&self, access_token: &AccessToken) -> Result<Self::UserInfo, Error> {
         let req = reqwest::Client::new()
             .get(Self::USER_INFO_URL)
             .bearer_auth(access_token.secret())
             .header("User-Agent", "KachiClash (http://kachiclash.com, 1)");
         //debug!("sending request: {:?}", req); // Note: this logs sensitive data
-        let mut res = req.send()?;
+        let res = req.send().await?;
+        let status = res.status();
         //debug!("response: {:?}", res); // Note: this logs sensitive data
-        if res.status().is_success() {
-            res.json().map_err(|e| e.into())
+        if status.is_success() {
+            res.json().await.map_err(|err| err.into())
         } else {
-            debug!("body: {}", res.text()?);
-            Err(format_err!("getting logged in user info failed with http status: {}", res.status()))
+            debug!("body: {}", res.text().await?);
+            Err(format_err!("getting logged in user info failed with http status: {}", status))
         }
     }
 }

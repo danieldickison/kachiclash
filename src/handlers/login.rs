@@ -64,18 +64,18 @@ pub struct OAuthRedirectQuery {
 }
 
 pub async fn discord_redirect(query: web::Query<OAuthRedirectQuery>, state: web::Data<AppState>, session: Session, id: Identity) -> Result<impl Responder> {
-    oauth_redirect(&query, state, session, id, DiscordAuthProvider)
+    oauth_redirect(&query, state, session, id, DiscordAuthProvider).await
 }
 
 pub async fn google_redirect(query: web::Query<OAuthRedirectQuery>, state: web::Data<AppState>, session: Session, id: Identity) -> Result<impl Responder> {
-    oauth_redirect(&query, state, session, id, GoogleAuthProvider)
+    oauth_redirect(&query, state, session, id, GoogleAuthProvider).await
 }
 
 pub async fn reddit_redirect(query: web::Query<OAuthRedirectQuery>, state: web::Data<AppState>, session: Session, id: Identity) -> Result<impl Responder> {
-    oauth_redirect(&query, state, session, id, RedditAuthProvider)
+    oauth_redirect(&query, state, session, id, RedditAuthProvider).await
 }
 
-fn oauth_redirect(query: &OAuthRedirectQuery, state: web::Data<AppState>, session: Session, id: Identity, provider: impl AuthProvider)
+async fn oauth_redirect(query: &OAuthRedirectQuery, state: web::Data<AppState>, session: Session, id: Identity, provider: impl AuthProvider + Sync)
     -> Result<impl Responder> {
 
     let mut db = state.db.lock().unwrap();
@@ -91,7 +91,7 @@ fn oauth_redirect(query: &OAuthRedirectQuery, state: web::Data<AppState>, sessio
                 })?;
 
             debug!("getting logged in user info from {:?}", provider);
-            let user_info = provider.get_logged_in_user_info(token_res.access_token())
+            let user_info = provider.get_logged_in_user_info(token_res.access_token()).await
                 .map_err(|e| {
                     warn!("error getting logged in user info from {:?}: {:?}", provider, e);
                     HandlerError::ExternalServiceError
