@@ -70,7 +70,7 @@ fn fetch_player_picks(db: &Connection, player_id: Option<PlayerId>, basho_id: Ba
                 params![player_id, basho_id],
                 |row| row.get(0)
             )
-            .map_err(|err| DataError::from(err))?;
+            .map_err(DataError::from)?;
         for pick in rows {
             set.insert(pick.unwrap());
         }

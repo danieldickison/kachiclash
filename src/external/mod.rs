@@ -45,7 +45,7 @@ pub trait AuthProvider: Debug {
     const SERVICE_NAME: &'static str;
 
     fn service_name(&self) -> &'static str {
-        return Self::SERVICE_NAME
+        Self::SERVICE_NAME
     }
 
     fn make_oauth_client(&self, config: &Config) -> BasicClient;
@@ -53,7 +53,7 @@ pub trait AuthProvider: Debug {
     fn authorize_url(&self, config: &Config) -> (Url, CsrfToken) {
         let client = self.make_oauth_client(&config);
         let mut req = client.authorize_url(CsrfToken::new_random);
-        for scope in Self::SCOPES {
+        for &scope in Self::SCOPES {
             req = req.add_scope(Scope::new(scope.to_string()));
         }
         req.url()

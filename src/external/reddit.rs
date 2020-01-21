@@ -42,7 +42,7 @@ impl UserInfo for RedditUserInfo {
     fn update_existing_player(&self, txn: &Transaction, mod_date: DateTime<Utc>)
         -> Result<Option<PlayerId>, Error> {
 
-        debug!("reddit user info: {:?}", self);
+        //debug!("reddit user info: {:?}", self);
 
         match txn
             .prepare("SELECT player_id, name, icon_img FROM player_reddit WHERE id = ?")?

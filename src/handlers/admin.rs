@@ -25,7 +25,7 @@ pub async fn edit_basho_page(path: web::Path<BashoId>, state: web::Data<AppState
     Ok(EditBashoTemplate {
         base: admin_base(&db, &identity)?,
         basho: BashoData::with_id(&db, *path)?,
-    }.into())
+    })
 }
 
 #[derive(Debug, Deserialize)]
@@ -118,7 +118,7 @@ fn admin_base(db: &Connection, identity: &Identity) -> Result<BaseTemplate> {
     if base.player.as_ref().map_or(false, |p| p.is_admin()) {
         Ok(base)
     } else {
-        Err(HandlerError::MustBeLoggedIn.into())
+        Err(HandlerError::MustBeLoggedIn)
     }
 }
 
@@ -147,7 +147,7 @@ pub async fn torikumi_page(path: web::Path<(BashoId, u8)>, state: web::Data<AppS
             warn!("failed to fetch sumodb data: {}", e);
             Ok::<_, failure::Error>(None)
         }).await?;
-    Ok(TorikumiTemplate { base, basho_id, day, sumo_db_text}.into())
+    Ok(TorikumiTemplate { base, basho_id, day, sumo_db_text})
 }
 
 async fn fetch_sumo_db_torikumi(basho_id: BashoId, day: u8)

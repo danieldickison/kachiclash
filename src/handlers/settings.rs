@@ -29,9 +29,9 @@ pub async fn settings_page(state: web::Data<AppState>, identity: Identity) -> Re
             base,
             message: None,
             error: None,
-        }.into())
+        })
     } else {
-        Err(HandlerError::MustBeLoggedIn.into())
+        Err(HandlerError::MustBeLoggedIn)
     }
 }
 
@@ -45,7 +45,7 @@ pub async fn settings_post(form: web::Form<FormData>, state: web::Data<AppState>
             base: BaseTemplate::new(&db, &identity)?,
             message: None,
             error: Some(format!("Invalid name: {}", form.name)),
-        }.into());
+        });
     }
 
     let result = db.execute(
@@ -65,8 +65,8 @@ pub async fn settings_post(form: web::Form<FormData>, state: web::Data<AppState>
                 Ok(_) => None,
                 Err(e) => Some(format!("Error: {}", e)),
             },
-        }.into())
+        })
     } else {
-        Err(HandlerError::MustBeLoggedIn.into())
+        Err(HandlerError::MustBeLoggedIn)
     }
 }

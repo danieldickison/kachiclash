@@ -112,7 +112,7 @@ async fn oauth_redirect(query: &OAuthRedirectQuery, state: web::Data<AppState>, 
         },
         Some(_) | None => {
             warn!("bad CSRF token received in {:?} oauth redirect endpoint", provider);
-            Err(HandlerError::CSRFError.into())
+            Err(HandlerError::CSRFError)
         }
     }
 }

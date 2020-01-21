@@ -43,7 +43,7 @@ impl Award {
             return vec![];
         }
         string
-            .split(",")
+            .split(',')
             .filter_map(|a| match a.parse() {
                 Err(e) => {
                     warn!("failed to parse award type {}: {}", a, e);
