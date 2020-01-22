@@ -43,8 +43,9 @@ pub async fn basho(path: web::Path<BashoId>, state: web::Data<AppState>, identit
     let player_id = base.player.as_ref().map(|p| p.id);
     let picks = fetch_player_picks(&db, player_id, basho_id)?;
     let FetchBashoRikishi {by_id: rikishi_by_id, by_rank: rikishi_by_rank} = FetchBashoRikishi::with_db(&db, basho_id, &picks)?;
+    let limit = if state.config.is_dev() {3} else {200};
     Ok(Either::A(BashoTemplate {
-        leaders: BashoPlayerResults::fetch(&db, basho_id, player_id, rikishi_by_id, basho.has_started())?,
+        leaders: BashoPlayerResults::fetch(&db, basho_id, player_id, rikishi_by_id, basho.has_started(), limit)?,
         next_day: rikishi_by_rank.iter()
             .map(|rr| rr.next_day())
             .max()

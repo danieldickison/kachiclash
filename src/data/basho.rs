@@ -12,7 +12,7 @@ use chrono::{DateTime, Datelike};
 use serde::{Deserialize, Deserializer};
 use itertools::Itertools;
 
-use super::{Result, DataError, PlayerId, Player, RikishiId, Rank, RankGroup, RankSide, Day, Award, leaders};
+use super::{Result, DataError, PlayerId, Player, RikishiId, Rank, RankGroup, RankSide, Day, Award};
 
 pub struct BashoInfo {
     pub id: BashoId,
@@ -594,16 +594,16 @@ pub fn finalize_basho(db: &mut Connection, basho_id: BashoId) -> Result<()> {
 }
 
 fn upsert_basho_results(txn: &Transaction, basho_id: BashoId, bestow_awards: bool) -> Result<()> {
-    let rikishi = FetchBashoRikishi::with_db(&txn, basho_id, &HashSet::new())?;
-    let results = leaders::BashoPlayerResults::fetch(&txn, basho_id, Some(0), rikishi.by_id, false)?;
+    debug!("upsert_basho_results for {}; bestow_awards: {}", basho_id, bestow_awards);
+    let scores = BashoPlayerScore::fetch(&txn, basho_id)?;
 
     if bestow_awards {
-        // Delete previously awarded emperor's cups
-        txn.prepare("
+        let count = txn.prepare("
                 DELETE FROM award
                 WHERE basho_id = ? AND type = ?
             ")?
             .execute(params![basho_id, Award::EmperorsCup])?;
+        debug!("deleted {} previously bestowed emperor's cups", count);
     }
 
     // For each player, upsert basho_result and award emperor's cup if they ranked #1
@@ -617,15 +617,60 @@ fn upsert_basho_results(txn: &Transaction, basho_id: BashoId, bestow_awards: boo
             INSERT INTO award (basho_id, player_id, type)
             VALUES (?, ?, ?)
         ")?;
-    for pr in results {
-        if let leaders::ResultPlayer::RealPlayer(p) = pr.player {
-            debug!("- rank {} player {} ({}) with {} wins", pr.rank, p.name, p.id, pr.total);
-            insert_result_stmt.execute(params![basho_id, p.id, pr.total, pr.rank as u32])?;
-            if bestow_awards && pr.rank == 1 {
-                debug!("  ! awarding emperor's cup to {}", p.name);
-                insert_award_stmt.execute(params![basho_id, p.id, Award::EmperorsCup])?;
-            }
+    for p in scores {
+        debug!("- rank {} player {} ({}) with {} wins", p.rank, p.name, p.id, p.wins);
+        insert_result_stmt.execute(params![basho_id, p.id, p.wins, p.rank as u32])?;
+        if bestow_awards && p.rank == 1 {
+            debug!("  ! awarding emperor's cup to {}", p.name);
+            insert_award_stmt.execute(params![basho_id, p.id, Award::EmperorsCup])?;
         }
     }
     Ok(())
+}
+
+struct BashoPlayerScore {
+    id: PlayerId,
+    name: String,
+    wins: u8,
+    rank: usize,
+}
+
+impl BashoPlayerScore {
+    fn fetch(txn: &Transaction, basho_id: BashoId) -> Result<Vec<Self>> {
+        let mut players: Vec<Self> = txn.prepare("
+                SELECT
+                    p.id,
+                    p.name,
+                    bs.wins
+                FROM basho_score AS bs
+                JOIN player AS p ON p.id = bs.player_id
+                WHERE bs.basho_id = ?
+                ORDER BY bs.wins DESC
+            ")?
+            .query_map(
+                params![basho_id],
+                |row| -> SqlResult<Self> {
+                    Ok(Self {
+                        id: row.get("id")?,
+                        name: row.get("name")?,
+                        wins: row.get("wins")?,
+                        rank: 0,
+                    })
+                }
+            )?
+            .collect::<SqlResult<_>>()?;
+
+        // assign ranks
+        let mut last_wins = 0;
+        let mut last_rank = 1;
+        for (i, p) in players.iter_mut().enumerate() {
+            if p.wins != last_wins {
+                last_wins = p.wins;
+                last_rank = i + 1;
+            }
+            p.rank = last_rank;
+        }
+
+        Ok(players)
+    }
 }

@@ -10,12 +10,11 @@ pub struct BashoPlayerResults {
     pub days: [Option<u8>; 15],
     picks: [Option<RikishiId>; 5],
     rikishi_by_id: Arc<HashMap<RikishiId, BashoRikishi>>,
-    pub rank: usize,
     pub is_self: bool,
 }
 
 pub enum ResultPlayer {
-    RealPlayer(Player),
+    RankedPlayer(Player, usize),
     Max,
     Min,
 }
@@ -29,43 +28,58 @@ impl BashoPlayerResults {
             .collect()
     }
 
-    pub fn fetch(db: &Connection, basho_id: BashoId, player_id: Option<PlayerId>, rikishi: HashMap<RikishiId, BashoRikishi>, include_best_worst: bool)
-                     -> Result<Vec<Self>> {
-        const LIMIT: usize = 200;
-        debug!("fetching {} leaders for basho {}", LIMIT, basho_id);
+    fn sort_rank(&self) -> usize {
+        match self.player {
+            ResultPlayer::RankedPlayer(_, rank) => rank,
+            ResultPlayer::Max => 0,
+            ResultPlayer::Min => usize::max_value(),
+        }
+    }
+
+    pub fn fetch(db: &Connection,
+                 basho_id: BashoId,
+                 player_id: Option<PlayerId>,
+                 rikishi: HashMap<RikishiId, BashoRikishi>,
+                 include_best_worst: bool,
+                 limit: usize)
+        -> Result<Vec<Self>> {
+
+        debug!("fetching {} leaders for basho {}", limit, basho_id);
 
         let rikishi = Arc::new(rikishi);
         let mut leaders: Vec<BashoPlayerResults> = db.prepare("
                 SELECT
                     player.*,
-                    bs.wins,
+                    br.wins,
+                    br.rank,
                     player.id = :player_id AS is_self,
                     GROUP_CONCAT(pick.rikishi_id) AS pick_ids
-                FROM basho_score AS bs
-                JOIN player_info AS player ON player.id = bs.player_id
-                JOIN pick ON pick.player_id = player.id AND pick.basho_id = bs.basho_id
-                WHERE bs.basho_id = :basho_id
+                FROM pick
+                JOIN player_info AS player ON player.id = pick.player_id
+                LEFT NATURAL JOIN basho_result AS br
+                WHERE pick.basho_id = :basho_id
                 GROUP BY player.id
-                ORDER BY is_self DESC, bs.wins DESC
+                ORDER BY is_self DESC, wins DESC
                 LIMIT :limit
             ").unwrap()
             .query_map_named(
                 named_params! {
                     ":basho_id": basho_id,
                     ":player_id": player_id,
-                    ":limit": LIMIT as u32,
+                    ":limit": limit as u32,
                 },
-                |row| -> SqlResult<(Player, u8, String)> {
+                |row| -> SqlResult<(Player, u8, u32, String)> {
                     Ok((
                         Player::from_row(row)?,
                         row.get("wins")?,
+                        row.get("rank")?,
                         row.get("pick_ids")?,
                     ))
                 }
             )?
-            .collect::<SqlResult<Vec<(Player, u8, String)>>>()?
+            .collect::<SqlResult<Vec<(Player, u8, u32, String)>>>()?
             .into_iter()
-            .map(|(player, total, picks_str)| {
+            .map(|(player, total, rank, picks_str)| {
                 let mut picks = [None; 5];
                 let mut pick_rikishi = [None; 5];
                 for r in picks_str.split(',').filter_map(|id| rikishi.get(&id.parse().unwrap())) {
@@ -77,8 +91,7 @@ impl BashoPlayerResults {
                 assert_eq!(total, total_validation);
                 BashoPlayerResults {
                     is_self: player_id.map_or(false, |id| player.id == id),
-                    rank: 0, // populated later
-                    player: ResultPlayer::RealPlayer(player),
+                    player: ResultPlayer::RankedPlayer(player, rank as usize),
                     rikishi_by_id: rikishi.clone(),
                     picks,
                     total,
@@ -87,28 +100,14 @@ impl BashoPlayerResults {
             })
             .collect();
 
-        // Sort and assign ranks
-        leaders.sort_by_key(|p| -i16::from(p.total));
-        let mut last_total = 0;
-        let mut last_rank = 1;
-        let count = leaders.len();
-        for (i, p) in leaders.iter_mut().enumerate() {
-            if p.total != last_total {
-                last_total = p.total;
-                last_rank = i + 1;
-            }
-            if p.is_self && count == LIMIT && i == count - 1 {
-                p.rank = 0; // zero means an unknown rank > LIMIT
-            } else {
-                p.rank = last_rank;
-            }
-        }
-
         if include_best_worst {
             let (min, max) = make_min_max_results(rikishi);
-            leaders.insert(0, max);
             leaders.push(min);
+            leaders.push(max);
         }
+
+        // Sort to put self player at the bottom. (It's always first from the db query to ensure it doesn't get bumped off by the LIMIT clause.)
+        leaders.sort_by_key(|p| p.sort_rank());
 
         Ok(leaders)
     }
@@ -139,7 +138,6 @@ fn make_min_max_results(rikishi: Arc<HashMap<RikishiId, BashoRikishi>>)
     (
         BashoPlayerResults {
             is_self: false,
-            rank: 0, // n/a
             player: ResultPlayer::Min,
             picks: min_ids,
             rikishi_by_id: rikishi.clone(),
@@ -148,7 +146,6 @@ fn make_min_max_results(rikishi: Arc<HashMap<RikishiId, BashoRikishi>>)
         },
         BashoPlayerResults {
             is_self: false,
-            rank: 0, // n/a
             player: ResultPlayer::Max,
             picks: max_ids,
             rikishi_by_id: rikishi.clone(),

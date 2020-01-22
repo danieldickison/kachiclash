@@ -138,15 +138,9 @@
                     {%- when ResultPlayer::Min %}
                         <td class="min-max-name" colspan="2">Worst Possible</td>
 
-                    {%- when ResultPlayer::RealPlayer with (player) %}
+                    {%- when ResultPlayer::RankedPlayer with (player, rank) %}
                         <td class="rank">
-                            {% if basho.has_started() %}
-                                {% if leader.rank == 0 %} &gt;{{leaders.len()}}
-                                {% else %} {{leader.rank}}
-                                {% endif %}
-                            {% else %}
-                                {{loop.index}}
-                            {% endif %}
+                            {%- if basho.has_started() -%} {{rank}} {%- endif -%}
                         </td>
                         <td class="name">{% include "player_listing.html" %}</td>
                     {%- endmatch -%}
@@ -171,22 +165,6 @@
                         {% endfor -%}
 
                         <td class="score total">{{leader.total}}</td>
-                    {% endif %}
-
-                    {% if base.is_admin() && basho.has_started() && leader.rank == 1 && next_day > 15 %}
-                        {%- match leader.player -%}
-                        {%- when ResultPlayer::RealPlayer with (player) -%}
-                            <td>
-                                <button class="bestow-emperors-cup-button" data-player-id="{{player.id}}">
-                                    🏆
-                                </button>
-                                <button class="revoke-emperors-cup-button" data-player-id="{{player.id}}">
-                                    <s>🏆</s>
-                                </button>
-                            </td>
-                        {%- when ResultPlayer::Max -%}
-                        {%- when ResultPlayer::Min -%}
-                        {%- endmatch -%}
                     {% endif %}
                 </tr>
             {%- endfor %}
