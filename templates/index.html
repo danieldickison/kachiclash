@@ -52,7 +52,7 @@
                             <td class="winner">
                                 {% for player in basho.winners -%}
                                     {% include "player_listing.html" %}
-                                    {%- if loop.first && !loop.last %}, {% endif %}
+                                    {%- if !loop.last %}, {% endif -%}
                                 {%- endfor %}
                             </td>
                             <td>
