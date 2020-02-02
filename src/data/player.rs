@@ -201,7 +201,7 @@ pub struct BashoScore {
 }
 
 impl BashoScore {
-    pub fn with_player_id(db: &Connection, player_id: PlayerId) -> Result<Vec<Self>> {
+    pub fn with_player_id(db: &Connection, player_id: PlayerId, player_name: &String) -> Result<Vec<Self>> {
         // Build mapping of bashi_id => PlayerBashoRikishi that can be inserted into the BashoScores later
         let mut basho_rikishi = HashMap::new();
         {
@@ -248,8 +248,8 @@ impl BashoScore {
         db.prepare("
                 SELECT
                     b.id AS basho_id,
-                    r.wins,
-                    r.rank,
+                    COALESCE(r.wins, e.wins) AS wins,
+                    COALESCE(r.rank, e.rank) AS rank,
                     (
                         SELECT COALESCE(GROUP_CONCAT(a.type), '')
                         FROM award AS a
@@ -257,10 +257,11 @@ impl BashoScore {
                     ) AS awards
                 FROM basho AS b
                 LEFT JOIN basho_result AS r ON r.basho_id = b.id AND r.player_id = ?
+                LEFT JOIN external_basho_player AS e ON e.basho_id = b.id AND e.name = ?
                 ORDER BY b.id DESC
             ").unwrap()
             .query_map(
-                params![player_id, player_id],
+                params![player_id, player_id, player_name],
                 |row| -> SqlResult<Self> {
                     let basho_id = row.get("basho_id")?;
                     Ok(BashoScore {

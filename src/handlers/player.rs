@@ -21,7 +21,7 @@ pub async fn player(path: web::Path<String>, state: web::Data<AppState>, identit
     let db = state.db.lock().unwrap();
     let player = Player::with_name(&db, name)?
         .ok_or_else(|| HandlerError::NotFound("player".to_string()))?;
-    let basho_scores = BashoScore::with_player_id(&db, player.id)?;
+    let basho_scores = BashoScore::with_player_id(&db, player.id, &player.name)?;
     let base = BaseTemplate::new(&db, &identity)?;
     Ok(PlayerTemplate {
         base,
