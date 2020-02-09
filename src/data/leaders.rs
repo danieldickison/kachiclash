@@ -206,16 +206,25 @@ impl HistoricLeader {
         let mut leaders = db.prepare("
                 SELECT
                     p.*,
-                    SUM(COALESCE(r.wins, e.wins)) AS total_wins,
-                    MIN(COALESCE(r.wins, e.wins)) AS min_wins,
-                    MAX(COALESCE(r.wins, e.wins)) AS max_wins,
-                    AVG(COALESCE(r.wins, e.wins)) AS mean_wins,
-                    MIN(COALESCE(r.rank, e.rank)) AS min_rank,
-                    MAX(COALESCE(r.rank, e.rank)) AS max_rank,
-                    AVG(COALESCE(r.rank, e.rank)) AS mean_rank
-                FROM player_info AS p
-                LEFT JOIN basho_result AS r ON r.player_id = p.id AND r.basho_id >= ?
-                LEFT JOIN external_basho_player AS e ON e.name = p.name AND e.basho_id >= ?
+                    SUM(r.wins) AS total_wins,
+                    MIN(r.wins) AS min_wins,
+                    MAX(r.wins) AS max_wins,
+                    AVG(r.wins) AS mean_wins,
+                    MIN(r.rank) AS min_rank,
+                    MAX(r.rank) AS max_rank,
+                    AVG(r.rank) AS mean_rank
+                FROM (
+                    SELECT p.id, r.basho_id, r.wins, r.rank
+                    FROM player AS p
+                    LEFT JOIN basho_result AS r ON r.player_id = p.id AND r.basho_id >= ?
+
+                    UNION ALL
+
+                    SELECT p.id, e.basho_id, e.wins, e.rank
+                    FROM player AS p
+                    LEFT JOIN external_basho_player AS e ON e.name = p.name AND e.basho_id >= ?
+                ) AS r
+                JOIN player_info AS p ON p.id = r.id
                 GROUP BY p.id
                 ORDER BY total_wins DESC, max_wins DESC, min_rank ASC NULLS LAST
                 LIMIT ?
