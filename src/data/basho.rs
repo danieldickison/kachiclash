@@ -13,6 +13,7 @@ use serde::{Deserialize, Deserializer};
 use itertools::Itertools;
 
 use super::{Result, DataError, PlayerId, Player, RikishiId, Rank, RankGroup, RankSide, Day, Award};
+use crate::data::leaders::{Rankable, assign_rank};
 
 pub struct BashoInfo {
     pub id: BashoId,
@@ -635,6 +636,16 @@ struct BashoPlayerScore {
     rank: usize,
 }
 
+impl Rankable for BashoPlayerScore {
+    fn get_score(&self) -> i32 {
+        self.wins as i32
+    }
+
+    fn set_rank(&mut self, rank: usize) {
+        self.rank = rank
+    }
+}
+
 impl BashoPlayerScore {
     fn fetch(txn: &Transaction, basho_id: BashoId) -> Result<Vec<Self>> {
         let mut players: Vec<Self> = txn.prepare("
@@ -659,18 +670,7 @@ impl BashoPlayerScore {
                 }
             )?
             .collect::<SqlResult<_>>()?;
-
-        // assign ranks
-        let mut last_wins = 0;
-        let mut last_rank = 1;
-        for (i, p) in players.iter_mut().enumerate() {
-            if p.wins != last_wins {
-                last_wins = p.wins;
-                last_rank = i + 1;
-            }
-            p.rank = last_rank;
-        }
-
+        assign_rank(&mut players.iter_mut());
         Ok(players)
     }
 }

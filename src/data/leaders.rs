@@ -176,7 +176,7 @@ fn picks_to_days(picks: &[Option<&BashoRikishi>; 5]) -> ([Option<u8>; 15], u8) {
 #[derive(Debug)]
 pub struct HistoricLeader {
     pub player: Player,
-    pub rank: u32,
+    pub rank: usize,
     pub wins: NumericStats,
     pub ranks: NumericStats,
 }
@@ -189,11 +189,21 @@ pub struct NumericStats {
     pub mean: Option<f64>,
 }
 
+impl Rankable for HistoricLeader {
+    fn get_score(&self) -> i32 {
+        self.wins.total.unwrap_or(0) as i32
+    }
+
+    fn set_rank(&mut self, rank: usize) {
+        self.rank = rank;
+    }
+}
+
 impl HistoricLeader {
     pub fn with_first_basho(db: &Connection, first_basho: Option<BashoId>, player_limit: u32) -> Result<Vec<Self>> {
         let first_basho = first_basho.unwrap_or_else(|| "201901".parse().unwrap());
         debug!("Fetching {} leaders since basho {}", player_limit, first_basho);
-        db.prepare("
+        let mut leaders = db.prepare("
                 SELECT
                     p.*,
                     SUM(COALESCE(r.wins, e.wins)) AS total_wins,
@@ -229,6 +239,29 @@ impl HistoricLeader {
                     }
                 })
             )?
-            .collect()
+            .collect::<Result<Vec<Self>>>()?;
+        assign_rank(&mut leaders.iter_mut());
+        Ok(leaders)
+    }
+}
+
+pub trait Rankable {
+    fn get_score(&self) -> i32;
+    fn set_rank(&mut self, rank: usize);
+}
+
+pub fn assign_rank<'a, I, R: 'a>(iter: &'a mut I)
+where
+    I: Iterator<Item=&'a mut R>,
+    R: Rankable
+{
+    let mut last_score = i32::min_value();
+    let mut last_rank = 1;
+    for (i, r) in iter.enumerate() {
+        if r.get_score() != last_score {
+            last_score = r.get_score();
+            last_rank = i + 1;
+        }
+        r.set_rank(last_rank);
     }
 }
