@@ -75,14 +75,14 @@
                 <tr>
                     <th rowspan="2">Rank</th>
                     <th rowspan="2">Player</th>
-                    <th colspan="3">Basho Ranks</th>
-                    <th colspan="4">Wins</th>
+                    <th colspan="3" class="border-left">Basho Ranks</th>
+                    <th colspan="4" class="border-left">Wins</th>
                 </tr>
                 <tr>
-                    <th>best</th>
+                    <th class="border-left">best</th>
                     <th>worst</th>
                     <th>avg</th>
-                    <th>most</th>
+                    <th class="border-left">most</th>
                     <th>least</th>
                     <th>avg</th>
                     <th>total</th>
@@ -91,15 +91,15 @@
             <tbody>
             {% for leader in leaders %}
                 <tr>
-                    <td>{{leader.rank}}</td>
+                    <td class="rank">{{leader.rank}}</td>
                     <td>{{leader.player.render().unwrap()|safe}}</td>
-                    <td>{% call numeric_stat(leader.ranks.min) %}</td>
-                    <td>{% call numeric_stat(leader.ranks.max) %}</td>
-                    <td>{% call numeric_stat(leader.ranks.mean) %}</td>
-                    <td>{% call numeric_stat(leader.wins.max) %}</td>
-                    <td>{% call numeric_stat(leader.wins.min) %}</td>
-                    <td>{% call numeric_stat(leader.wins.mean) %}</td>
-                    <td>{% call numeric_stat(leader.wins.total) %}</td>
+                    <td class="num border-left">{% call numeric_stat(leader.ranks.min) %}</td>
+                    <td class="num">{% call numeric_stat(leader.ranks.max) %}</td>
+                    <td class="num">{% call numeric_stat(leader.ranks.mean) %}</td>
+                    <td class="num border-left">{% call numeric_stat(leader.wins.max) %}</td>
+                    <td class="num">{% call numeric_stat(leader.wins.min) %}</td>
+                    <td class="num">{% call numeric_stat(leader.wins.mean) %}</td>
+                    <td class="num sort-key">{% call numeric_stat(leader.wins.total) %}</td>
                 </tr>
             {% endfor %}
                 

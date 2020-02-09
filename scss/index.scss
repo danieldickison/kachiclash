@@ -21,5 +21,30 @@
 
     #leaderboard {
         background: var(--color-light-blue-bg);
+
+        table {
+            border-collapse: collapse;
+
+            td, th {
+                padding: 0.125rem 0.25rem;
+            }
+
+            .num {
+                text-align: right;
+            }
+
+            .rank {
+                text-align: right;
+                padding-right: 0.5rem;
+            }
+
+            .border-left {
+                border-left: solid 1px var(--color-border);
+            }
+
+            .sort-key {
+                font-weight: bold;
+            }
+        }
     }
 }
