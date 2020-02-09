@@ -51,7 +51,7 @@
                             <td>{{basho.player_count}}</td>
                             <td class="winner">
                                 {% for player in basho.winners -%}
-                                    {% include "player_listing.html" %}
+                                    {{player.render().unwrap()|safe}}
                                     {%- if !loop.last %}, {% endif -%}
                                 {%- endfor %}
                             </td>
@@ -68,17 +68,50 @@
         </table>
     </section>
 
-    {% if base.is_admin() %}
     <section id="leaderboard">
         <h2 class="leaderboard-heading">Leaderboard</h2>
-        <ol class="leaderboard">
-        {% for player in leaders %}
-            <li class="leaderboard__item">
-                {% include "player_listing.html" %}
-                joined {{player.join_date.format("%Y-%m-%d")}}
-            </li>
-        {% endfor %}
-        </ol>
+        <table class="leaderboard">
+            <thead>
+                <tr>
+                    <th rowspan="2">Rank</th>
+                    <th rowspan="2">Player</th>
+                    <th colspan="3">Basho Ranks</th>
+                    <th colspan="4">Wins</th>
+                </tr>
+                <tr>
+                    <th>best</th>
+                    <th>worst</th>
+                    <th>avg</th>
+                    <th>most</th>
+                    <th>least</th>
+                    <th>avg</th>
+                    <th>total</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for leader in leaders %}
+                <tr>
+                    <td>{{leader.rank}}</td>
+                    <td>{{leader.player.render().unwrap()|safe}}</td>
+                    <td>{% call numeric_stat(leader.ranks.min) %}</td>
+                    <td>{% call numeric_stat(leader.ranks.max) %}</td>
+                    <td>{% call numeric_stat(leader.ranks.mean) %}</td>
+                    <td>{% call numeric_stat(leader.wins.max) %}</td>
+                    <td>{% call numeric_stat(leader.wins.min) %}</td>
+                    <td>{% call numeric_stat(leader.wins.mean) %}</td>
+                    <td>{% call numeric_stat(leader.wins.total) %}</td>
+                </tr>
+            {% endfor %}
+                
+            </tbody>
+        </table>
     </section>
-    {% endif %}
 {% endblock %}
+
+{%- macro numeric_stat(opt_num) -%}
+    {%- match opt_num -%}
+    {%- when Some with (num) -%} {{"{:.1}"|format(num)}}
+    {%- when None -%}
+    {%- endmatch -%}
+{%- endmacro -%}
+

@@ -142,7 +142,7 @@
                         <td class="rank">
                             {%- if basho.has_started() -%} {{rank}} {%- endif -%}
                         </td>
-                        <td class="name">{% include "player_listing.html" %}</td>
+                        <td class="name">{{player.render().unwrap()|safe}}</td>
                     {%- endmatch -%}
 
                     {% for rikishi in leader.picks() %}

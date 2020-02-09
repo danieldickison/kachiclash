@@ -171,3 +171,64 @@ fn picks_to_days(picks: &[Option<&BashoRikishi>; 5]) -> ([Option<u8>; 15], u8) {
     }
     (days, total_validation)
 }
+
+
+#[derive(Debug)]
+pub struct HistoricLeader {
+    pub player: Player,
+    pub rank: u32,
+    pub wins: NumericStats,
+    pub ranks: NumericStats,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct NumericStats {
+    pub total: Option<u32>,
+    pub min: Option<u32>,
+    pub max: Option<u32>,
+    pub mean: Option<f64>,
+}
+
+impl HistoricLeader {
+    pub fn with_first_basho(db: &Connection, first_basho: Option<BashoId>, player_limit: u32) -> Result<Vec<Self>> {
+        let first_basho = first_basho.unwrap_or_else(|| "201901".parse().unwrap());
+        debug!("Fetching {} leaders since basho {}", player_limit, first_basho);
+        db.prepare("
+                SELECT
+                    p.*,
+                    SUM(COALESCE(r.wins, e.wins)) AS total_wins,
+                    MIN(COALESCE(r.wins, e.wins)) AS min_wins,
+                    MAX(COALESCE(r.wins, e.wins)) AS max_wins,
+                    AVG(COALESCE(r.wins, e.wins)) AS mean_wins,
+                    MIN(COALESCE(r.rank, e.rank)) AS min_rank,
+                    MAX(COALESCE(r.rank, e.rank)) AS max_rank,
+                    AVG(COALESCE(r.rank, e.rank)) AS mean_rank
+                FROM player_info AS p
+                LEFT JOIN basho_result AS r ON r.player_id = p.id AND r.basho_id >= ?
+                LEFT JOIN external_basho_player AS e ON e.name = p.name AND e.basho_id >= ?
+                GROUP BY p.id
+                ORDER BY total_wins DESC, max_wins DESC, min_rank ASC NULLS LAST
+                LIMIT ?
+            ")?
+            .query_and_then(
+                params![first_basho, first_basho, player_limit],
+                |row| Ok(Self {
+                    player: Player::from_row(&row)?,
+                    rank: 0,
+                    wins: NumericStats {
+                        total: row.get("total_wins")?,
+                        min: row.get("min_wins")?,
+                        max: row.get("max_wins")?,
+                        mean: row.get("mean_wins")?,
+                    },
+                    ranks: NumericStats {
+                        total: None,
+                        min: row.get("min_rank")?,
+                        max: row.get("max_rank")?,
+                        mean: row.get("mean_rank")?,
+                    }
+                })
+            )?
+            .collect()
+    }
+}

@@ -1,7 +1,7 @@
-<a class="g-player-listing" href="{{player.url_path()}}">
-    <span class="img-wrapper"><img class="js-player-img" src="{{player.tiny_thumb()}}"></span>
-    <span class="name">{{player.name}}</span>
-    {%- if player.has_emperors_cup() -%}
+<a class="g-player-listing" href="{{self.url_path()}}">
+    <span class="img-wrapper"><img class="js-player-img" src="{{self.tiny_thumb()}}"></span>
+    <span class="name">{{name}}</span>
+    {%- if self.has_emperors_cup() -%}
         <span class="cup">{{crate::data::award::Award::EmperorsCup.emoji()}}</span>
     {%- endif -%}
 </a>

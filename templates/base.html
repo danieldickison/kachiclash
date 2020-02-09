@@ -13,7 +13,7 @@
         <div class="player-menu">
             {% match base.player %}
             {%- when Some with (player) -%}
-                {% include "player_listing.html" %}
+                {{player.render().unwrap()|safe}}
                 |
                 <a href="/settings">settings</a>
                 |
