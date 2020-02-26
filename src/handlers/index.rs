@@ -12,6 +12,7 @@ pub struct IndexTemplate {
     base: BaseTemplate,
     leaders: Vec<HistoricLeader>,
     leader_basho_count: usize,
+    leader_basho_count_options: Vec<usize>,
     basho_list: Vec<BashoInfo>,
     next_basho_id: BashoId,
 }
@@ -20,6 +21,8 @@ pub struct IndexTemplate {
 pub struct QueryParams {
     b: Option<usize>
 }
+
+const LEADER_BASHO_COUNT_OPTIONS: [usize; 3] = [6, 3, 2];
 
 pub async fn index(query: web::Query<QueryParams>, state: web::Data<AppState>, identity: Identity) -> Result<IndexTemplate> {
     let leader_basho_count = query.b.unwrap_or(6);
@@ -30,6 +33,9 @@ pub async fn index(query: web::Query<QueryParams>, state: web::Data<AppState>, i
         base: BaseTemplate::new(&db, &identity)?,
         leaders: HistoricLeader::with_first_basho(&db, nth_completed_basho_id(&basho_list, leader_basho_count - 1), 100)?,
         leader_basho_count,
+        leader_basho_count_options: LEADER_BASHO_COUNT_OPTIONS.iter().copied()
+            .filter({|c| *c != leader_basho_count})
+            .collect(),
         basho_list,
         next_basho_id: current_basho_id
             .map(|id| id.next_honbasho())

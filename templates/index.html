@@ -70,8 +70,13 @@
 
     <section id="leaderboard">
         <h2 class="leaderboard-heading">Leaderboard</h2>
-        <p>Ranked by total wins recorded in the past {{leader_basho_count}} basho.</p>
-        <p>See also: past <a href="?b=6">6 basho</a>, <a href="?b=3">3 basho</a>, <a href="?b=2">2 basho</a>.</p>
+        <p>Ranked by total wins recorded in the <strong>past {{leader_basho_count}} basho</strong>.</p>
+        <p>
+            See also: past
+            {% for c in leader_basho_count_options %}
+                <a href="?b={{c}}">{{c}} basho</a>{% if !loop.last %},{% endif -%}
+            {%- endfor %}.
+        </p>
         <table class="leaderboard">
             <thead>
                 <tr>
