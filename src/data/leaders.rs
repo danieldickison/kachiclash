@@ -29,8 +29,10 @@ impl BashoPlayerResults {
     }
 
     fn sort_rank(&self) -> usize {
-        match self.player {
-            ResultPlayer::RankedPlayer(_, rank) => rank,
+        match &self.player {
+            ResultPlayer::RankedPlayer(p, rank) => {
+                if *rank == 0 { p.id as usize } else { *rank }
+            },
             ResultPlayer::Max => 0,
             ResultPlayer::Min => usize::max_value(),
         }
@@ -50,8 +52,8 @@ impl BashoPlayerResults {
         let mut leaders: Vec<BashoPlayerResults> = db.prepare("
                 SELECT
                     player.*,
-                    br.wins,
-                    br.rank,
+                    COALESCE(br.wins, 0) AS wins,
+                    COALESCE(br.rank, 0) AS rank,
                     player.id = :player_id AS is_self,
                     GROUP_CONCAT(pick.rikishi_id) AS pick_ids
                 FROM pick
@@ -59,7 +61,7 @@ impl BashoPlayerResults {
                 LEFT NATURAL JOIN basho_result AS br
                 WHERE pick.basho_id = :basho_id
                 GROUP BY player.id
-                ORDER BY is_self DESC, wins DESC
+                ORDER BY is_self DESC, wins DESC, player.id ASC
                 LIMIT :limit
             ").unwrap()
             .query_map_named(
