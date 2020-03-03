@@ -98,7 +98,7 @@
             {% if basho.has_started() %}
                 Leaderboard
             {% else %}
-                Entries
+                {{basho.player_count}} Entries
             {% endif %}
         </h2>
         <table>
@@ -110,7 +110,9 @@
                     </tr>
                 {% endif %}
                 <tr>
-                    <th class="rank">#</th>
+                    {% if basho.has_started() %}
+                        <th class="rank">#</th>
+                    {% endif %}
                     <th>Player</th>
                     <th class="pick" colspan="5">Picks</th>
                     {% if basho.has_started() %}
@@ -139,9 +141,9 @@
                         <td class="min-max-name" colspan="2">Worst Possible</td>
 
                     {%- when ResultPlayer::RankedPlayer with (player, rank) %}
-                        <td class="rank">
-                            {%- if basho.has_started() -%} {{rank}} {%- endif -%}
-                        </td>
+                        {%- if basho.has_started() -%} 
+                            <td class="rank">{{rank}}</td>
+                         {%- endif -%}
                         <td class="name">{{player.render().unwrap()|safe}}</td>
                     {%- endmatch -%}
 
@@ -170,6 +172,9 @@
             {%- endfor %}
             </tbody>
         </table>
+        {% if basho.has_started() && basho.player_count > leaders.len() - 2 %}
+            <p>Showing top {{leaders.len() - 2}} players out of {{basho.player_count}} total.</p>
+        {% endif %}
     </section>
 {% endblock %}
 

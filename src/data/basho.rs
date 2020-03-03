@@ -20,7 +20,7 @@ pub struct BashoInfo {
     pub start_date: DateTime<Utc>,
     pub venue: String,
     pub external_link: Option<String>,
-    pub player_count: u32,
+    pub player_count: usize,
     pub winners: Vec<Player>,
     pub winning_score: Option<u8>,
 }
@@ -34,7 +34,13 @@ impl BashoInfo {
                 basho.venue,
                 ebr.url AS external_link,
                 CASE
-                    WHEN ebr.basho_id IS NULL THEN COUNT(DISTINCT br.player_id)
+                    WHEN ebr.basho_id IS NULL THEN
+                        CASE
+                            WHEN COUNT(br.player_id) = 0 THEN (
+                                SELECT COUNT(DISTINCT player_id) FROM pick AS p WHERE p.basho_id = basho.id
+                            )
+                            ELSE COUNT(*)
+                        END
                     ELSE ebr.players
                 END AS player_count,
                 COALESCE(MAX(br.wins), ebr.winning_score) AS winning_score
@@ -52,7 +58,7 @@ impl BashoInfo {
                                  start_date: row.get("start_date")?,
                                  venue: row.get("venue")?,
                                  external_link: row.get("external_link")?,
-                                 player_count: row.get("player_count")?,
+                                 player_count: row.get::<_, u32>("player_count")? as usize,
                                  winning_score: row.get("winning_score")?,
                                  winners: BashoInfo::fetch_basho_winners(&db, id)?,
                              }))
@@ -88,7 +94,7 @@ impl BashoInfo {
                         start_date: row.get("start_date")?,
                         venue: row.get("venue")?,
                         external_link: row.get("external_link")?,
-                        player_count: row.get("player_count")?,
+                        player_count: row.get::<_, u32>("player_count")? as usize,
                         winning_score: row.get("winning_score")?,
                         winners: winners.remove(&basho_id).unwrap_or_else(|| vec![]),
                     })
