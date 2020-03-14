@@ -85,6 +85,7 @@ pub async fn run(config: Config) -> std::io::Result<()> {
 
         .service(
             web::scope("/player")
+                .service(web::resource("").to(handlers::admin::list_players))
                 .service(web::resource("/{player_id}").to(handlers::player::player))
         )
 

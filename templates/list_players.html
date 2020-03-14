@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block main_id %}p-list-players{% endblock %}
+
+{% block subtitle %}Players List{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet" href="/static/css/player.css">
+{% endblock %}
+
+{% block main %}
+
+    <section id="players">
+        <table class="player-list">
+            <thead>
+                <tr>
+                    <th>Player</th>
+                    <th><!-- buttons --></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for player in players -%}
+                <tr>
+                    <td class="player">{{player.render().unwrap()|safe}}</td>
+                    <td class="actions">
+                        <button>something</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+{% endblock %}

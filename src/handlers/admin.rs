@@ -1,5 +1,5 @@
 
-use crate::data::{self, basho, Rank, BashoId, PlayerId, Award, DataError};
+use crate::data::{self, basho, Rank, BashoId, PlayerId, Award, DataError, Player};
 use crate::AppState;
 use super::{HandlerError, BaseTemplate, Result};
 
@@ -232,4 +232,22 @@ pub async fn finalize_basho(path: web::Path<BashoId>, state: web::Data<AppState>
             .set_header(http::header::LOCATION, &*path.url_path())
             .finish()
     )
+}
+
+#[derive(Template)]
+#[template(path = "list_players.html")]
+pub struct ListPlayersTemplate {
+    base: BaseTemplate,
+    players: Vec<Player>,
+}
+
+pub async fn list_players(state: web::Data<AppState>, identity: Identity)
+    -> Result<ListPlayersTemplate> {
+
+    let db = state.db.lock().unwrap();
+    let base = admin_base(&db, &identity)?;
+    Ok(ListPlayersTemplate {
+        base,
+        players: Player::list_all(&db)?,
+    })
 }
