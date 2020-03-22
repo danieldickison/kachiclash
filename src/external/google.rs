@@ -2,6 +2,7 @@ use oauth2::{RedirectUrl, TokenUrl, ClientId, ClientSecret, AuthUrl};
 use oauth2::basic::{BasicClient};
 use rusqlite::{Transaction, Error};
 use chrono::{Utc, DateTime};
+use async_trait::async_trait;
 
 use crate::Config;
 use crate::data::{PlayerId};
@@ -11,11 +12,19 @@ use crate::external::UserInfo;
 #[derive(Debug)]
 pub struct GoogleAuthProvider;
 
+#[async_trait]
 impl AuthProvider for GoogleAuthProvider {
-    type UserInfo = GoogleUserInfo;
-    const SCOPES: &'static [&'static str] = &["https://www.googleapis.com/auth/userinfo.profile"];
-    const USER_INFO_URL: &'static str = "https://www.googleapis.com/userinfo/v2/me";
-    const SERVICE_NAME: &'static str = "Google";
+    fn service_name(&self) -> &'static str {
+        "Google"
+    }
+
+    fn logged_in_user_info_url(&self) -> &'static str {
+        "https://www.googleapis.com/userinfo/v2/me"
+    }
+
+    fn oauth_scopes(&self) -> &'static [&'static str] {
+        &["https://www.googleapis.com/auth/userinfo.profile"]
+    }
 
     fn make_oauth_client(&self, config: &Config) -> BasicClient {
         let mut redirect_url = config.url();
@@ -28,6 +37,14 @@ impl AuthProvider for GoogleAuthProvider {
             Some(TokenUrl::new("https://oauth2.googleapis.com/token".to_string()).unwrap())
         )
         .set_redirect_url(RedirectUrl::from_url(redirect_url))
+    }
+
+    fn make_user_info_url(&self, user_id: &str) -> String {
+        format!("https://people.googleapis.com/v1/{{resourceName=people/{}}}?personFields=photos", user_id)
+    }
+
+    async fn parse_user_info_response(&self, res: reqwest::Response) -> Result<Box<dyn UserInfo>, failure::Error> {
+        Ok(Box::new(res.json::<GoogleUserInfo>().await?))
     }
 }
 

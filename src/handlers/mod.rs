@@ -35,6 +35,9 @@ pub enum HandlerError {
 
     #[fail(display = "Unexpected failure")]
     Failure(failure::Error),
+
+    #[fail(display = "actix-web error")]
+    ActixError(String),
 }
 
 impl error::ResponseError for HandlerError {
@@ -43,7 +46,7 @@ impl error::ResponseError for HandlerError {
         match self {
             HandlerError::NotFound(_) => HttpResponse::NotFound(),
             HandlerError::ExternalServiceError => HttpResponse::InternalServerError(),
-            HandlerError::DatabaseError(_) | HandlerError::Failure(_) => HttpResponse::InternalServerError(),
+            HandlerError::DatabaseError(_) | HandlerError::Failure(_) | HandlerError::ActixError(_) => HttpResponse::InternalServerError(),
             HandlerError::CSRFError | HandlerError::MustBeLoggedIn => HttpResponse::Forbidden(),
         }
             .content_type("text/plain")
@@ -60,6 +63,13 @@ impl From<DataError> for HandlerError {
 impl From<failure::Error> for HandlerError {
     fn from(err: failure::Error) -> Self {
         Self::Failure(err)
+    }
+}
+
+impl From<actix_web::Error> for HandlerError {
+    fn from(err: actix_web::Error) -> Self {
+        // I can't figure out how to make the actix error Send+Sync so just make it a string for now.
+        Self::ActixError(err.to_string())
     }
 }
 

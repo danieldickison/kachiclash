@@ -87,6 +87,8 @@ pub async fn run(config: Config) -> std::io::Result<()> {
             web::scope("/player")
                 .service(web::resource("").to(handlers::admin::list_players))
                 .service(web::resource("/{player_id}").to(handlers::player::player))
+                .service(web::resource("/update_images")
+                    .route(web::post().to(handlers::admin::update_user_images)))
         )
 
         .default_service(web::route().to(default_not_found));

@@ -52,6 +52,9 @@ pub enum DataError {
 
     #[fail(display = "Database error: {}", _0)]
     DatabaseError(rusqlite::Error),
+
+    #[fail(display = "Unknown login provider")]
+    UnknownLoginProvider,
 }
 
 impl From<rusqlite::Error> for DataError {

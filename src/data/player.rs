@@ -1,7 +1,7 @@
 use rusqlite::{Row, Connection, OptionalExtension, ErrorCode, Error as SqlError, Result as SqlResult, NO_PARAMS};
 use chrono::{DateTime, Utc};
 
-use crate::external::{self, discord, ImageSize, AuthProvider};
+use crate::external::{discord, ImageSize, AuthProvider, UserInfo};
 use super::{Result, BashoId, Rank, Award};
 use rand::random;
 use url::Url;
@@ -12,6 +12,7 @@ use crate::external::google::GoogleAuthProvider;
 use crate::external::reddit::RedditAuthProvider;
 use std::collections::HashMap;
 use askama::Template;
+use crate::data::DataError;
 
 pub type PlayerId = i64;
 
@@ -126,19 +127,33 @@ impl Player {
     }
 
     pub fn login_service_name(&self) -> &'static str {
+        self.login_service_provider()
+            .map_or("unknown", |p| p.service_name())
+    }
+
+    fn login_service_provider(&self) -> Result<Box<dyn AuthProvider>> {
         if self.discord_user_id.is_some() {
-            DiscordAuthProvider.service_name()
+            Ok(Box::new(DiscordAuthProvider))
         } else if self.google_picture.is_some() {
-            GoogleAuthProvider.service_name()
+            Ok(Box::new(GoogleAuthProvider))
         } else if self.reddit_icon.is_some() {
-            RedditAuthProvider.service_name()
+            Ok(Box::new(RedditAuthProvider))
         } else {
-            "unknown"
+            Err(DataError::UnknownLoginProvider)
         }
+    }
+
+    pub async fn update_image(&self, db: &mut Connection)
+        -> Result<()> {
+
+        let auth = self.login_service_provider()?;
+
+
+        Ok(())
     }
 }
 
-pub fn player_id_with_external_user(db: &mut Connection, user_info: impl external::UserInfo) -> SqlResult<(PlayerId, bool)> {
+pub fn player_id_with_external_user(db: &mut Connection, user_info: Box<dyn UserInfo>) -> SqlResult<(PlayerId, bool)> {
     let txn = db.transaction()?;
     let now = Utc::now();
     let existing_player = user_info.update_existing_player(&txn, now)?;

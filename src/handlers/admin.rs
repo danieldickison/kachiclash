@@ -1,6 +1,10 @@
 
 use crate::data::{self, basho, Rank, BashoId, PlayerId, Award, DataError, Player};
-use crate::AppState;
+use crate::{AppState};
+use crate::external::AuthProvider;
+use crate::external::discord::DiscordAuthProvider;
+use crate::external::google::GoogleAuthProvider;
+use crate::external::reddit::RedditAuthProvider;
 use super::{HandlerError, BaseTemplate, Result};
 
 use actix_web::{web, http, HttpResponse, Responder};
@@ -12,6 +16,7 @@ use serde::{Deserializer, Deserialize};
 use chrono::NaiveDateTime;
 use futures::prelude::*;
 use regex::{Regex, RegexBuilder};
+use actix_session::Session;
 
 #[derive(Template)]
 #[template(path = "edit_basho.html")]
@@ -250,4 +255,28 @@ pub async fn list_players(state: web::Data<AppState>, identity: Identity)
         base,
         players: Player::list_all(&db)?,
     })
+}
+
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ImageUpdateData {
+    service_name: String,
+    player_ids: Vec<PlayerId>,
+}
+
+
+pub async fn update_user_images(json: web::Json<ImageUpdateData>, state: web::Data<AppState>, session: Session)
+    -> Result<HttpResponse> {
+    let provider = match json.service_name.as_str() {
+        "discord" => Ok(Box::new(DiscordAuthProvider) as Box<dyn AuthProvider>),
+        "google" => Ok(Box::new(GoogleAuthProvider) as Box<dyn AuthProvider>),
+        "reddit" => Ok(Box::new(RedditAuthProvider) as Box<dyn AuthProvider>),
+        _ => Err(HandlerError::NotFound("auth service".to_string())),
+    }?;
+    session.set("image_update_data", serde_json::to_string(&json.0).unwrap())?;
+    let (auth_url, csrf_token) = provider.authorize_url(&state.config);
+    session.set("oauth_csrf", csrf_token)?;
+    Ok(web::HttpResponse::SeeOther()
+        .set_header(http::header::LOCATION, auth_url.to_string())
+        .finish())
 }

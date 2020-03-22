@@ -4,7 +4,6 @@ use oauth2::basic::{BasicTokenResponse, BasicClient};
 use url::Url;
 use async_trait::async_trait;
 use failure::Error;
-use serde::de::DeserializeOwned;
 use chrono::{DateTime, Utc};
 use rand;
 
@@ -39,36 +38,36 @@ pub trait UserInfo {
 
 #[async_trait]
 pub trait AuthProvider: Debug {
-    type UserInfo: UserInfo + DeserializeOwned;
-    const SCOPES: &'static [&'static str];
-    const USER_INFO_URL: &'static str;
-    const SERVICE_NAME: &'static str;
-
-    fn service_name(&self) -> &'static str {
-        Self::SERVICE_NAME
-    }
-
+    fn service_name(&self) -> &'static str;
+    fn logged_in_user_info_url(&self) -> &'static str;
+    fn oauth_scopes(&self) -> &'static [&'static str];
     fn make_oauth_client(&self, config: &Config) -> BasicClient;
+    fn make_user_info_url(&self, user_id: &str) -> String;
+    async fn parse_user_info_response(&self, res: reqwest::Response) -> Result<Box<dyn UserInfo>, Error>;
 
     fn authorize_url(&self, config: &Config) -> (Url, CsrfToken) {
         let client = self.make_oauth_client(&config);
         let mut req = client.authorize_url(CsrfToken::new_random);
-        for &scope in Self::SCOPES {
+        for &scope in self.oauth_scopes() {
             req = req.add_scope(Scope::new(scope.to_string()));
         }
         req.url()
     }
 
-    fn exchange_code(&self, config: &Config, auth_code: AuthorizationCode) -> Result<BasicTokenResponse, Error> {
+    fn exchange_code(&self, config: &Config, auth_code: AuthorizationCode)
+        -> Result<BasicTokenResponse, Error> {
+
         self.make_oauth_client(&config)
             .exchange_code(auth_code)
             .request(oauth2::reqwest::http_client)
             .map_err(|e| e.into())
     }
 
-    async fn get_logged_in_user_info(&self, access_token: &AccessToken) -> Result<Self::UserInfo, Error> {
+    async fn get_logged_in_user_info(&self, access_token: &AccessToken)
+        -> Result<Box<dyn UserInfo>, Error> {
+
         let req = reqwest::Client::new()
-            .get(Self::USER_INFO_URL)
+            .get(self.logged_in_user_info_url())
             .bearer_auth(access_token.secret())
             .header("User-Agent", "KachiClash (http://kachiclash.com, 1)");
         //debug!("sending request: {:?}", req); // Note: this logs sensitive data
@@ -76,10 +75,29 @@ pub trait AuthProvider: Debug {
         let status = res.status();
         //debug!("response: {:?}", res); // Note: this logs sensitive data
         if status.is_success() {
-            res.json().await.map_err(|err| err.into())
+            self.parse_user_info_response(res).await
         } else {
             debug!("body: {}", res.text().await?);
             Err(format_err!("getting logged in user info failed with http status: {}", status))
+        }
+    }
+
+    async fn get_user_info(&self, access_token: &AccessToken, user_id: &str)
+        -> Result<Box<dyn UserInfo>, Error> {
+
+        let req = reqwest::Client::new()
+            .get(self.make_user_info_url(user_id).as_str())
+            .bearer_auth(access_token.secret())
+            .header("User-Agent", "KachiClash (http://kachiclash.com, 1)");
+        //debug!("sending request: {:?}", req); // Note: this logs sensitive data
+        let res = req.send().await?;
+        let status = res.status();
+        //debug!("response: {:?}", res); // Note: this logs sensitive data
+        if status.is_success() {
+            self.parse_user_info_response(res).await
+        } else {
+            debug!("body: {}", res.text().await?);
+            Err(format_err!("getting user info for {} {} failed with http status: {}", self.service_name(), user_id, status))
         }
     }
 }

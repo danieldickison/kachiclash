@@ -16,17 +16,26 @@ use super::{AuthProvider, UserInfo, ImageSize};
 use rusqlite::Transaction;
 use chrono::{DateTime, Utc};
 use crate::data::PlayerId;
+use async_trait::async_trait;
 
 const IMG_BASE: &str = "https://cdn.discordapp.com/";
 
 #[derive(Debug)]
 pub struct DiscordAuthProvider;
 
+#[async_trait]
 impl AuthProvider for DiscordAuthProvider {
-    type UserInfo = DiscordUserInfo;
-    const SCOPES: &'static [&'static str] = &["identify"];
-    const USER_INFO_URL: &'static str = "https://discordapp.com/api/v6/users/@me";
-    const SERVICE_NAME: &'static str = "Discord";
+    fn service_name(&self) -> &'static str {
+        "Discord"
+    }
+
+    fn logged_in_user_info_url(&self) -> &'static str {
+        "https://discordapp.com/api/v6/users/@me"
+    }
+
+    fn oauth_scopes(&self) -> &'static [&'static str] {
+        &["identify"]
+    }
 
     fn make_oauth_client(&self, config: &Config) -> BasicClient {
         let mut redirect_url = config.url();
@@ -39,6 +48,14 @@ impl AuthProvider for DiscordAuthProvider {
             Some(TokenUrl::new("https://discordapp.com/api/oauth2/token".to_string()).unwrap())
         )
         .set_redirect_url(RedirectUrl::from_url(redirect_url))
+    }
+
+    fn make_user_info_url(&self, user_id: &str) -> String {
+        format!("https://discordapp.com/api/v6/users/{}", user_id)
+    }
+
+    async fn parse_user_info_response(&self, res: reqwest::Response) -> Result<Box<dyn UserInfo>, failure::Error> {
+        Ok(Box::new(res.json::<DiscordUserInfo>().await?))
     }
 }
 

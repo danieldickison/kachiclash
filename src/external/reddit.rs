@@ -2,6 +2,7 @@ use oauth2::{RedirectUrl, TokenUrl, ClientId, ClientSecret, AuthUrl};
 use oauth2::basic::{BasicClient};
 use rusqlite::{Transaction, Error};
 use chrono::{Utc, DateTime};
+use async_trait::async_trait;
 
 use crate::Config;
 use crate::data::{PlayerId};
@@ -11,11 +12,19 @@ use crate::external::UserInfo;
 #[derive(Debug)]
 pub struct RedditAuthProvider;
 
+#[async_trait]
 impl AuthProvider for RedditAuthProvider {
-    type UserInfo = RedditUserInfo;
-    const SCOPES: &'static [&'static str] = &["identity"];
-    const USER_INFO_URL: &'static str = "https://oauth.reddit.com/api/v1/me";
-    const SERVICE_NAME: &'static str = "Reddit";
+    fn service_name(&self) -> &'static str {
+        "Reddit"
+    }
+
+    fn logged_in_user_info_url(&self) -> &'static str {
+        "https://oauth.reddit.com/api/v1/me"
+    }
+
+    fn oauth_scopes(&self) -> &'static [&'static str] {
+        &["identity"]
+    }
 
     fn make_oauth_client(&self, config: &Config) -> BasicClient {
         let mut redirect_url = config.url();
@@ -28,6 +37,14 @@ impl AuthProvider for RedditAuthProvider {
             Some(TokenUrl::new("https://www.reddit.com/api/v1/access_token".to_string()).unwrap())
         )
         .set_redirect_url(RedirectUrl::from_url(redirect_url))
+    }
+
+    fn make_user_info_url(&self, user_id: &str) -> String {
+        format!("https://oauth.reddit.com/api/v1/user/{}/about", user_id)
+    }
+
+    async fn parse_user_info_response(&self, res: reqwest::Response) -> Result<Box<dyn UserInfo>, failure::Error> {
+        Ok(Box::new(res.json::<RedditUserInfo>().await?))
     }
 }
 
