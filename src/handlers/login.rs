@@ -91,7 +91,8 @@ async fn oauth_redirect(query: &OAuthRedirectQuery, state: web::Data<AppState>, 
                 })?;
 
             debug!("getting logged in user info from {:?}", provider);
-            let user_info = provider.get_logged_in_user_info(token_res.access_token()).await
+            let user_info = provider
+                .get_logged_in_user_info(token_res.access_token()).await
                 .map_err(|e| {
                     warn!("error getting logged in user info from {:?}: {:?}", provider, e);
                     HandlerError::ExternalServiceError
