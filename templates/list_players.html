@@ -6,29 +6,43 @@
 
 {% block head %}
     <link rel="stylesheet" href="/static/css/player.css">
+    <script src="/static/js/list_players.js" defer></script>
 {% endblock %}
 
 {% block main %}
 
     <section id="players">
-        <table class="player-list">
-            <thead>
-                <tr>
-                    <th>Player</th>
-                    <th><!-- buttons --></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for player in players -%}
-                <tr>
-                    <td class="player">{{player.render().unwrap()|safe}}</td>
-                    <td class="actions">
-                        <button>something</button>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="toolbar">
+            Select broken images for:
+            <button class="select-broken-images">Discord</button>
+            <button class="select-broken-images">Reddit</button>
+            <button class="select-broken-images">Google</button>
+        </div>
+
+        <form id="player-list-form">
+            <table>
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Player</th>
+                        <th>Service</th>
+                        <th><!-- buttons --></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for player in players -%}
+                    <tr data-id="{{player.id}}" data-service="{{player.login_service_name()}}">
+                        <td><input type="checkbox" class="player-checkbox" name="player_selected_{player.id}"></td>
+                        <td class="player">{{player.render().unwrap()|safe}}</td>
+                        <td class="service">{{player.login_service_name()}}</td>
+                        <td class="actions">
+                            <button>something</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </form>
     </section>
 
 {% endblock %}
