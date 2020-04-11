@@ -15,11 +15,13 @@ use askama::Template;
 
 use super::{HandlerError, BaseTemplate, Result};
 use crate::{AppState, Config};
-use crate::data::player;
+use crate::data::{player, PlayerId};
 use crate::external::{AuthProvider};
 use crate::external::google::GoogleAuthProvider;
 use crate::external::discord::DiscordAuthProvider;
 use crate::external::reddit::RedditAuthProvider;
+use failure::_core::num::ParseIntError;
+use result::ResultOptionExt;
 
 #[derive(Template)]
 #[template(path = "login.html")]
@@ -79,6 +81,15 @@ async fn oauth_redirect(query: &OAuthRedirectQuery, state: web::Data<AppState>, 
     -> Result<impl Responder> {
 
     let mut db = state.db.lock().unwrap();
+
+    let image_update_player_ids: Option<Vec<PlayerId>> = session.get("image_update_player_ids")?
+        .map(|str: String|
+            str.split(',')
+                .map(|id| id.parse())
+                .collect::<std::result::Result<Vec<PlayerId>, ParseIntError>>()
+                .map_err(|e| format_err!("Failed to parse image_update_player_ids: {}", e)))
+        .invert()?;
+    debug!("image_update_player_ids: {:?}", image_update_player_ids);
 
     match session.get::<String>("oauth_csrf").unwrap_or(None) {
         Some(ref session_csrf) if *session_csrf == query.state => {
