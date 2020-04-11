@@ -17,6 +17,7 @@ use chrono::NaiveDateTime;
 use futures::prelude::*;
 use regex::{Regex, RegexBuilder};
 use actix_session::Session;
+use itertools::Itertools;
 
 #[derive(Template)]
 #[template(path = "edit_basho.html")]
@@ -264,19 +265,26 @@ pub struct ImageUpdateData {
     player_ids: Vec<PlayerId>,
 }
 
+#[derive(Debug, Serialize)]
+pub struct ImageUpdateResponseData {
+    login_url: String,
+}
+
 
 pub async fn update_user_images(json: web::Json<ImageUpdateData>, state: web::Data<AppState>, session: Session)
-    -> Result<HttpResponse> {
+    -> Result<web::Json<ImageUpdateResponseData>> {
+
     let provider = match json.service_name.as_str() {
         "discord" => Ok(Box::new(DiscordAuthProvider) as Box<dyn AuthProvider>),
         "google" => Ok(Box::new(GoogleAuthProvider) as Box<dyn AuthProvider>),
         "reddit" => Ok(Box::new(RedditAuthProvider) as Box<dyn AuthProvider>),
         _ => Err(HandlerError::NotFound("auth service".to_string())),
     }?;
-    session.set("image_update_data", serde_json::to_string(&json.0).unwrap())?;
+    session.set("image_update_player_ids",
+                json.player_ids.iter().join(","))?;
     let (auth_url, csrf_token) = provider.authorize_url(&state.config);
     session.set("oauth_csrf", csrf_token)?;
-    Ok(web::HttpResponse::SeeOther()
-        .set_header(http::header::LOCATION, auth_url.to_string())
-        .finish())
+    Ok(web::Json(ImageUpdateResponseData {
+        login_url: auth_url.to_string()
+    }))
 }

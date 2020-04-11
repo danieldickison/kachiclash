@@ -23,11 +23,16 @@ root.querySelectorAll('.select-broken-images').forEach(button => {
 
 root.querySelectorAll('.update-broken-images').forEach(button => {
     button.addEventListener('click', async () => {
+        const playerIDs = [];
+        form.querySelectorAll('tbody > tr').forEach(row => {
+            if (row.querySelector('.player-checkbox').checked) {
+                playerIDs.push(parseInt(row.dataset.id));
+            }
+        });
+
         const data = {
-            service: button.innerText.toLowerCase(),
-            venue: bashoForm.elements.venue.value,
-            start_date: bashoForm.elements.start_date.value,
-            banzuke: parsedBanzuke,
+            service_name: button.innerText.toLowerCase(),
+            player_ids: playerIDs,
         };
         const response = await fetch('/player/update_images', {
             method: 'POST',
@@ -40,7 +45,7 @@ root.querySelectorAll('.update-broken-images').forEach(button => {
         if (response.ok) {
             const json = await response.json();
             console.log("response json:", json);
-            //window.location = json.basho_url;
+            window.location = json.login_url;
         } else {
             const text = await response.text();
             throw text;
