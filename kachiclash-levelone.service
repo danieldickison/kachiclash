@@ -11,6 +11,7 @@ Group=kachiclash
 Environment=KACHI_ENV=prod
 Environment=KACHI_DB_PATH=/storage/kachiclash.com/var/levelone.sqlite
 Environment=KACHI_STATIC_PATH=/storage/kachiclash.com/public-levelone
+Environment=KACHI_HOST=levelone.kachiclash.com
 Environment=KACHI_PORT=8002
 EnvironmentFile=/storage/kachiclash.com/prod_secrets-levelone
 ExecStart=/storage/kachiclash.com/server
