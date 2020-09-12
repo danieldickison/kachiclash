@@ -1,0 +1,20 @@
+[Unit]
+Description=kachiclash-levelone webapp server
+Documentation=https://levelone.kachiclash.com
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=kachiclash
+Group=kachiclash
+Environment=KACHI_ENV=prod
+Environment=KACHI_DB_PATH=/storage/kachiclash.com/var/levelone.sqlite
+Environment=KACHI_STATIC_PATH=/storage/kachiclash.com/public-levelone
+Environment=KACHI_PORT=8002
+EnvironmentFile=/storage/kachiclash.com/prod_secrets-levelone
+ExecStart=/storage/kachiclash.com/server
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
