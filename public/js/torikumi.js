@@ -24,7 +24,7 @@ function torikumiFormInput() {
     });
 }
 
-// Maches rank, name, record, kimarite, rank, name, record
+// Matches rank, name, record, kimarite, rank, name, record
 const TORIKUMI_REGEX = /^ *[a-z]{1,2}\d{1,3}[ew] +([a-z]+) +\(\d+(?:-\d+){1,2}\) +[a-z]+ *[a-z]{1,2}\d{1,3}[ew] +([a-z]+) +\(\d+(?:-\d+){1,2}\) *$/gim
 
 function parseTorikumi(str) {
