@@ -20,8 +20,8 @@ use crate::external::{AuthProvider};
 use crate::external::google::GoogleAuthProvider;
 use crate::external::discord::DiscordAuthProvider;
 use crate::external::reddit::RedditAuthProvider;
-use failure::_core::num::ParseIntError;
 use result::ResultOptionExt;
+use anyhow::{anyhow};
 
 #[derive(Template)]
 #[template(path = "login.html")]
@@ -86,8 +86,8 @@ async fn oauth_redirect(query: &OAuthRedirectQuery, state: web::Data<AppState>, 
         .map(|str: String|
             str.split(',')
                 .map(|id| id.parse())
-                .collect::<std::result::Result<Vec<PlayerId>, ParseIntError>>()
-                .map_err(|e| format_err!("Failed to parse image_update_player_ids: {}", e)))
+                .collect::<std::result::Result<Vec<PlayerId>, _>>()
+                .map_err(|e| anyhow!("Failed to parse image_update_player_ids: {}", e)))
         .invert()?;
     debug!("image_update_player_ids: {:?}", image_update_player_ids);
 
@@ -96,6 +96,7 @@ async fn oauth_redirect(query: &OAuthRedirectQuery, state: web::Data<AppState>, 
             debug!("exchanging oauth code for access token from {:?}", provider);
             let auth_code = AuthorizationCode::new(query.code.to_owned());
             let token_res = provider.exchange_code(&state.config, auth_code)
+                .await
                 .map_err(|e| {
                     warn!("error exchanging auth code for access token from {:?}: {:?}", provider, e);
                     HandlerError::ExternalServiceError

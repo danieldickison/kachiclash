@@ -43,7 +43,7 @@ impl AuthProvider for RedditAuthProvider {
         format!("https://oauth.reddit.com/api/v1/user/{}/about", user_id)
     }
 
-    async fn parse_user_info_response(&self, res: reqwest::Response) -> Result<Box<dyn UserInfo>, failure::Error> {
+    async fn parse_user_info_response(&self, res: reqwest::Response) -> anyhow::Result<Box<dyn UserInfo>> {
         Ok(Box::new(res.json::<RedditUserInfo>().await?))
     }
 }

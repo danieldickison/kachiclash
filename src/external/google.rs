@@ -43,7 +43,7 @@ impl AuthProvider for GoogleAuthProvider {
         format!("https://people.googleapis.com/v1/{{resourceName=people/{}}}?personFields=photos", user_id)
     }
 
-    async fn parse_user_info_response(&self, res: reqwest::Response) -> Result<Box<dyn UserInfo>, failure::Error> {
+    async fn parse_user_info_response(&self, res: reqwest::Response) -> anyhow::Result<Box<dyn UserInfo>> {
         Ok(Box::new(res.json::<GoogleUserInfo>().await?))
     }
 }

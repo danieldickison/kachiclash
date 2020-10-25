@@ -1,0 +1,10 @@
+export KACHI_HOST=localhost
+export KACHI_PORT=8000
+export DISCORD_CLIENT_ID=
+export DISCORD_CLIENT_SECRET=
+export REDDIT_CLIENT_ID=
+export REDDIT_CLIENT_SECRET=
+export GOOGLE_CLIENT_ID=
+export GOOGLE_CLIENT_SECRET=
+
+cargo run --verbose --bin server

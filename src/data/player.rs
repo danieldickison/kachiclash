@@ -11,12 +11,12 @@ use crate::external::discord::DiscordAuthProvider;
 use crate::external::google::GoogleAuthProvider;
 use crate::external::reddit::RedditAuthProvider;
 use std::collections::HashMap;
-use askama::Template;
+use askama_actix::Template;
 use crate::data::DataError;
 
 pub type PlayerId = i64;
 
-pub const NAME_LENGTH: RangeInclusive<usize> = (3..=14);
+pub const NAME_LENGTH: RangeInclusive<usize> = 3..=14;
 pub const NAME_REGEX: &str = "^[a-zA-Z][a-zA-Z0-9]*$";
 
 // Because askama makes it tricky to use a {% let player = foo.player %} and then an {% include "player_listing.html" %} to render a standardized player listing subtemplate, we set this up directly as an unescaped template that can be rendered into a parent template like {{foo.player.render().unwrap()|safe}}
@@ -61,8 +61,8 @@ impl Player {
                 SELECT * FROM player_info
             ").unwrap()
             .query_map(NO_PARAMS, |row| Player::from_row(row))
-            .and_then(|mapped_rows| {
-                Ok(mapped_rows.map(|r| r.unwrap()).collect::<Vec<Player>>())
+            .map(|mapped_rows| {
+                mapped_rows.map(|r| r.unwrap()).collect::<Vec<Player>>()
             })
             .map_err(|e| e.into())
     }
@@ -219,7 +219,7 @@ pub struct BashoScore {
 }
 
 impl BashoScore {
-    pub fn with_player_id(db: &Connection, player_id: PlayerId, player_name: &String) -> Result<Vec<Self>> {
+    pub fn with_player_id(db: &Connection, player_id: PlayerId, player_name: &str) -> Result<Vec<Self>> {
         // Build mapping of bashi_id => PlayerBashoRikishi that can be inserted into the BashoScores later
         let mut basho_rikishi = HashMap::new();
         {

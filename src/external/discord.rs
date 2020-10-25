@@ -54,7 +54,7 @@ impl AuthProvider for DiscordAuthProvider {
         format!("https://discordapp.com/api/v6/users/{}", user_id)
     }
 
-    async fn parse_user_info_response(&self, res: reqwest::Response) -> Result<Box<dyn UserInfo>, failure::Error> {
+    async fn parse_user_info_response(&self, res: reqwest::Response) -> anyhow::Result<Box<dyn UserInfo>> {
         Ok(Box::new(res.json::<DiscordUserInfo>().await?))
     }
 }

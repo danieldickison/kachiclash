@@ -96,7 +96,7 @@ impl BashoInfo {
                         external_link: row.get("external_link")?,
                         player_count: row.get::<_, u32>("player_count")? as usize,
                         winning_score: row.get("winning_score")?,
-                        winners: winners.remove(&basho_id).unwrap_or_else(|| vec![]),
+                        winners: winners.remove(&basho_id).unwrap_or_else(Vec::new),
                     })
                 })?
             .collect::<SqlResult<_>>()
@@ -235,11 +235,11 @@ impl FromSql for BashoId {
     fn column_result(value: ValueRef) -> FromSqlResult<Self> {
         value
             .as_i64()
-            .and_then(|num| {
-                Ok(Self {
+            .map(|num| {
+                Self {
                     year: (num / 100) as i32,
                     month: (num % 100) as u8,
-                })
+                }
             })
     }
 }

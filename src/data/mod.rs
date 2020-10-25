@@ -14,6 +14,9 @@ pub use basho::{BashoId, BashoInfo, BashoRikishi, BashoRikishiByRank, FetchBasho
 
 pub mod award;
 pub use award::Award;
+use std::error::Error;
+use std::fmt;
+use serde::export::Formatter;
 
 pub mod leaders;
 
@@ -32,33 +35,38 @@ pub fn make_conn(path: &Path) -> DbConn {
 
 type Result<T> = std::result::Result<T, DataError>;
 
-#[derive(Fail, Debug)]
+#[derive(Debug)]
 pub enum DataError {
-    #[fail(display = "Basho has already started")]
     BashoHasStarted,
-
-    #[fail(display = "Invalid picks")]
     InvalidPicks,
-
-    #[fail(display = "Rikishi not found: {}", family_name)]
     RikishiNotFound {
         family_name: String,
     },
-
-    #[fail(display = "Multiple rikishi with shikona: {:?}", family_names)]
     AmbiguousShikona {
         family_names: Vec<String>,
     },
-
-    #[fail(display = "Database error: {}", _0)]
     DatabaseError(rusqlite::Error),
-
-    #[fail(display = "Unknown login provider")]
     UnknownLoginProvider,
 }
 
 impl From<rusqlite::Error> for DataError {
     fn from(e: rusqlite::Error) -> Self {
         DataError::DatabaseError(e)
+    }
+}
+
+impl Error for DataError {}
+
+impl fmt::Display for DataError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            DataError::BashoHasStarted => write!(f, "Basho has already started"),
+            DataError::InvalidPicks => write!(f, "Invalid picks"),
+            DataError::RikishiNotFound { family_name } => write!(f, "Rikishi not found: {}", family_name),
+            DataError::AmbiguousShikona { family_names } => write!(f, "Multiple rikishi with shikona: {:?}", family_names),
+            DataError::DatabaseError(e) => write!(f, "Database error: {}", e),
+            DataError::UnknownLoginProvider => write!(f, "Unknown login provider"),
+        }?;
+        Ok(())
     }
 }
