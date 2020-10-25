@@ -5,7 +5,6 @@ use url::Url;
 use async_trait::async_trait;
 use anyhow::{Result, anyhow};
 use chrono::{DateTime, Utc};
-use rand;
 
 use crate::Config;
 use crate::data::PlayerId;

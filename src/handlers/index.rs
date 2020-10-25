@@ -43,7 +43,7 @@ pub async fn index(query: web::Query<QueryParams>, state: web::Data<AppState>, i
     })
 }
 
-fn nth_completed_basho_id(basho_list: &Vec<BashoInfo>, n: usize) -> Option<BashoId> {
+fn nth_completed_basho_id(basho_list: &[BashoInfo], n: usize) -> Option<BashoId> {
     if basho_list.is_empty() { return None; }
 
     let mut n = n;
