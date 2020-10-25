@@ -54,13 +54,14 @@ pub trait AuthProvider: Debug {
         req.url()
     }
 
-    fn exchange_code(&self, config: &Config, auth_code: AuthorizationCode)
+    async fn exchange_code(&self, config: &Config, auth_code: AuthorizationCode)
         -> anyhow::Result<BasicTokenResponse> {
 
         self.make_oauth_client(&config)
             .exchange_code(auth_code)
-            .request(oauth2::reqwest::http_client)
-            .map_err(|e| e.into())
+            .request_async(oauth2::reqwest::async_http_client)
+            .await
+            .map_err(|e| anyhow!("oauth code exchange error: {}", e))
     }
 
     async fn get_logged_in_user_info(&self, access_token: &AccessToken)

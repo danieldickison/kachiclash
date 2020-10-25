@@ -85,6 +85,7 @@ async fn oauth_redirect(query: &OAuthRedirectQuery, state: web::Data<AppState>, 
             debug!("exchanging oauth code for access token from {:?}", provider);
             let auth_code = AuthorizationCode::new(query.code.to_owned());
             let token_res = provider.exchange_code(&state.config, auth_code)
+                .await
                 .map_err(|e| {
                     warn!("error exchanging auth code for access token from {:?}: {:?}", provider, e);
                     HandlerError::ExternalServiceError
