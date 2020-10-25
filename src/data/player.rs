@@ -11,12 +11,12 @@ use crate::external::discord::DiscordAuthProvider;
 use crate::external::google::GoogleAuthProvider;
 use crate::external::reddit::RedditAuthProvider;
 use std::collections::HashMap;
-use askama::Template;
+use askama_actix::Template;
 use crate::data::DataError;
 
 pub type PlayerId = i64;
 
-pub const NAME_LENGTH: RangeInclusive<usize> = (3..=14);
+pub const NAME_LENGTH: RangeInclusive<usize> = 3..=14;
 pub const NAME_REGEX: &str = "^[a-zA-Z][a-zA-Z0-9]*$";
 
 // Because askama makes it tricky to use a {% let player = foo.player %} and then an {% include "player_listing.html" %} to render a standardized player listing subtemplate, we set this up directly as an unescaped template that can be rendered into a parent template like {{foo.player.render().unwrap()|safe}}

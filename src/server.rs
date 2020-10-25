@@ -40,7 +40,7 @@ pub async fn run(config: Config) -> std::io::Result<()> {
             CookieIdentityPolicy::new(&session_secret)
               .secure(!config.is_dev())
               .same_site(SameSite::Lax)
-              .max_age_time(Duration::days(3650)))
+              .max_age(Duration::days(3650).num_seconds()))
         )
         .wrap(CookieSession::signed(&session_secret).secure(config.env != "dev"))
         .wrap(middleware::DefaultHeaders::new().header("Content-Type", "text/html; charset=utf-8"))

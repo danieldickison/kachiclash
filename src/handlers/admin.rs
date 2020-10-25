@@ -17,6 +17,7 @@ use chrono::NaiveDateTime;
 use futures::prelude::*;
 use regex::{Regex, RegexBuilder};
 use actix_session::Session;
+use anyhow::anyhow;
 
 #[derive(Template)]
 #[template(path = "edit_basho.html")]
@@ -142,15 +143,15 @@ pub struct TorikumiTemplate {
 pub async fn torikumi_page(path: web::Path<(BashoId, u8)>, state: web::Data<AppState>, identity: Identity)
     -> Result<TorikumiTemplate> {
 
-    let basho_id = path.0;
-    let day = path.1;
+    let basho_id = path.0.0;
+    let day = path.0.1;
     let db = state.db.lock().unwrap();
     let base = async { admin_base(&db, &identity) }.await?;
     let sumo_db_text = fetch_sumo_db_torikumi(basho_id, day)
         .map_ok(Some)
         .or_else(|e| async move {
             warn!("failed to fetch sumodb data: {}", e);
-            Ok::<_, failure::Error>(None)
+            Ok::<_, anyhow::Error>(None)
         }).await?;
     Ok(TorikumiTemplate { base, basho_id, day, sumo_db_text})
 }
@@ -171,13 +172,16 @@ async fn fetch_sumo_db_torikumi(basho_id: BashoId, day: u8)
     let mut response = client.get(url)
         .header("User-Agent", "kachiclash")
         .send()
-        .map_err(|e| format_err!("{}", e)).await?;
-    let body = response.body().map_err(|e| format_err!("{}", e)).await?;
+        .map_err(|e| anyhow!("sumodb request error: {}", e))
+        .await?;
+    let body = response.body()
+        .map_err(|e| anyhow!("sumodb payload error: {}", e))
+        .await?;
     let str = String::from_utf8(body.to_vec())
-        .map_err(|e| format_err!("{}", e))?;
+        .map_err(|e| anyhow!("sumodb utf8 decoding error: {}", e))?;
     RE.captures(str.as_str())
         .map(|cap| cap.get(1).unwrap().as_str().to_string())
-        .ok_or_else(|| format_err!("sumodb response did not match regex").into())
+        .ok_or_else(|| anyhow!("sumodb response did not match regex").into())
 }
 
 #[derive(Debug, Deserialize)]
@@ -191,8 +195,8 @@ pub async fn torikumi_post(path: web::Path<(BashoId, u8)>, torikumi: web::Json<T
     admin_base(&db, &identity)?;
     let res = data::basho::update_torikumi(
         &mut db,
-        path.0,
-        path.1,
+        path.0.0,
+        path.0.1,
         &torikumi.torikumi
     );
     map_empty_response(res)
