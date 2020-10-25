@@ -18,6 +18,7 @@ use futures::prelude::*;
 use regex::{Regex, RegexBuilder};
 use actix_session::Session;
 use anyhow::anyhow;
+use std::time::Duration;
 
 #[derive(Template)]
 #[template(path = "edit_basho.html")]
@@ -169,16 +170,14 @@ async fn fetch_sumo_db_torikumi(basho_id: BashoId, day: u8)
 
     let client = Client::default();
     let url = format!("http://sumodb.sumogames.de/Results_text.aspx?b={}&d={}", basho_id.id(), day);
-    let mut response = client.get(url)
-        .header("User-Agent", "kachiclash")
-        .send()
-        .map_err(|e| anyhow!("sumodb request error: {}", e))
-        .await?;
-    let body = response.body()
-        .map_err(|e| anyhow!("sumodb payload error: {}", e))
-        .await?;
-    let str = String::from_utf8(body.to_vec())
-        .map_err(|e| anyhow!("sumodb utf8 decoding error: {}", e))?;
+    let str = reqwest::Client::builder()
+        .connect_timeout(Duration::from_secs(5))
+        .timeout(Duration::from_secs(10))
+        .user_agent("kachiclash.com")
+        .build()?
+        .get(&url)
+        .send().await?
+        .text().await?;
     RE.captures(str.as_str())
         .map(|cap| cap.get(1).unwrap().as_str().to_string())
         .ok_or_else(|| anyhow!("sumodb response did not match regex").into())

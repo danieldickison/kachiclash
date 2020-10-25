@@ -72,6 +72,12 @@ impl From<anyhow::Error> for HandlerError {
     }
 }
 
+impl From<reqwest::Error> for HandlerError {
+    fn from(_err: reqwest::Error) -> Self {
+        Self::ExternalServiceError
+    }
+}
+
 impl From<actix_web::Error> for HandlerError {
     fn from(err: actix_web::Error) -> Self {
         // I can't figure out how to make the actix error Send+Sync so just make it a string for now.
