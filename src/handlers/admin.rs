@@ -9,7 +9,6 @@ use super::{HandlerError, BaseTemplate, Result};
 
 use actix_web::{web, http, HttpResponse, Responder};
 use actix_identity::Identity;
-use actix_web::client::Client;
 use rusqlite::{Connection, Result as SqlResult, OptionalExtension};
 use askama::Template;
 use serde::{Deserializer, Deserialize};
@@ -168,8 +167,8 @@ async fn fetch_sumo_db_torikumi(basho_id: BashoId, day: u8)
                 .unwrap();
     }
 
-    let client = Client::default();
     let url = format!("http://sumodb.sumogames.de/Results_text.aspx?b={}&d={}", basho_id.id(), day);
+    debug!("sending request to {}", url);
     let str = reqwest::Client::builder()
         .connect_timeout(Duration::from_secs(5))
         .timeout(Duration::from_secs(10))
