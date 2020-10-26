@@ -30,6 +30,7 @@ oauth2 = "4.0.0-alpha.2"
 anyhow = "1.0"
 askama = "0.10"
 askama_actix = "0.11"
+num_cpus = "1.13"
 
 [dependencies.rusqlite]
 version = "0.24"

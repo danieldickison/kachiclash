@@ -1327,6 +1327,7 @@ dependencies = [
  "itertools",
  "lazy_static",
  "log",
+ "num_cpus",
  "oauth2",
  "rand",
  "regex",

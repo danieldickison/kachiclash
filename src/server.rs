@@ -10,6 +10,7 @@ use actix_identity::{CookieIdentityPolicy, IdentityService};
 use actix_session::{CookieSession};
 use actix_files::Files;
 use chrono::Duration;
+use std::cmp::max;
 
 
 pub async fn run(config: Config) -> std::io::Result<()> {
@@ -98,9 +99,10 @@ pub async fn run(config: Config) -> std::io::Result<()> {
         }
         app
     })
-    .bind(("0.0.0.0", config2.port))?
-    .run()
-    .await
+        .workers(max(num_cpus::get(), 4))
+        .bind(("0.0.0.0", config2.port))?
+        .run()
+        .await
 }
 
 async fn default_not_found() -> Result<HttpResponse, handlers::HandlerError> {
