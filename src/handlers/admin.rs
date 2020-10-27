@@ -86,7 +86,9 @@ fn deserialize_datetime<'de, D>(deserializer: D) -> std::result::Result<NaiveDat
         where D: Deserializer<'de> {
     let s: String = String::deserialize(deserializer)?;
     debug!("parsing datetime from {}", s);
-    NaiveDateTime::parse_from_str(&s, "%Y-%m-%d %H:%M").map_err(serde::de::Error::custom)
+    NaiveDateTime::parse_from_str(&s, "%FT%R")
+        .or_else(|_e| NaiveDateTime::parse_from_str(&s, "%FT%T%.f"))
+        .map_err(serde::de::Error::custom)
 }
 
 #[derive(Debug, Deserialize)]
