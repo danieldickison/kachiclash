@@ -1,3 +1,4 @@
+@charset "utf-8";
 @use 'media';
 
 #p-basho {
@@ -158,6 +159,21 @@
                 label {
                     display: block;
                     padding: 0 0.25rem;
+                }
+
+                .info-link {
+                    font-size: 0.75rem;
+                    vertical-align: middle;
+                    &::before {
+                        content: "ℹ️";
+                    }
+                    @media (hover: hover) {
+                        opacity: 0;
+                        transition: opacity 100ms ease-out;
+                    }
+                }
+                &:hover .info-link {
+                    opacity: 1;
                 }
             }
 

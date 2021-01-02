@@ -191,7 +191,8 @@
                     {% if rikishi.is_player_pick -%} checked {%- endif %}
                     {% if !initially_selectable -%} disabled {%- endif %}
                 >
-                {{- rikishi.name -}}
+                {{- rikishi.name }}
+                <a class="info-link" target="_blank" href="http://sumodb.sumogames.de/Rikishi.aspx?shikona={{rikishi.name}}&b={{basho.id.id()}}"></a>
             </label>
         </td>
         <td class="pick-count">
