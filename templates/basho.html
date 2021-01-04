@@ -181,7 +181,11 @@
 {%- macro rikishi_results(rikishi) -%}
     {%- match rikishi -%}
     {%- when Some with (rikishi) -%}
-        <td class="rikishi {% if rikishi.is_player_pick -%} is-player-pick {%- endif %}"
+        <td class="
+                rikishi
+                {%- if rikishi.is_player_pick %} is-player-pick {% endif -%}
+                {%- if rikishi.is_kyujyo %} is-kyujyo {% endif -%}
+            "
             data-rikishi-id="{{rikishi.id}}"
         >
             <label>

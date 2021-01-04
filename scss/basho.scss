@@ -157,8 +157,18 @@
                 }
 
                 label {
-                    display: block;
+                    display: inline-block;
                     padding: 0 0.25rem;
+                }
+                &.is-kyujyo label {
+                    text-decoration: line-through;
+                    color: var(--color-gray-fg);
+                    &::before {
+                        display: inline-block;
+                        content: "㊡";
+                        text-decoration: none;
+                        color: var(--color-orange);
+                    }
                 }
 
                 .info-link {
