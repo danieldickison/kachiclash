@@ -121,6 +121,10 @@
             }
         }
 
+        // > form {
+        //     margin: 0 -100px;
+        // }
+
         table {
             border-collapse: collapse;
             line-height: 2;
@@ -139,6 +143,7 @@
             td {
                 &.rikishi {
                     font-weight: bold;
+                    white-space: nowrap;
                     @media (min-width: media.$wide) {
                         font-size: 1.25rem;
                     }
