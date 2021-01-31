@@ -52,6 +52,10 @@
 
             td.pick {
                 padding: 0 0.125rem;
+                &.kyujyo {
+                    text-decoration: line-through;
+                    color: var(--color-gray-fg);
+                }
             }
 
             td.score,
