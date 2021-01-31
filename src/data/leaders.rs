@@ -28,7 +28,7 @@ impl BashoPlayerResults {
             .collect()
     }
 
-    fn sort_key<'a>(&'a self) -> (usize, Vec<String>) {
+    fn sort_key(&self) -> (usize, Vec<String>) {
         match &self.player {
             ResultPlayer::RankedPlayer(_, rank) => {
                 (
