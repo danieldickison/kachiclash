@@ -124,7 +124,7 @@ fn make_min_max_results(rikishi: Arc<HashMap<RikishiId, BashoRikishi>>)
                         -> (BashoPlayerResults, BashoPlayerResults) {
     let mut mins = [None; 5];
     let mut maxes = [None; 5];
-    for r in rikishi.values() {
+    for r in rikishi.values().filter(|r| !r.is_kyujyo) {
         let group = r.rank.group().as_index();
         mins[group] = mins[group].map_or(Some(r), |min: &BashoRikishi| {
             Some(if r.wins < min.wins { r } else { min })
