@@ -147,8 +147,10 @@ pub async fn torikumi_page(path: web::Path<(BashoId, u8)>, state: web::Data<AppS
 
     let basho_id = path.0.0;
     let day = path.0.1;
-    let db = state.db.lock().unwrap();
-    let base = async { admin_base(&db, &identity) }.await?;
+    let base = {
+        let db = state.db.lock().unwrap();
+        admin_base(&db, &identity)?
+    };
     let sumo_db_text = fetch_sumo_db_torikumi(basho_id, day)
         .map_ok(Some)
         .or_else(|e| async move {
