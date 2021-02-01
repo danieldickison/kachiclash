@@ -1,3 +1,4 @@
+@charset "utf-8";
 @use 'media';
 
 #p-basho {
@@ -51,6 +52,10 @@
 
             td.pick {
                 padding: 0 0.125rem;
+                &.kyujyo {
+                    text-decoration: line-through;
+                    color: var(--color-gray-fg);
+                }
             }
 
             td.score,
@@ -120,6 +125,10 @@
             }
         }
 
+        // > form {
+        //     margin: 0 -100px;
+        // }
+
         table {
             border-collapse: collapse;
             line-height: 2;
@@ -138,6 +147,7 @@
             td {
                 &.rikishi {
                     font-weight: bold;
+                    white-space: nowrap;
                     @media (min-width: media.$wide) {
                         font-size: 1.25rem;
                     }
@@ -156,8 +166,33 @@
                 }
 
                 label {
-                    display: block;
+                    display: inline-block;
                     padding: 0 0.25rem;
+                }
+                &.is-kyujyo label {
+                    text-decoration: line-through;
+                    color: var(--color-gray-fg);
+                    &::before {
+                        display: inline-block;
+                        content: "㊡";
+                        text-decoration: none;
+                        color: var(--color-orange);
+                    }
+                }
+
+                .info-link {
+                    font-size: 0.75rem;
+                    vertical-align: middle;
+                    &::before {
+                        content: "ℹ️";
+                    }
+                    @media (hover: hover) {
+                        opacity: 0;
+                        transition: opacity 100ms ease-out;
+                    }
+                }
+                &:hover .info-link {
+                    opacity: 1;
                 }
             }
 

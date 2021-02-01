@@ -459,6 +459,7 @@ pub struct BashoRikishi {
     pub losses: u8,
     pub picks: u16,
     pub is_player_pick: bool,
+    pub is_kyujyo: bool,
 }
 
 impl BashoRikishi {
@@ -495,12 +496,13 @@ impl FetchBashoRikishi {
     pub fn with_db(db: &Connection, basho_id: BashoId, picks: &HashSet<RikishiId>)
                      -> Result<Self> {
         debug!("fetching rikishi results for basho {}", basho_id);
-        struct FetchedRikishiRow(Rank, RikishiId, String, Option<Day>, Option<bool>, u16);
+        struct FetchedRikishiRow(Rank, RikishiId, String, bool, Option<Day>, Option<bool>, u16);
         let vec: Vec<BashoRikishiByRank> = db.prepare("
             SELECT
                 banzuke.rank,
                 banzuke.rikishi_id,
                 banzuke.family_name,
+                banzuke.kyujyo,
                 torikumi.day,
                 torikumi.win,
                 (
@@ -523,6 +525,7 @@ impl FetchBashoRikishi {
                         row.get("rank")?,
                         row.get("rikishi_id")?,
                         row.get("family_name")?,
+                        row.get("kyujyo")?,
                         row.get("day")?,
                         row.get("win")?,
                         row.get("picks")?,
@@ -553,10 +556,11 @@ impl FetchBashoRikishi {
                         results: [None; 15],
                         wins: 0,
                         losses: 0,
-                        picks: arow.5,
+                        picks: arow.6,
                         is_player_pick: picks.contains(&arow.1),
+                        is_kyujyo: arow.3,
                     };
-                    for FetchedRikishiRow(_, _, _, day, win, _) in rows {
+                    for FetchedRikishiRow(_, _, _, _, day, win, _) in rows {
                         match win {
                             Some(true) => rikishi.wins += 1,
                             Some(false) => rikishi.losses += 1,

@@ -147,14 +147,17 @@
                         <td class="name">{{player.render().unwrap()|safe}}</td>
                     {%- endmatch -%}
 
-                    {% for rikishi in leader.picks() %}
-                        <td class="pick">
+                    {% for rikishi in leader.picks() -%}
                         {%- match rikishi -%}
-                        {%- when Some with (r) %}{{r.name}}
+                        {%- when Some with (r) -%}
+                            <td class="
+                                pick
+                                {% if r.is_kyujyo %}kyujyo{% endif -%}
+                            ">{{r.name}}</td>
                         {%- when None -%}
+                            <td class="pick"></td>
                         {%- endmatch -%}
-                        </td>
-                    {% endfor %}
+                    {%- endfor %}
 
                     {% if basho.has_started() %}
                         {% for wins in leader.days -%}
@@ -181,7 +184,11 @@
 {%- macro rikishi_results(rikishi) -%}
     {%- match rikishi -%}
     {%- when Some with (rikishi) -%}
-        <td class="rikishi {% if rikishi.is_player_pick -%} is-player-pick {%- endif %}"
+        <td class="
+                rikishi
+                {%- if rikishi.is_player_pick %} is-player-pick {% endif -%}
+                {%- if rikishi.is_kyujyo %} is-kyujyo {% endif -%}
+            "
             data-rikishi-id="{{rikishi.id}}"
         >
             <label>
@@ -191,7 +198,8 @@
                     {% if rikishi.is_player_pick -%} checked {%- endif %}
                     {% if !initially_selectable -%} disabled {%- endif %}
                 >
-                {{- rikishi.name -}}
+                {{- rikishi.name }}
+                <a class="info-link" target="_blank" href="http://sumodb.sumogames.de/Rikishi.aspx?shikona={{rikishi.name}}&b={{basho.id.id()}}"></a>
             </label>
         </td>
         <td class="pick-count">

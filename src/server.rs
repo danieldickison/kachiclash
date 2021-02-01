@@ -10,12 +10,14 @@ use actix_identity::{CookieIdentityPolicy, IdentityService};
 use actix_session::{CookieSession};
 use actix_files::Files;
 use chrono::Duration;
+use std::cmp::max;
 
 
 pub async fn run(config: Config) -> std::io::Result<()> {
 
     let config2 = config.clone();
     let session_secret: [u8; 32] = config.session_secret.as_bytes().try_into().expect("session key should be 32 utf8 bytes");
+    let db = data::make_conn(&config2.db_path);
 
     if config.is_dev() {
         info!("starting sass --watch scss/:public/css/");
@@ -32,7 +34,7 @@ pub async fn run(config: Config) -> std::io::Result<()> {
         let mut app = App::new()
         .data(AppState {
             config: config.clone(),
-            db: data::make_conn(&config.db_path),
+            db: db.clone(),
         })
 
         .wrap(middleware::Logger::default())
@@ -98,9 +100,10 @@ pub async fn run(config: Config) -> std::io::Result<()> {
         }
         app
     })
-    .bind(("0.0.0.0", config2.port))?
-    .run()
-    .await
+        .workers(max(num_cpus::get(), 4))
+        .bind(("0.0.0.0", config2.port))?
+        .run()
+        .await
 }
 
 async fn default_not_found() -> Result<HttpResponse, handlers::HandlerError> {

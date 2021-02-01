@@ -28,13 +28,18 @@ impl BashoPlayerResults {
             .collect()
     }
 
-    fn sort_rank(&self) -> usize {
+    fn sort_key(&self) -> (usize, Vec<String>) {
         match &self.player {
-            ResultPlayer::RankedPlayer(p, rank) => {
-                if *rank == 0 { p.id as usize } else { *rank }
+            ResultPlayer::RankedPlayer(_, rank) => {
+                (
+                    if *rank == 0 { 1 } else { *rank },
+                    self.picks().iter().map(|rikishi|
+                        rikishi.map_or("".to_string(), |r| r.name.clone())
+                    ).collect()
+                )
             },
-            ResultPlayer::Max => 0,
-            ResultPlayer::Min => usize::max_value(),
+            ResultPlayer::Max => (0, vec![]),
+            ResultPlayer::Min => (usize::max_value(), vec![]),
         }
     }
 
@@ -109,7 +114,7 @@ impl BashoPlayerResults {
         }
 
         // Sort to put self player at the bottom. (It's always first from the db query to ensure it doesn't get bumped off by the LIMIT clause.)
-        leaders.sort_by_key(|p| p.sort_rank());
+        leaders.sort_by_cached_key(|p| p.sort_key());
 
         Ok(leaders)
     }
@@ -119,7 +124,7 @@ fn make_min_max_results(rikishi: Arc<HashMap<RikishiId, BashoRikishi>>)
                         -> (BashoPlayerResults, BashoPlayerResults) {
     let mut mins = [None; 5];
     let mut maxes = [None; 5];
-    for r in rikishi.values() {
+    for r in rikishi.values().filter(|r| !r.is_kyujyo) {
         let group = r.rank.group().as_index();
         mins[group] = mins[group].map_or(Some(r), |min: &BashoRikishi| {
             Some(if r.wins < min.wins { r } else { min })

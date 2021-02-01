@@ -80,8 +80,6 @@ pub async fn reddit_redirect(query: web::Query<OAuthRedirectQuery>, state: web::
 async fn oauth_redirect(query: &OAuthRedirectQuery, state: web::Data<AppState>, session: Session, id: Identity, provider: impl AuthProvider + Sync)
     -> Result<impl Responder> {
 
-    let mut db = state.db.lock().unwrap();
-
     let image_update_player_ids: Option<Vec<PlayerId>> = session.get("image_update_player_ids")?
         .map(|str: String|
             str.split(',')
@@ -109,7 +107,7 @@ async fn oauth_redirect(query: &OAuthRedirectQuery, state: web::Data<AppState>, 
                     warn!("error getting logged in user info from {:?}: {:?}", provider, e);
                     HandlerError::ExternalServiceError
                 })?;
-            let (player_id, is_new) = player::player_id_with_external_user(&mut db, user_info)
+            let (player_id, is_new) = player::player_id_with_external_user(&mut state.db.lock().unwrap(), user_info)
                 .map_err(|err| {
                     warn!("error creating player for {:?} login: {:?}", provider, err);
                     HandlerError::DatabaseError(err.into())

@@ -186,8 +186,8 @@ impl FromStr for Rank {
     type Err = RankError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut chars = s.chars();
-        let name_char = chars.next().ok_or_else(|| RankError::MissingChar)?;
-        let side_char = chars.next_back().ok_or_else(|| RankError::MissingChar)?;
+        let name_char = chars.next().ok_or(RankError::MissingChar)?;
+        let side_char = chars.next_back().ok_or(RankError::MissingChar)?;
         let num_str = chars.as_str();
         //debug!("parsing rank got name char {} side char {} with remaining {}", name_char, side_char, num_str);
         Ok(Rank {

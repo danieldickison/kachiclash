@@ -23,10 +23,10 @@
         </label>
         <label>
             Start date:
-            <span class="footnote">This is the precise time when entries will be closed, in UTC. (yyyy-mm-dd hh:mm)</span>
-            <input name="start_date" type="datetime-local" placeholder="yyyy-mm-dd hh:mm"
+            <span class="footnote">This is the precise time when entries will be closed, in UTC. (yyyy-mm-ddThh:mm)</span>
+            <input name="start_date" type="datetime-local" placeholder="yyyy-mm-ddThh:mm"
                 {%- match basho -%}
-                {%- when Some with (b) -%} value="{{b.start_date.format("%Y-%m-%d %H:%M")}}"
+                {%- when Some with (b) -%} value="{{b.start_date.format("%Y-%m-%dT%H:%M")}}"
                 {%- when None -%}
                 {%- endmatch -%}
             >
