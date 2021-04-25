@@ -12,7 +12,8 @@ use crate::external::google::GoogleAuthProvider;
 use crate::external::reddit::RedditAuthProvider;
 use std::collections::HashMap;
 use askama_actix::Template;
-use crate::data::DataError;
+use crate::data::{DataError, DbConn};
+use oauth2::AccessToken;
 
 pub type PlayerId = i64;
 
@@ -142,15 +143,6 @@ impl Player {
             Err(DataError::UnknownLoginProvider)
         }
     }
-
-    pub async fn update_image(&self, db: &mut Connection)
-        -> Result<()> {
-
-        let auth = self.login_service_provider()?;
-
-
-        Ok(())
-    }
 }
 
 pub fn player_id_with_external_user(db: &mut Connection, user_info: Box<dyn UserInfo>) -> SqlResult<(PlayerId, bool)> {
@@ -207,6 +199,23 @@ pub fn name_is_valid(name: &str) -> bool {
     }
 
     NAME_LENGTH.contains(&name.len()) && RE.is_match(&name)
+}
+
+pub async fn update_player_images(player_ids: &Vec<PlayerId>, db: &DbConn, auth: &dyn AuthProvider, access_token: &AccessToken)
+                                  -> Result<()> {
+    for player_id in player_ids {
+        match auth.get_user_info(&access_token, &user_id).await {
+            Ok(user_info) => {
+
+            }
+            Err(e) => {
+                error!("failed to get user info for image update for player {}", player_id);
+            }
+        };
+    }
+
+
+    Ok(())
 }
 
 #[derive(Debug)]

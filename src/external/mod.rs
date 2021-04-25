@@ -43,6 +43,7 @@ pub trait AuthProvider: Debug {
     fn make_oauth_client(&self, config: &Config) -> BasicClient;
     fn make_user_info_url(&self, user_id: &str) -> String;
     async fn parse_user_info_response(&self, res: reqwest::Response) -> anyhow::Result<Box<dyn UserInfo>>;
+    fn player_id_to_user_id_mapping_sql(&self) -> &'static str;
 
     fn authorize_url(&self, config: &Config) -> (Url, CsrfToken) {
         let client = self.make_oauth_client(&config);

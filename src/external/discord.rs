@@ -57,6 +57,13 @@ impl AuthProvider for DiscordAuthProvider {
     async fn parse_user_info_response(&self, res: reqwest::Response) -> anyhow::Result<Box<dyn UserInfo>> {
         Ok(Box::new(res.json::<DiscordUserInfo>().await?))
     }
+
+    fn player_id_to_user_id_mapping_sql(&self) -> &'static str {
+        "
+            SELECT player_id, user_id
+            FROM player_discord WHERE player_id IN ({})
+        "
+    }
 }
 
 #[derive(Debug, Deserialize, Clone)]

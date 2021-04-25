@@ -22,6 +22,7 @@ use crate::external::discord::DiscordAuthProvider;
 use crate::external::reddit::RedditAuthProvider;
 use result::ResultOptionExt;
 use anyhow::{anyhow};
+use crate::handlers::admin;
 
 #[derive(Template)]
 #[template(path = "login.html")]
@@ -87,9 +88,13 @@ async fn oauth_redirect(query: &OAuthRedirectQuery, state: web::Data<AppState>, 
                 .collect::<std::result::Result<Vec<PlayerId>, _>>()
                 .map_err(|e| anyhow!("Failed to parse image_update_player_ids: {}", e)))
         .invert()?;
+    session.remove("image_update_player_ids");
     debug!("image_update_player_ids: {:?}", image_update_player_ids);
 
-    match session.get::<String>("oauth_csrf").unwrap_or(None) {
+    let session_csrf = session.get::<String>("oauth_csrf").unwrap_or(None);
+    session.remove("oauth_csrf");
+
+    match session_csrf {
         Some(ref session_csrf) if *session_csrf == query.state => {
             debug!("exchanging oauth code for access token from {:?}", provider);
             let auth_code = AuthorizationCode::new(query.code.to_owned());
@@ -101,8 +106,9 @@ async fn oauth_redirect(query: &OAuthRedirectQuery, state: web::Data<AppState>, 
                 })?;
 
             debug!("getting logged in user info from {:?}", provider);
+            let access_token = token_res.access_token();
             let user_info = provider
-                .get_logged_in_user_info(token_res.access_token()).await
+                .get_logged_in_user_info(access_token).await
                 .map_err(|e| {
                     warn!("error getting logged in user info from {:?}: {:?}", provider, e);
                     HandlerError::ExternalServiceError
@@ -115,7 +121,10 @@ async fn oauth_redirect(query: &OAuthRedirectQuery, state: web::Data<AppState>, 
 
             debug!("logged in as player {}, is_new: {}", player_id, is_new);
             id.remember(player_id.to_string());
-            session.remove("oauth_csrf");
+
+            if let Some(image_update_player_ids) = image_update_player_ids {
+                player::update_player_images(&image_update_player_ids, &state.db, &provider, &access_token);
+            }
 
             Ok(web::HttpResponse::SeeOther()
                 .set_header(http::header::LOCATION, if is_new {"/settings"} else {"/"})

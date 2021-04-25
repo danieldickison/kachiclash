@@ -46,6 +46,13 @@ impl AuthProvider for GoogleAuthProvider {
     async fn parse_user_info_response(&self, res: reqwest::Response) -> anyhow::Result<Box<dyn UserInfo>> {
         Ok(Box::new(res.json::<GoogleUserInfo>().await?))
     }
+
+    fn player_id_to_user_id_mapping_sql(&self) -> &'static str {
+        "
+            SELECT player_id, id
+            FROM player_google WHERE player_id IN ({})
+        "
+    }
 }
 
 #[derive(Debug, Deserialize, Clone)]
