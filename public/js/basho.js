@@ -33,7 +33,9 @@ document.querySelectorAll('.change-picks-button').forEach(button => {
 
 function setSelectable(selectable) {
     banzukeSection.classList.toggle('selectable', selectable);
-    document.querySelectorAll('.select-radio').forEach(button => button.disabled = !selectable);
+    document.querySelectorAll('.select-radio').forEach(button => {
+        button.disabled = !selectable || button.matches('.rikishi.is-kyujyo *');
+    });
 }
 
 async function savePicks(formData, url) {
