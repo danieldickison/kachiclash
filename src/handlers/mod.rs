@@ -6,8 +6,7 @@ use actix_web::{error, HttpResponse};
 use actix_identity::Identity;
 use rusqlite::Connection;
 use std::error::Error;
-use std::fmt::Display;
-use serde::export::Formatter;
+use std::fmt::{Display, Formatter};
 
 pub mod index;
 pub mod basho;

@@ -47,7 +47,7 @@ impl AuthProvider for DiscordAuthProvider {
             AuthUrl::new("https://discordapp.com/api/oauth2/authorize".to_string()).unwrap(),
             Some(TokenUrl::new("https://discordapp.com/api/oauth2/token".to_string()).unwrap())
         )
-        .set_redirect_url(RedirectUrl::from_url(redirect_url))
+        .set_redirect_uri(RedirectUrl::from_url(redirect_url))
     }
 
     fn make_user_info_url(&self, user_id: &str) -> String {

@@ -36,7 +36,7 @@ impl AuthProvider for GoogleAuthProvider {
             AuthUrl::new("https://accounts.google.com/o/oauth2/v2/auth".to_string()).unwrap(),
             Some(TokenUrl::new("https://oauth2.googleapis.com/token".to_string()).unwrap())
         )
-        .set_redirect_url(RedirectUrl::from_url(redirect_url))
+        .set_redirect_uri(RedirectUrl::from_url((redirect_url)))
     }
 
     fn make_user_info_url(&self, user_id: &str) -> String {
