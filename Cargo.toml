@@ -6,6 +6,7 @@ edition = "2018"
 publish = false
 
 [dependencies]
+#tokio = "0.2"
 actix-web = "3.3"
 actix-rt = "1.1"
 actix-identity = "0.3"
@@ -17,7 +18,7 @@ serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
 futures = "0.3"
-envconfig = "0.9"
+envconfig = "0.10"
 log = "0.4"
 env_logger = "0.8"
 chrono = "0.4"
@@ -26,14 +27,14 @@ result = "1.0"
 regex = "1.4"
 lazy_static = "1.4"
 rand = "0.8"
-oauth2 = "4.0.0-alpha.2"
+oauth2 = "=4.0.0-alpha.2" # 4.0.0 release bumps reqwest to 0.11 which bumps tokio to 1.0, which is incompat with actix-rt
 anyhow = "1.0"
 askama = "0.10"
 askama_actix = "0.11"
 num_cpus = "1.13"
 
 [dependencies.rusqlite]
-version = "0.24"
+version = "0.25"
 features = ["bundled", "chrono"]
 
 [dependencies.reqwest]

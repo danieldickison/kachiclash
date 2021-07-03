@@ -4,7 +4,7 @@ use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::cmp::max;
 use std::result::Result as StdResult;
-use rusqlite::{Connection, NO_PARAMS, Result as SqlResult, Transaction};
+use rusqlite::{Connection, Result as SqlResult, Transaction, params_from_iter};
 use rusqlite::types::{ToSql, ToSqlOutput, ValueRef, FromSql, FromSqlResult};
 use chrono::naive::{NaiveDate, NaiveDateTime};
 use chrono::offset::Utc;
@@ -86,7 +86,7 @@ impl BashoInfo {
                 GROUP BY basho.id
                 ORDER BY basho.id DESC")?
             .query_map(
-                NO_PARAMS,
+                [],
                 |row| {
                     let basho_id = row.get("id")?;
                     Ok(BashoInfo {
@@ -319,7 +319,7 @@ pub fn update_basho(db: &mut Connection, basho_id: BashoId, venue: &str, start_d
     let mut ambiguous_shikona = Vec::<String>::new();
     txn.prepare(query_str.as_str())?
         .query_map(
-            banzuke.iter().map(|(name, _)| name),
+            params_from_iter(banzuke.iter().map(|(name, _)| name)),
             |row| {
                 let id: i64 = row.get("id")?;
                 let family_name: String = row.get("family_name")?;

@@ -69,7 +69,7 @@ impl BashoPlayerResults {
                 ORDER BY is_self DESC, wins DESC, player.id ASC
                 LIMIT :limit
             ").unwrap()
-            .query_map_named(
+            .query_map(
                 named_params! {
                     ":basho_id": basho_id,
                     ":player_id": player_id,

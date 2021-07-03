@@ -1,4 +1,4 @@
-use rusqlite::{Row, Connection, OptionalExtension, ErrorCode, Error as SqlError, Result as SqlResult, NO_PARAMS};
+use rusqlite::{Row, Connection, OptionalExtension, ErrorCode, Error as SqlError, Result as SqlResult};
 use chrono::{DateTime, Utc};
 
 use crate::external::{discord, ImageSize, AuthProvider, UserInfo};
@@ -60,7 +60,7 @@ impl Player {
         db.prepare("
                 SELECT * FROM player_info
             ").unwrap()
-            .query_map(NO_PARAMS, |row| Player::from_row(row))
+            .query_map([], |row| Player::from_row(row))
             .map(|mapped_rows| {
                 mapped_rows.map(|r| r.unwrap()).collect::<Vec<Player>>()
             })
