@@ -143,10 +143,10 @@ impl Player {
         }
     }
 
-    pub async fn update_image(&self, db: &mut Connection)
+    pub async fn update_image(&self, _db: &mut Connection)
         -> Result<()> {
 
-        let auth = self.login_service_provider()?;
+        let _auth = self.login_service_provider()?;
 
 
         Ok(())
