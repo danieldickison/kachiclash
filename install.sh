@@ -12,3 +12,4 @@ sudo install -v \
     /storage/kachiclash.com
 
 sudo systemctl restart kachiclash
+sudo systemctl restart kachiclash-levelone
