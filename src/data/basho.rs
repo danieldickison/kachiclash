@@ -281,14 +281,12 @@ pub fn save_player_picks(db: &mut Connection, player_id: PlayerId, basho_id: Bas
         DELETE FROM pick
         WHERE player_id = ? AND basho_id = ?",
         params![player_id, basho_id])?;
-    for rikishi_id in &picks {
-        if let Some(rikishi_id) = rikishi_id {
-            debug!("inserting player {} pick {} for {}", player_id, rikishi_id, basho_id);
-            txn.execute("
-                INSERT INTO pick (player_id, basho_id, rikishi_id)
-                VALUES (?, ?, ?)",
-                params![player_id, basho_id, rikishi_id])?;
-        }
+    for rikishi_id in picks.iter().flatten() {
+        debug!("inserting player {} pick {} for {}", player_id, rikishi_id, basho_id);
+        txn.execute("
+            INSERT INTO pick (player_id, basho_id, rikishi_id)
+            VALUES (?, ?, ?)",
+            params![player_id, basho_id, rikishi_id])?;
     }
     txn.commit()?;
 

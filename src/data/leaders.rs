@@ -165,14 +165,12 @@ fn make_min_max_results(rikishi: Arc<HashMap<RikishiId, BashoRikishi>>)
 fn picks_to_days(picks: &[Option<&BashoRikishi>; 5]) -> ([Option<u8>; 15], u8) {
     let mut days = [None; 15];
     let mut total_validation = 0;
-    for pick in picks {
-        if let Some(r) = pick {
-            for (day, win) in r.results.iter().enumerate() {
-                if let Some(win) = win {
-                    let incr = if *win { 1 } else { 0 };
-                    days[day] = Some(days[day].unwrap_or(0) + incr);
-                    total_validation += incr;
-                }
+    for pick in picks.iter().flatten() {
+        for (day, win) in pick.results.iter().enumerate() {
+            if let Some(win) = win {
+                let incr = if *win { 1 } else { 0 };
+                days[day] = Some(days[day].unwrap_or(0) + incr);
+                total_validation += incr;
             }
         }
     }

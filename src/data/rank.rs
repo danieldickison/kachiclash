@@ -21,9 +21,9 @@ impl fmt::Display for RankError {
 
 impl Error for RankError {}
 
-impl Into<FromSqlError> for RankError {
-    fn into(self) -> FromSqlError {
-        FromSqlError::Other(Box::new(self))
+impl From<RankError> for FromSqlError {
+    fn from(e: RankError) -> Self {
+        Self::Other(Box::new(e))
     }
 }
 

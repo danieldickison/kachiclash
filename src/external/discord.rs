@@ -134,7 +134,7 @@ pub fn avatar_url(user_id: &str, avatar: &Option<String>, discriminator: &str, e
     if let Some(hash) = &avatar {
         base.join(&format!("avatars/{}/{}.{}?size={}", user_id, hash, ext, size as i32)[..]).unwrap()
     } else {
-        let discrim = u16::from_str_radix(discriminator, 10).unwrap_or(0) % 5;
+        let discrim = str::parse(discriminator).unwrap_or(0) % 5;
         base.join(&format!("embed/avatars/{}.png?size={}", discrim, size as i32)[..]).unwrap()
     }
 }
