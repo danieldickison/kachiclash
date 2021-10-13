@@ -50,7 +50,7 @@ pub async fn run(config: Config) -> std::io::Result<()> {
                 middleware::DefaultHeaders::new()
                     .header("Content-Type", "text/html; charset=utf-8"),
             )
-            .service(Files::new("/static", &config.static_path))
+            .service(Files::new("/static", &config.static_path).prefer_utf8(true))
             .service(web::resource("/").to(handlers::index::index))
             .service(web::resource("/logout").to(handlers::login::logout))
             .service(
