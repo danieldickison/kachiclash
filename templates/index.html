@@ -13,7 +13,10 @@
     {% when Some with (basho) %}
         <section id="next-basho">
             <a href="{{basho.link_url()}}">
-                <img src="2021-Current-Tournament.png" alt="Enter current tournament">
+                <img class="button-link"
+                    alt="Enter current tournament"
+                    src="/static/img2/2021-Current-Tournament.png"
+                    width="1801" height="388">
             </a>
             {% if !basho.has_started() %}
                 <p>
@@ -23,6 +26,9 @@
             {% endif %}
         </section>
     {% when None %}
+        {% if base.is_admin() %}
+            <p>Admin: <a href="{{next_basho_id.url_path()}}/edit">enter banzuke for {{next_basho_id}}</a></p>
+        {% endif %}
     {% endmatch %}
 
     {% match prev_basho %}

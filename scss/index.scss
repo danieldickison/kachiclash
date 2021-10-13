@@ -1,16 +1,16 @@
+@use 'media';
+
 #p-index {
     section {
         background: none;
         border: none;
+        margin: 0;
     }
 
     #next-basho {
         .button-link {
-            font-size: 2rem;
-            padding: 0.5rem;
-            background: var(--color-navy);
-            color: var(--color-light-fg);
-            border: solid 1px var(--color-border);
+            width: 100%;
+            height: auto;
         }
     }
 
@@ -28,9 +28,9 @@
 
         .winners {
             position: relative;
-            margin-left: 210px;
-            margin-top: 160px;
-            padding-right: 100px;
+            margin-left: min(210px, 23%);
+            margin-top: min(160px, 15%);
+            padding-right: min(100px, 10%);
             padding-bottom: 50px;
             font-size: 1.75rem;
             display: flex;
@@ -38,6 +38,14 @@
             align-items: baseline;
             justify-content: center;
             z-index: 2;
+
+            @media (max-width: media.$medium-width) {
+                font-size: 1.5rem;
+            }
+
+            @media (max-width: media.$narrow) {
+                font-size: 1.25rem;
+            }
         }
     }
 
