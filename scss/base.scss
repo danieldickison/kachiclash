@@ -11,7 +11,7 @@
     --color-gray-fg: #666;
     --color-gray-bg: #dadbdd;
     --color-light-bg: rgba(255, 255, 255, 0.6);
-    --colog-dark-bg: #333;
+    --color-dark-bg: #111;
     --color-light-blue-bg: rgba(242, 250, 255, 0.7);
     --color-light-yellow-bg: rgba(255, 248, 224, 0.7);
     --color-border: rgba(0, 0, 0, 0.125);
@@ -41,7 +41,7 @@ html {
 body {
     font-family: "Helvetica Neue", sans-serif;
     color: #333;
-    background-color: var(--color-gray-bg);
+    background-color: var(--color-dark-bg);
     background-image: url(/static/img2/2021-BG.jpg);
     background-attachment: fixed;
     background-repeat: no-repeat;
