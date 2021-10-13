@@ -89,6 +89,7 @@ impl BashoInfo {
                 FROM basho
                 LEFT JOIN basho_result AS br ON br.basho_id = basho.id
                 LEFT JOIN external_basho_result AS ebr ON ebr.basho_id = basho.id
+                GROUP BY basho.id
                 ORDER BY basho.id DESC
                 LIMIT 2")?;
         let mut infos = stmt.query_map(
