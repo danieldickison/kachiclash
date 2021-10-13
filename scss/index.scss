@@ -1,4 +1,9 @@
 #p-index {
+    section {
+        background: none;
+        border: none;
+    }
+
     #next-basho {
         .button-link {
             font-size: 2rem;
@@ -10,14 +15,31 @@
     }
 
     #prev-winners {
-        .basho-list {
-            border: 3px solid var(--color-mauve);
+        h2 {
+            position: absolute;
+            z-index: 1;
+        }
 
-            td {
-                padding: 0.25rem 0.5rem;
-            }
+        h2 > img {
+            width: 100%;
+            height: auto;
+        }
+
+        .winners {
+            position: relative;
+            padding-right: 100px;
+            padding-left: 210px;
+            padding-top: 160px;
+            padding-bottom: 50px;
+            font-size: 1.75rem;
+            display: flex;
+            flex-flow: row;
+            align-items: baseline;
+            justify-content: center;
+            z-index: 2;
         }
     }
+
 
     #leaderboard {
         background: var(--color-light-blue-bg);

@@ -9,74 +9,39 @@
 {% block main %}
     <a id="g-hero" href="/"></a>
 
-    {% match basho_list.first() %}
+    {% match current_basho %}
     {% when Some with (basho) %}
-        {% if basho.has_started() %}
-            <section id="next-basho">
-                <h2>The Current Basho is {{basho.id}}</h2>
-                <a class="button-link" href="{{basho.link_url()}}">View Results</a>
-
-                {% if base.is_admin() %}
-                    <p>Admin: <a href="{{next_basho_id.url_path()}}/edit">enter banzuke for {{next_basho_id}}</a></p>
-                {% endif %}
-            </section>
-        {% else %}
-            {% include "rules.html" %}
-            <section id="next-basho">
-                <h2>The Next Basho is {{basho.id}}</h2>
+        <section id="next-basho">
+            <a href="{{basho.link_url()}}">
+                <img src="2021-Current-Tournament.png" alt="Enter current tournament">
+            </a>
+            {% if !basho.has_started() %}
                 <p>
-                    Time remaining:
+                    Time remaining to enter your picks:
                     <span class="js-basho-count-down" data-start-date="{{basho.start_date.timestamp_millis()}}"></span>
                 </p>
-                <a class="button-link" href="{{basho.link_url()}}">Click here to enter {{basho.id}}!</a>
-            </section>
-        {% endif %}
+            {% endif %}
+        </section>
     {% when None %}
     {% endmatch %}
 
-    <section id="prev-winners">
-        <h2>Previous Emperor's Cup Winners</h2>
-        <table class="basho-list">
-            <thead>
-                <th>Basho</th>
-                <th>Players</th>
-                <th>Winner</th>
-                <th>Score</th>
-            </thead>
-            <tbody>
-                {% for basho in basho_list -%}
-                    {% if !basho.winners.is_empty() %}
-                        <tr>
-                            <td class="basho"><a href="{{basho.link_url()}}">{{basho.id}}</a></td>
-                            <td>{{basho.player_count}}</td>
-                            <td class="winner">
-                                {% for player in basho.winners -%}
-                                    {{player.render().unwrap()|safe}}
-                                    {%- if !loop.last %}, {% endif -%}
-                                {%- endfor %}
-                            </td>
-                            <td>
-                                {% match basho.winning_score %}
-                                {% when Some with (score) %}{{score}}
-                                {% when None %}
-                                {% endmatch %}
-                            </td>
-                        </tr>
-                        {% endif %}
+    {% match prev_basho %}
+    {% when Some with (basho) %}
+        <section id="prev-winners">
+            <h2><img src="/static/img2/2021-Basho-Champion.png"
+                    width="1801" height="448"
+                    alt="Congratulations to the previous basho champion"></h2>
+            <span class="winners">
+                {% for player in basho.winners -%}
+                    {{player.render().unwrap()|safe}}
+                    {%- if !loop.last %}, {% endif -%}
                 {%- endfor %}
-            </tbody>
-        </table>
-    </section>
+            </span>
+        </section>
+    {% when None %}
+    {% endmatch %}
 
     <section id="leaderboard">
-        <h2 class="leaderboard-heading">Leaderboard</h2>
-        <p>Ranked by total wins recorded in the <strong>past {{leader_basho_count}} basho</strong>.</p>
-        <p>
-            See also: past
-            {% for c in leader_basho_count_options %}
-                <a href="?b={{c}}">{{c}} basho</a>{% if !loop.last %},{% endif -%}
-            {%- endfor %}.
-        </p>
         <table class="leaderboard">
             <thead>
                 <tr>

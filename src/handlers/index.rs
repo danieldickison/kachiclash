@@ -11,9 +11,8 @@ use askama::Template;
 pub struct IndexTemplate {
     base: BaseTemplate,
     leaders: Vec<HistoricLeader>,
-    leader_basho_count: usize,
-    leader_basho_count_options: Vec<usize>,
-    basho_list: Vec<BashoInfo>,
+    current_basho: Option<BashoInfo>,
+    prev_basho: Option<BashoInfo>,
     next_basho_id: BashoId,
 }
 
@@ -24,22 +23,19 @@ pub struct QueryParams {
 
 const LEADER_BASHO_COUNT_OPTIONS: [usize; 3] = [6, 3, 2];
 
-pub async fn index(query: web::Query<QueryParams>, state: web::Data<AppState>, identity: Identity) -> Result<IndexTemplate> {
-    let leader_basho_count = query.b.unwrap_or(6);
+pub async fn index(state: web::Data<AppState>, identity: Identity) -> Result<IndexTemplate> {
     let db = state.db.lock().unwrap();
-    let basho_list = BashoInfo::list_all(&db)?;
-    let current_basho_id = basho_list.first().map(|b| b.id);
+    let (current_basho, prev_basho) = BashoInfo::current_and_previous(&db)?;
+    let next_basho_id =
+        current_basho.as_ref().or(prev_basho.as_ref())
+        .map(|basho| basho.id.next())
+        .unwrap_or_else(|| "201911".parse().unwrap());
     Ok(IndexTemplate {
         base: BaseTemplate::new(&db, &identity)?,
-        leaders: HistoricLeader::with_first_basho(&db, nth_completed_basho_id(&basho_list, leader_basho_count - 1), 100)?,
-        leader_basho_count,
-        leader_basho_count_options: LEADER_BASHO_COUNT_OPTIONS.iter().copied()
-            .filter(|c| *c != leader_basho_count)
-            .collect(),
-        basho_list,
-        next_basho_id: current_basho_id
-            .map(|id| id.next_honbasho())
-            .unwrap_or_else(|| "201911".parse().unwrap()),
+        leaders: HistoricLeader::with_first_basho(&db, prev_basho.as_ref().map(|basho| basho.id.incr(-5)), 270)?,
+        current_basho,
+        prev_basho,
+        next_basho_id
     })
 }
 

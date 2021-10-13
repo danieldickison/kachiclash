@@ -4,6 +4,7 @@ use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::cmp::max;
 use std::result::Result as StdResult;
+use result::ResultIteratorExt;
 use rusqlite::{Connection, Result as SqlResult, Transaction, params_from_iter};
 use rusqlite::types::{ToSql, ToSqlOutput, ValueRef, FromSql, FromSqlResult};
 use chrono::naive::{NaiveDate, NaiveDateTime};
@@ -65,6 +66,56 @@ impl BashoInfo {
                          }
                      })
             .map_err(|e| e.into())
+    }
+
+    pub fn current_and_previous(db: &Connection) -> Result<(Option<BashoInfo>, Option<BashoInfo>)> {
+         let mut stmt = db.prepare("
+                SELECT
+                    basho.id,
+                    basho.start_date,
+                    basho.venue,
+                    ebr.url AS external_link,
+                    CASE
+                        WHEN ebr.basho_id IS NULL THEN
+                            CASE
+                                WHEN COUNT(br.player_id) = 0 THEN (
+                                    SELECT COUNT(DISTINCT player_id) FROM pick AS p WHERE p.basho_id = basho.id
+                                )
+                                ELSE COUNT(*)
+                            END
+                        ELSE ebr.players
+                    END AS player_count,
+                    COALESCE(MAX(br.wins), ebr.winning_score) AS winning_score
+                FROM basho
+                LEFT JOIN basho_result AS br ON br.basho_id = basho.id
+                LEFT JOIN external_basho_result AS ebr ON ebr.basho_id = basho.id
+                ORDER BY basho.id DESC
+                LIMIT 2")?;
+        let mut infos = stmt.query_map(
+            [],
+            |row| {
+                let basho_id = row.get("id")?;
+                 Ok(BashoInfo {
+                     id: basho_id,
+                     start_date: row.get("start_date")?,
+                     venue: row.get("venue")?,
+                     external_link: row.get("external_link")?,
+                     player_count: row.get::<_, u32>("player_count")? as usize,
+                     winning_score: row.get("winning_score")?,
+                     winners: BashoInfo::fetch_basho_winners(&db, basho_id)?,
+                 })
+             })?;
+        let first = infos.next_invert()?;
+        let second = infos.next_invert()?;
+        if let Some(f) = &first {
+            if f.winners.is_empty() {
+                Ok((first, second))
+            } else {
+                Ok((None, first))
+            }
+        } else {
+            Ok((None, None))
+        }
     }
 
     pub fn list_all(db: &Connection) -> Result<Vec<BashoInfo>> {
@@ -136,6 +187,7 @@ impl BashoInfo {
                 FROM award AS a
                 JOIN player_info AS p ON p.id = a.player_id
                 WHERE a.type = ?
+                ORDER BY basho_id DESC
             ")?;
         let rows = stmt.query_map(params![Award::EmperorsCup], |row| {
                 Ok((row.get::<_, BashoId>("basho_id")?, Player::from_row(row)?))
@@ -183,19 +235,26 @@ impl BashoId {
         format!("{}", date.format("%B"))
     }
 
-    pub fn next_honbasho(self) -> BashoId {
-        let next_month = self.month + 2;
-        if next_month > 12 {
-            BashoId {
-                year: self.year + 1,
-                month: 1,
-            }
-        } else {
-            BashoId {
-                year: self.year,
-                month: next_month,
-            }
+    pub fn next(self) -> BashoId {
+        self.incr(1)
+    }
+
+    pub fn incr(self, count: isize) -> BashoId {
+        self.incr_month(count * 2)
+    }
+
+    fn incr_month(self, months: isize) -> BashoId {
+        let mut year = self.year;
+        let mut month = (self.month as isize) + months;
+        while month > 12 {
+            year += 1;
+            month -= 12;
         }
+        while month < 1 {
+            year -= 1;
+            month += 12;
+        }
+        BashoId {year, month: month as u8}
     }
 }
 
