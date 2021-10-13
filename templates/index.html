@@ -28,9 +28,13 @@
     {% match prev_basho %}
     {% when Some with (basho) %}
         <section id="prev-winners">
-            <h2><img src="/static/img2/2021-Basho-Champion.png"
-                    width="1801" height="448"
-                    alt="Congratulations to the previous basho champion"></h2>
+            <h2>
+                <a href="{{basho.link_url()}}">
+                    <img src="/static/img2/2021-Basho-Champion.png"
+                        width="1801" height="448"
+                        alt="Congratulations to the previous basho champion">
+                </a>
+            </h2>
             <span class="winners">
                 {% for player in basho.winners -%}
                     {{player.render().unwrap()|safe}}

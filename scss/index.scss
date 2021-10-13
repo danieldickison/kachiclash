@@ -18,18 +18,19 @@
         h2 {
             position: absolute;
             z-index: 1;
-        }
+            margin: 0;
 
-        h2 > img {
-            width: 100%;
-            height: auto;
+            img {
+                width: 100%;
+                height: auto;
+            }
         }
 
         .winners {
             position: relative;
+            margin-left: 210px;
+            margin-top: 160px;
             padding-right: 100px;
-            padding-left: 210px;
-            padding-top: 160px;
             padding-bottom: 50px;
             font-size: 1.75rem;
             display: flex;
