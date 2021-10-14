@@ -20,6 +20,7 @@
     --color-table-highlight-bg: #ffc;
     --color-table-highlight-outline: #ec0;
 
+    --content-max-width: 950px;
     --section-padding: 1rem;
     --header-height: 28px;
 
@@ -135,7 +136,7 @@ section {
 
 body > main {
     width: 100%;
-    max-width: 950px;
+    max-width: var(--content-max-width);
     flex-grow: 1;
     margin: var(--header-height) auto 15rem auto;
 }

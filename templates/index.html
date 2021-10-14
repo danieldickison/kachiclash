@@ -52,41 +52,48 @@
     {% endmatch %}
 
     <section id="leaderboard">
-        <table class="leaderboard">
-            <thead>
-                <tr>
-                    <th rowspan="2">Rank</th>
-                    <th rowspan="2">Player</th>
-                    <th colspan="3" class="border-left">Basho Ranks</th>
-                    <th colspan="4" class="border-left">Wins</th>
-                </tr>
-                <tr>
-                    <th class="border-left">best</th>
-                    <th>worst</th>
-                    <th>avg</th>
-                    <th class="border-left">most</th>
-                    <th>least</th>
-                    <th>avg</th>
-                    <th>total</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for leader in leaders %}
-                <tr>
-                    <td class="rank">{{leader.rank}}</td>
-                    <td>{{leader.player.render().unwrap()|safe}}</td>
-                    <td class="num border-left">{% call numeric_stat(leader.ranks.min) %}</td>
-                    <td class="num">{% call numeric_stat(leader.ranks.max) %}</td>
-                    <td class="num">{% call numeric_stat(leader.ranks.mean) %}</td>
-                    <td class="num border-left">{% call numeric_stat(leader.wins.max) %}</td>
-                    <td class="num">{% call numeric_stat(leader.wins.min) %}</td>
-                    <td class="num">{% call numeric_stat(leader.wins.mean) %}</td>
-                    <td class="num sort-key">{% call numeric_stat(leader.wins.total) %}</td>
-                </tr>
-            {% endfor %}
-                
-            </tbody>
-        </table>
+        <picture class="background">
+            <source src="/static/img2/2021-Player-Rankings.webp" type="image/webp">
+            <img src="/static/img2/2021-Player-Rankings.png" width="1059" height="1301">
+        </picture>
+        
+        <div class="scroll-container">
+            <table class="leaderboard">
+                <thead>
+                    <tr>
+                        <th rowspan="2">Rank</th>
+                        <th rowspan="2">Player</th>
+                        <th colspan="3" class="border-left">Basho Ranks</th>
+                        <th colspan="4" class="border-left">Wins</th>
+                    </tr>
+                    <tr>
+                        <th class="border-left">best</th>
+                        <th>worst</th>
+                        <th>avg</th>
+                        <th class="border-left">most</th>
+                        <th>least</th>
+                        <th>avg</th>
+                        <th>total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for leader in leaders %}
+                    <tr>
+                        <td class="rank">{{leader.rank}}</td>
+                        <td>{{leader.player.render().unwrap()|safe}}</td>
+                        <td class="num border-left">{% call numeric_stat(leader.ranks.min) %}</td>
+                        <td class="num">{% call numeric_stat(leader.ranks.max) %}</td>
+                        <td class="num">{% call numeric_stat(leader.ranks.mean) %}</td>
+                        <td class="num border-left">{% call numeric_stat(leader.wins.max) %}</td>
+                        <td class="num">{% call numeric_stat(leader.wins.min) %}</td>
+                        <td class="num">{% call numeric_stat(leader.wins.mean) %}</td>
+                        <td class="num sort-key">{% call numeric_stat(leader.wins.total) %}</td>
+                    </tr>
+                {% endfor %}
+                    
+                </tbody>
+            </table>
+        </div>
     </section>
 {% endblock %}
 
