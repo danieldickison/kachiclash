@@ -13,6 +13,12 @@
         .button-link {
             width: 100%;
             height: auto;
+            transition: transform ease-out 100ms;
+
+            &:hover {
+                transform: scale(1.04);
+                transition: transform ease-out 200ms;
+            }
         }
     }
 
