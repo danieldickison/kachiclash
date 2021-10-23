@@ -11,7 +11,7 @@ use oauth2::{
     RedirectUrl,
     TokenUrl
 };
-use oauth2::basic::{BasicClient};
+use oauth2::basic::BasicClient;
 use super::{AuthProvider, UserInfo, ImageSize};
 use rusqlite::Transaction;
 use chrono::{DateTime, Utc};

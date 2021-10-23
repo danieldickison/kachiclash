@@ -1,6 +1,6 @@
 
 use crate::data::{self, basho, Rank, BashoId, PlayerId, Award, DataError, Player};
-use crate::{AppState};
+use crate::AppState;
 use crate::external::AuthProvider;
 use crate::external::discord::DiscordAuthProvider;
 use crate::external::google::GoogleAuthProvider;

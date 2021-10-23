@@ -16,11 +16,6 @@ pub struct IndexTemplate {
     next_basho_id: BashoId,
 }
 
-#[derive(Deserialize)]
-pub struct QueryParams {
-    b: Option<usize>
-}
-
 const LEADER_BASHO_COUNT_OPTIONS: [usize; 3] = [6, 3, 2];
 
 pub async fn index(state: web::Data<AppState>, identity: Identity) -> Result<IndexTemplate> {

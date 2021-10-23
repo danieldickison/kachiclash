@@ -1,11 +1,11 @@
 use oauth2::{RedirectUrl, TokenUrl, ClientId, ClientSecret, AuthUrl};
-use oauth2::basic::{BasicClient};
+use oauth2::basic::BasicClient;
 use rusqlite::{Transaction, Error};
 use chrono::{Utc, DateTime};
 use async_trait::async_trait;
 
 use crate::Config;
-use crate::data::{PlayerId};
+use crate::data::PlayerId;
 use super::AuthProvider;
 use crate::external::UserInfo;
 

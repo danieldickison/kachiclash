@@ -16,7 +16,7 @@ use askama::Template;
 use super::{HandlerError, BaseTemplate, Result};
 use crate::{AppState, Config};
 use crate::data::player;
-use crate::external::{AuthProvider};
+use crate::external::AuthProvider;
 use crate::external::google::GoogleAuthProvider;
 use crate::external::discord::DiscordAuthProvider;
 use crate::external::reddit::RedditAuthProvider;
