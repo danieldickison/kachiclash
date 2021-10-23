@@ -14,7 +14,7 @@ use serde::{Deserialize, Deserializer};
 use itertools::Itertools;
 
 use super::{Result, DataError, PlayerId, Player, RikishiId, Rank, RankGroup, RankSide, Day, Award};
-use crate::data::leaders::{Rankable, assign_rank};
+use crate::data::leaders::{Rankable, assign_ord};
 
 pub struct BashoInfo {
     pub id: BashoId,
@@ -709,8 +709,8 @@ impl Rankable for BashoPlayerScore {
         self.wins as i32
     }
 
-    fn set_rank(&mut self, rank: usize) {
-        self.rank = rank
+    fn set_ord(&mut self, ord: usize) {
+        self.rank = ord
     }
 }
 
@@ -738,7 +738,7 @@ impl BashoPlayerScore {
                 }
             )?
             .collect::<SqlResult<_>>()?;
-        assign_rank(&mut players.iter_mut());
+        assign_ord(&mut players.iter_mut());
         Ok(players)
     }
 }

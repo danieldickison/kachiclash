@@ -37,6 +37,19 @@ pub enum RankName {
     Juryo,
 }
 
+impl RankName {
+    fn next(self) -> Option<Self> {
+        match self {
+            RankName::Yokozuna  => Some(Self::Ozeki),
+            RankName::Ozeki     => Some(Self::Sekiwake),
+            RankName::Sekiwake  => Some(Self::Komusubi),
+            RankName::Komusubi  => Some(Self::Maegashira),
+            RankName::Maegashira=> Some(Self::Juryo),
+            RankName::Juryo     => None,
+        }
+    }
+}
+
 impl fmt::Display for RankName {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", match self {
@@ -154,12 +167,61 @@ pub struct Rank {
 }
 
 impl Rank {
+    pub fn top() -> Self {
+        Self {
+            name: RankName::Yokozuna,
+            number: 1,
+            side: RankSide::East,
+        }
+    }
+
     pub fn group(self) -> RankGroup {
         RankGroup::for_rank(self.name, self.number)
     }
 
     pub fn is_makuuchi(self) -> bool {
         self.name <= RankName::Maegashira
+    }
+
+    pub fn next_lower(self) -> Self {
+        match self {
+            Self {
+                name: RankName::Yokozuna | RankName::Ozeki | RankName::Sekiwake | RankName::Komusubi,
+                side: RankSide::West,
+                ..
+            } => Self {
+                name: self.name.next().unwrap(),
+                side: RankSide::East,
+                number: 1,
+            },
+
+            Self {
+                name: RankName::Maegashira,
+                side: RankSide::West,
+                number: 17,
+            } => Self {
+                name: RankName::Juryo,
+                side: RankSide::East,
+                number: 1,
+            },
+
+            Self {
+                side: RankSide::East,
+                ..
+            } => Self {
+                name: self.name,
+                side: RankSide::West,
+                number: self.number,
+            },
+
+            _ => {
+                Self {
+                    name: self.name,
+                    side: RankSide::East,
+                    number: self.number + 1,
+                }
+            }
+        }
     }
 }
 

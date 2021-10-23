@@ -22,6 +22,7 @@ mod data;
 mod handlers;
 mod server;
 mod external;
+mod util;
 
 
 #[derive(Envconfig)]

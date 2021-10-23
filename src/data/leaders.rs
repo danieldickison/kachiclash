@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 use rusqlite::{Connection, Result as SqlResult};
 
-use super::{Result, PlayerId, Player, RikishiId, BashoId, BashoRikishi};
+use super::{BashoId, BashoRikishi, Player, PlayerId, Rank, RankName, RankSide, Result, RikishiId};
+use crate::util::GroupRuns;
 use std::sync::Arc;
 
 pub struct BashoPlayerResults {
@@ -181,7 +182,8 @@ fn picks_to_days(picks: &[Option<&BashoRikishi>; 5]) -> ([Option<u8>; 15], u8) {
 #[derive(Debug)]
 pub struct HistoricLeader {
     pub player: Player,
-    pub rank: usize,
+    pub ord: usize,
+    pub rank: Rank,
     pub wins: NumericStats,
     pub ranks: NumericStats,
 }
@@ -199,8 +201,8 @@ impl Rankable for HistoricLeader {
         self.wins.total.unwrap_or(0) as i32
     }
 
-    fn set_rank(&mut self, rank: usize) {
-        self.rank = rank;
+    fn set_ord(&mut self, ord: usize) {
+        self.ord = ord;
     }
 }
 
@@ -238,7 +240,8 @@ impl HistoricLeader {
                 params![first_basho, first_basho, player_limit],
                 |row| Ok(Self {
                     player: Player::from_row(&row)?,
-                    rank: 0,
+                    ord: 0,
+                    rank: Rank::top(),
                     wins: NumericStats {
                         total: row.get("total_wins")?,
                         min: row.get("min_wins")?,
@@ -254,28 +257,69 @@ impl HistoricLeader {
                 })
             )?
             .collect::<Result<Vec<Self>>>()?;
-        assign_rank(&mut leaders.iter_mut());
+        assign_ord(&mut leaders.iter_mut());
+        assign_rank(&mut leaders);
         Ok(leaders)
     }
 }
 
 pub trait Rankable {
     fn get_score(&self) -> i32;
-    fn set_rank(&mut self, rank: usize);
+    fn set_ord(&mut self, ord: usize);
 }
 
-pub fn assign_rank<'a, I, R: 'a>(iter: &'a mut I)
+pub fn assign_ord<'a, I, R: 'a>(iter: &'a mut I)
 where
     I: Iterator<Item=&'a mut R>,
     R: Rankable
 {
     let mut last_score = i32::min_value();
-    let mut last_rank = 1;
+    let mut ord = 1;
+
     for (i, r) in iter.enumerate() {
         if r.get_score() != last_score {
             last_score = r.get_score();
-            last_rank = i + 1;
+            ord = i + 1;
         }
-        r.set_rank(last_rank);
+        r.set_ord(ord);
+    }
+}
+
+fn assign_rank(leaders: &mut [HistoricLeader]) {
+    let mut rank = Rank {name: RankName::Yokozuna, side: RankSide::East, number: 1};
+    let mut count = 0;
+    let mut iter = leaders.group_runs(|a, b| a.ord == b.ord).peekable();
+    while let Some(group) = iter.next() {
+        for leader in group.iter_mut() {
+            leader.rank = rank;
+        }
+        count = count + group.len();
+
+        let next_len = iter.peek().map_or(0, |next| next.len());
+        let RankPlayerCounts {minimum, preferred} = RankPlayerCounts::for_rank(rank);
+        if count >= preferred ||
+            (count >= minimum && count + next_len > preferred)
+        {
+            rank = rank.next_lower();
+            count = 0;
+        }
+    }
+}
+
+struct RankPlayerCounts {
+    minimum: usize,
+    preferred: usize,
+}
+
+impl RankPlayerCounts {
+    fn for_rank(rank: Rank) -> Self {
+        match rank.name {
+            RankName::Yokozuna  => Self {minimum: 1, preferred: 1},
+            RankName::Ozeki     => Self {minimum: 1, preferred: 2},
+            RankName::Sekiwake  => Self {minimum: 1, preferred: 4},
+            RankName::Komusubi  => Self {minimum: 1, preferred: 4},
+            RankName::Maegashira=> Self {minimum: 3, preferred: 4},
+            RankName::Juryo     => Self {minimum: 4, preferred: 4},
+        }
     }
 }
