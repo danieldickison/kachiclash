@@ -138,7 +138,7 @@ body > main {
     width: 100%;
     max-width: var(--content-max-width);
     flex-grow: 1;
-    margin: var(--header-height) auto 15rem auto;
+    margin: var(--header-height) auto 0 auto;
 }
 
 #g-hero {
@@ -174,6 +174,10 @@ body > main {
     background: #662045;
     border-top: solid 1px #33002a;
     color: #ccc;
+    display: flex;
+    flex-flow: row wrap;
+    align-items: baseline;
+    justify-content: space-between;
 
     > ul {
         list-style: none;
@@ -188,6 +192,11 @@ body > main {
         a {
             color: inherit;
         }
+    }
+
+    > .dbox-donation-button {
+        float: right;
+        display: block;
     }
 }
 
