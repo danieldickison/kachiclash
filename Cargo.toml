@@ -1,8 +1,8 @@
 [package]
 name = "kachiclash"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Daniel Dickison <kachiclash@danieldickison.com>"]
-edition = "2018"
+edition = "2021"
 publish = false
 
 [dependencies]

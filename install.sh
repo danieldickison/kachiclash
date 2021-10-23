@@ -1,6 +1,6 @@
 #!/bin/sh
 
-cargo build --bin=server --release
+cargo build --bin=server --release || exit
 
 sudo rsync -rv public /storage/kachiclash.com/
 sudo chown -R kachiclash:kachiclash /storage/kachiclash.com/public
