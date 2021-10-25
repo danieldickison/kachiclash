@@ -139,6 +139,7 @@ body > main {
     max-width: var(--content-max-width);
     flex-grow: 1;
     margin: var(--header-height) auto 0 auto;
+    z-index: 0;
 }
 
 #g-hero {
@@ -171,18 +172,19 @@ body > main {
     width: 100%;
     margin: 0;
     padding: 10px;
-    background: #662045;
+    background-color: var(--color-dark-bg);
     border-top: solid 1px #33002a;
     color: #ccc;
     display: flex;
     flex-flow: row wrap;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
 
     > ul {
         list-style: none;
         margin: 0;
         padding: 0;
+        flex: 1 1;
         
         > li {
             display: inline-block;
@@ -195,7 +197,6 @@ body > main {
     }
 
     > .dbox-donation-button {
-        float: right;
         display: block;
     }
 }

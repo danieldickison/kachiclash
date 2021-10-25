@@ -100,6 +100,9 @@
             display: grid;
             grid-template-columns: [east] 50% [mid] 50% [west];
             grid-auto-flow: row;
+            border-bottom: 1px solid var(--color-border);
+            padding-bottom: 1em;
+            margin-bottom: 1em;
 
             .group {
                 &.e {
@@ -147,6 +150,18 @@
                         content: '#';
                     }
                 }
+            }
+        }
+
+        .all-stats {
+            display: block;
+            text-align: right;
+            font-size: larger;
+            font-weight: bolder;
+            color: var(--color-mauve);
+
+            &::after {
+                content: ' ➡';
             }
         }
     }
