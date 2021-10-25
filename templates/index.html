@@ -60,19 +60,19 @@
         <div class="scroll-container">
             <div class="grid">
             {% for (rank, players) in self.leaders_by_rank() %}
-                <div class="group">
+                <div class="group {{rank.side}}">
                     <h3>{{rank}}</h3>
-                    <ol>
+                    <ol class="players">
                     {% for player in players %}
                         <li>
+                            <span class="ord">
+                                {{-player.ord-}}
+                            </span>
                             <span class="player">
                                 {{player.player.render().unwrap()|safe}}
                             </span>
                             <span class="wins">
                                 {%- call numeric_stat(player.wins.total) -%}
-                            </span>
-                            <span class="ord">
-                                {{-player.ord-}}
                             </span>
                         </li>
                     {% endfor %}
@@ -80,6 +80,8 @@
                 </div>
             {% endfor %}
             </div>
+
+            <a href="/stats">See all stats</a>
         </div>
     </section>
 {% endblock %}
