@@ -201,7 +201,7 @@ impl Rankable for HistoricLeader {
         self.wins.total.unwrap_or(0) as i32
     }
 
-    fn set_ord(&mut self, ord: usize) {
+    fn set_rank(&mut self, ord: usize) {
         self.ord = ord;
     }
 }
@@ -258,14 +258,35 @@ impl HistoricLeader {
             )?
             .collect::<Result<Vec<Self>>>()?;
         assign_ord(&mut leaders.iter_mut());
-        assign_rank(&mut leaders);
+        Self::assign_rank(&mut leaders);
         Ok(leaders)
+    }
+
+    fn assign_rank(leaders: &mut [HistoricLeader]) {
+        let mut rank = Rank {name: RankName::Yokozuna, side: RankSide::East, number: 1};
+        let mut count = 0;
+        let mut iter = leaders.group_runs_mut(|a, b| a.ord == b.ord).peekable();
+        while let Some(group) = iter.next() {
+            for leader in group.iter_mut() {
+                leader.rank = rank;
+            }
+            count = count + group.len();
+
+            let next_len = iter.peek().map_or(0, |next| next.len());
+            let RankPlayerCounts {minimum, preferred} = RankPlayerCounts::for_rank(rank);
+            if count >= preferred ||
+                (count >= minimum && count + next_len > preferred)
+            {
+                rank = rank.next_lower();
+                count = 0;
+            }
+        }
     }
 }
 
 pub trait Rankable {
     fn get_score(&self) -> i32;
-    fn set_ord(&mut self, ord: usize);
+    fn set_rank(&mut self, ord: usize);
 }
 
 pub fn assign_ord<'a, I, R: 'a>(iter: &'a mut I)
@@ -281,28 +302,7 @@ where
             last_score = r.get_score();
             ord = i + 1;
         }
-        r.set_ord(ord);
-    }
-}
-
-fn assign_rank(leaders: &mut [HistoricLeader]) {
-    let mut rank = Rank {name: RankName::Yokozuna, side: RankSide::East, number: 1};
-    let mut count = 0;
-    let mut iter = leaders.group_runs(|a, b| a.ord == b.ord).peekable();
-    while let Some(group) = iter.next() {
-        for leader in group.iter_mut() {
-            leader.rank = rank;
-        }
-        count = count + group.len();
-
-        let next_len = iter.peek().map_or(0, |next| next.len());
-        let RankPlayerCounts {minimum, preferred} = RankPlayerCounts::for_rank(rank);
-        if count >= preferred ||
-            (count >= minimum && count + next_len > preferred)
-        {
-            rank = rank.next_lower();
-            count = 0;
-        }
+        r.set_rank(ord);
     }
 }
 

@@ -709,7 +709,7 @@ impl Rankable for BashoPlayerScore {
         self.wins as i32
     }
 
-    fn set_ord(&mut self, ord: usize) {
+    fn set_rank(&mut self, ord: usize) {
         self.rank = ord
     }
 }

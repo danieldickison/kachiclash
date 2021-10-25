@@ -1,6 +1,8 @@
 use crate::AppState;
-use crate::data::{BashoId, BashoInfo};
+use crate::data::{BashoId, BashoInfo, Rank};
 use crate::data::leaders::HistoricLeader;
+use crate::util::GroupRuns;
+use crate::util::vec::GroupedRuns;
 use super::{BaseTemplate, Result};
 use actix_web::web;
 use actix_identity::Identity;
@@ -16,7 +18,18 @@ pub struct IndexTemplate {
     next_basho_id: BashoId,
 }
 
+impl IndexTemplate {
+    fn leaders_by_rank(&self)
+    -> Vec<(Rank, &[HistoricLeader])> {
+        self.leaders
+        .group_runs(|a, b| a.rank == b.rank)
+        .map(|group| (group.first().unwrap().rank, group))
+        .collect()
+    }
+}
+
 const LEADER_BASHO_COUNT_OPTIONS: [usize; 3] = [6, 3, 2];
+const LEADERS_LIMIT: u32 = 270;
 
 pub async fn index(state: web::Data<AppState>, identity: Identity) -> Result<IndexTemplate> {
     let db = state.db.lock().unwrap();
@@ -25,9 +38,10 @@ pub async fn index(state: web::Data<AppState>, identity: Identity) -> Result<Ind
         current_basho.as_ref().or(prev_basho.as_ref())
         .map(|basho| basho.id.next())
         .unwrap_or_else(|| "201911".parse().unwrap());
+    let first_leaders_basho = prev_basho.as_ref().map(|basho| basho.id.incr(-5));
     Ok(IndexTemplate {
         base: BaseTemplate::new(&db, &identity)?,
-        leaders: HistoricLeader::with_first_basho(&db, prev_basho.as_ref().map(|basho| basho.id.incr(-5)), 270)?,
+        leaders: HistoricLeader::with_first_basho(&db, first_leaders_basho, LEADERS_LIMIT)?,
         current_basho,
         prev_basho,
         next_basho_id
