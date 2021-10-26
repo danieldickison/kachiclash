@@ -52,14 +52,27 @@ impl RankName {
 
 impl fmt::Display for RankName {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", match self {
-            RankName::Yokozuna => 'Y',
-            RankName::Ozeki => 'O',
-            RankName::Sekiwake => 'S',
-            RankName::Komusubi => 'K',
-            RankName::Maegashira => 'M',
-            RankName::Juryo => 'J',
-        })
+        f.write_str(
+            if f.alternate() {
+                match self {
+                    RankName::Yokozuna => "Yokozuna",
+                    RankName::Ozeki => "Ozeki",
+                    RankName::Sekiwake => "Sekiwake",
+                    RankName::Komusubi => "Komusubi",
+                    RankName::Maegashira => "Maegashira",
+                    RankName::Juryo => "Juryo",
+                }
+            } else {
+                match self {
+                    RankName::Yokozuna => "Y",
+                    RankName::Ozeki => "O",
+                    RankName::Sekiwake => "S",
+                    RankName::Komusubi => "K",
+                    RankName::Maegashira => "M",
+                    RankName::Juryo => "J",
+                }
+            }
+        )
     }
 }
 
@@ -95,10 +108,19 @@ impl RankSide {
 
 impl fmt::Display for RankSide {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", match self {
-            RankSide::East => 'e',
-            RankSide::West => 'w',
-        })
+        f.write_str(
+            if f.alternate() {
+                match self {
+                    RankSide::East => "East",
+                    RankSide::West => "West",
+                }
+            } else {
+                match self {
+                    RankSide::East => "e",
+                    RankSide::West => "w",
+                }
+            }
+        )
     }
 }
 
@@ -227,7 +249,11 @@ impl Rank {
 
 impl fmt::Display for Rank {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}{}{}", self.name, self.number, self.side)
+        if f.alternate() {
+            write!(f, "{:#} {} ({:#})", self.name, self.number, self.side)
+        } else {
+            write!(f, "{}{}{}", self.name, self.number, self.side)
+        }
     }
 }
 

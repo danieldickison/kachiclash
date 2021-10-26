@@ -142,6 +142,8 @@
 
                 .ord {
                     font-size: smaller;
+                    display: inline-block;
+                    min-width: 3ex;
 
                     @media (max-width: media.$narrow) {
                         display: none;
