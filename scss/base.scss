@@ -169,12 +169,12 @@ body > main {
 }
 
 #g-footer {
+    z-index: 1;
     width: 100%;
     margin: 0;
     padding: 10px;
     background-color: var(--color-dark-bg);
-    border-top: solid 1px #33002a;
-    color: #ccc;
+    color: var(--color-light-fg);
     display: flex;
     flex-flow: row wrap;
     align-items: center;
@@ -193,6 +193,7 @@ body > main {
 
         a {
             color: inherit;
+            font-weight: normal;
         }
     }
 
