@@ -53,15 +53,16 @@
 
     <section id="leaderboard">
         <picture class="background">
-            <source src="/static/img2/2021-Player-Rankings.webp" type="image/webp">
-            <img src="/static/img2/2021-Player-Rankings.png" width="1059" height="1301">
+            <source src="/static/img2/2021-Player-Rankings2.webp" type="image/webp">
+            <img src="/static/img2/2021-Player-Rankings2.png" width="1100" height="1350">
         </picture>
         
         <div class="scroll-container">
             <div class="grid">
             {% for (rank, players) in self.leaders_by_rank() %}
                 <div class="group {{rank.side}}">
-                    <h3>{{"{:#}"|format(rank)}}</h3>
+                    <h3 class="wide">{{"{:#}"|format(rank)}}</h3>
+                    <h3 class="narrow">{{rank}}</h3>
                     <ol class="players">
                     {% for player in players %}
                         <li>
