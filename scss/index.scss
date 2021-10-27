@@ -110,11 +110,18 @@
             column-gap: 1em;
 
             .group {
-                &.e {
+                &.side-e {
                     grid-column: east / mid;
                 }
-                &.w {
+                &.side-w {
                     grid-column: mid / west;
+                }
+
+                &.rank-name-y {
+                    font-size: larger;
+                }
+                &.rank-name-j {
+                    font-size: smaller;
                 }
 
                 a {
