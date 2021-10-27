@@ -144,6 +144,11 @@
                     padding: 0;
                     > li {
                         list-style: none;
+
+                        &.self {
+                            background: var(--color-table-highlight-bg);
+                            outline: solid 2px var(--color-table-highlight-outline);
+                        }
                     }
                 }
 

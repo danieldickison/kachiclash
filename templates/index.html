@@ -58,13 +58,25 @@
         </picture>
         
         <div class="scroll-container">
+            {% match self.self_leader() %}
+            {% when Some with (leader) %}
+                <p>
+                    You are currently ranked
+                    <a href="#leaderboard-rank-{{leader.rank}}">
+                        {{"{:#}"|format(leader.rank)}}
+                    </a>
+                </p>
+            {% when None %}
+            {% endmatch %}
             <div class="grid">
             {% for (rank, players) in self.leaders_by_rank() %}
-                <div class="group side-{{rank.side}} rank-name-{{rank.name|lower}}">
+                <div id="leaderboard-rank-{{rank}}"
+                    class="group side-{{rank.side}} rank-name-{{rank.name|lower}}"
+                >
                     <h3>{{"{:#}"|format(rank)}}</h3>
                     <ol class="players">
                     {% for player in players %}
-                        <li>
+                        <li {% if self.is_self(player) %}class="self"{% endif %}>
                             <span class="ord">
                                 {{-player.ord-}}
                             </span>
