@@ -96,7 +96,7 @@
             padding: 2em 10%;
 
             @media (max-width: media.$narrow) {
-                padding: 2em 5%;
+                padding: 2em 10%;
             }
         }
 
@@ -112,9 +112,15 @@
             .group {
                 &.side-e {
                     grid-column: east / mid;
+                    @media (max-width: media.$narrow) {
+                        grid-column: east / west;
+                    }
                 }
                 &.side-w {
                     grid-column: mid / west;
+                    @media (max-width: media.$narrow) {
+                        grid-column: east / west;
+                    }
                 }
 
                 &.rank-name-y {
@@ -131,17 +137,6 @@
                 h3 {
                     text-align: center;
                     margin: 1em 0 0.25em;
-
-                    &.wide {
-                        @media (max-width: media.$narrow) {
-                            display: none;
-                        }
-                    }
-                    &.narrow {
-                        @media (min-width: media.$wide) {
-                            display: none;
-                        }
-                    }
                 }
 
                 .players {
@@ -153,9 +148,6 @@
                 }
 
                 .wins {
-                    @media (max-width: media.$narrow) {
-                        display: none;
-                    } 
                     &::before {
                         content: '(';
                     }
@@ -168,10 +160,7 @@
                     font-size: smaller;
                     display: inline-block;
                     min-width: 3ex;
-
-                    @media (max-width: media.$narrow) {
-                        display: none;
-                    } 
+                    
                     &::before {
                         content: '#';
                     }

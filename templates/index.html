@@ -61,8 +61,7 @@
             <div class="grid">
             {% for (rank, players) in self.leaders_by_rank() %}
                 <div class="group side-{{rank.side}} rank-name-{{rank.name|lower}}">
-                    <h3 class="wide">{{"{:#}"|format(rank)}}</h3>
-                    <h3 class="narrow">{{rank}}</h3>
+                    <h3>{{"{:#}"|format(rank)}}</h3>
                     <ol class="players">
                     {% for player in players %}
                         <li>
