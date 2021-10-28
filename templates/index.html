@@ -58,16 +58,19 @@
         </picture>
         
         <div class="scroll-container">
-            {% match self.self_leader() %}
-            {% when Some with (leader) %}
-                <p>
-                    You are currently ranked
+            {% if base.player.is_some() %}
+            <p class="current-rank">
+                You are currently ranked
+                {% match self.self_leader() %}
+                {% when Some with (leader) %}
                     <a href="#leaderboard-rank-{{leader.rank}}">
                         {{"{:#}"|format(leader.rank)}}
                     </a>
-                </p>
-            {% when None %}
-            {% endmatch %}
+                {% when None %}
+                    below Juryo
+                {% endmatch %}
+            </p>
+            {% endif %}
             <div class="grid">
             {% for (rank, players) in self.leaders_by_rank() %}
                 <div id="leaderboard-rank-{{rank}}"

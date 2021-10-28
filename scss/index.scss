@@ -65,6 +65,9 @@
         // compute height based on aspect ratio of bg image
         height: calc(min(100vw, var(--content-max-width)) * 1.2273);
 
+        // engraved wood appearance
+        text-shadow: rgba(255,255,255,0.5) 0 1px 1px;
+
         > .background > img {
             position: absolute;
             z-index: -1;
@@ -97,6 +100,17 @@
 
             @media (max-width: media.$narrow) {
                 padding: 2em 10%;
+            }
+        }
+
+        .current-rank {
+            margin-bottom: 0;
+
+            @media (max-width: media.$narrow) {
+                text-align: center;
+                > a {
+                    display: block;
+                }
             }
         }
 
@@ -136,7 +150,7 @@
 
                 h3 {
                     text-align: center;
-                    margin: 1em 0 0.25em;
+                    margin: 1.5em 0 0.25em;
                 }
 
                 .players {
@@ -165,7 +179,7 @@
                     font-size: smaller;
                     display: inline-block;
                     min-width: 3ex;
-                    
+
                     &::before {
                         content: '#';
                     }
