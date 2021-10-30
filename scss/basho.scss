@@ -238,6 +238,26 @@
                 &:hover .info-link {
                     opacity: 1;
                 }
+
+                &.is-player-pick {
+                    position: relative;
+                    background: var(--color-table-highlight-bg);
+                    background-clip: content-box;
+
+                    // put outline around the content area only:
+                    &::before {
+                        content: " ";
+                        display: block;
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        bottom: 0;
+                        right: 0;
+                        z-index: 1;
+                        pointer-events: none;
+                        outline: 2px solid var(--color-table-highlight-outline);
+                    }
+                }
             }
 
             @media (max-width: media.$narrow) {
@@ -251,11 +271,6 @@
                 vertical-align: middle;
                 margin-right: 0.25rem;
                 display: none;
-            }
-
-            .is-player-pick {
-                background: var(--color-table-highlight-bg);
-                outline: 2px solid var(--color-table-highlight-outline);
             }
 
             .rank-group-1 {
