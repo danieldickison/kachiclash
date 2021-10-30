@@ -4,6 +4,7 @@
 #p-basho {
     h1 {
         margin: var(--section-padding);
+        text-align: center;
     }
 
     #leaderboard {
@@ -89,9 +90,45 @@
             }
         }
     }
+
+    #rules {
+        padding: 49% 0 0 0;
+        margin-bottom: 0;
+        > .background > img {
+            position: absolute;
+            z-index: -1;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+    }
     
     #banzuke {
-        background: var(--color-light-yellow-bg);
+        margin-top: 0;
+        margin-bottom: 5rem;
+        padding-bottom: 0;
+        text-shadow: var(--emboss-text-shadow);
+
+        > p {
+            margin-left: 5%;
+            margin-right: 5%;
+        }
+
+        > .background > img {
+            position: absolute;
+            z-index: -1;
+            pointer-events: none;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+        }
+        > .background.bottom > img {
+            top: 100%;
+            height: auto;
+        }
 
         .save-picks-button,
         .change-picks-button {
@@ -130,9 +167,12 @@
         // }
 
         table {
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
             line-height: 2;
             margin: 0 auto;
+            --group-boundary-color: rgba(255, 255, 255, 0.5);
+            --group-boundary-thickness: 10px;
 
             .rank {
                 text-align: center;
@@ -190,6 +230,10 @@
                         opacity: 0;
                         transition: opacity 100ms ease-out;
                     }
+                    @media (max-width: media.$narrow) {
+                        display: none;
+                    }
+
                 }
                 &:hover .info-link {
                     opacity: 1;
@@ -215,35 +259,35 @@
             }
 
             .rank-group-1 {
-                background: hsl(230, 80%, 75%);
+                background: hsla(26, 79%, 62%, 0.5);
                 
-                + .rank-group-2 {
-                    border-top: solid 5px white;
+                + .rank-group-2 > td {
+                    border-top: solid var(--group-boundary-thickness) var(--group-boundary-color);
                 }
             }
             .rank-group-2 {
-                background: hsl(200, 80%, 75%);
+                background: hsla(32, 88%, 68%, 0.5);
 
-                + .rank-group-3 {
-                    border-top: solid 5px white;
+                + .rank-group-3 > td {
+                    border-top: solid var(--group-boundary-thickness) var(--group-boundary-color);
                 }
             }
             .rank-group-3 {
-                background: hsl(170, 70%, 65%);
+                background: hsla(39, 85%, 72%, 0.5);
 
-                + .rank-group-4 {
-                    border-top: solid 5px white;
+                + .rank-group-4 > td {
+                    border-top: solid var(--group-boundary-thickness) var(--group-boundary-color);
                 }
             }
             .rank-group-4 {
-                background: hsl(140, 70%, 70%);
+                background: hsla(43, 78.5%, 80%, 0.5);
 
-                + .rank-group-5 {
-                    border-top: solid 5px white;
+                + .rank-group-5 > td {
+                    border-top: solid var(--group-boundary-thickness) var(--group-boundary-color);
                 }
             }
             .rank-group-5 {
-                background: hsl(110, 60%, 70%);
+                background: hsla(50, 73%, 88%, 0.5);
             }
         }
     }

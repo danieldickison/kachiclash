@@ -66,7 +66,7 @@
         height: calc(min(100vw, var(--content-max-width)) * 1.2273);
 
         // engraved wood appearance
-        text-shadow: rgba(255,255,255,0.5) 0 1px 1px;
+        text-shadow: var(--emboss-text-shadow);
 
         > .background > img {
             position: absolute;
@@ -97,10 +97,6 @@
             height: 100%;
             overflow-y: scroll;
             padding: 2em 10%;
-
-            @media (max-width: media.$narrow) {
-                padding: 2em 10%;
-            }
         }
 
         .current-rank {

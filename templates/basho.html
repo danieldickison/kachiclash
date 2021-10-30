@@ -27,8 +27,13 @@
         </section>
     {% endif %}
 
-    <a id="g-hero" href="/"></a>
-    {% include "rules.html" %}
+    <section id="rules">
+        <picture class="background">
+            <source src="/static/img2/banzuke/top.webp" type="image/webp">
+            <img src="/static/img2/banzuke/top.png" width="1100" height="539"
+                alt="Rules">
+        </picture>
+    </section>
 
     <section id="banzuke"
         class="
@@ -36,7 +41,19 @@
             {% if initially_selectable %} selectable {% endif %}
         "
     >
-        <h2>Banzuke</h2>
+        <!-- <h2>Banzuke</h2> -->
+
+        <picture class="background">
+            <source src="/static/img2/banzuke/stretch-middle.webp" type="image/webp">
+            <img src="/static/img2/banzuke/stretch-middle.png" width="1100" height="1060"
+                alt="Rules">
+        </picture>
+
+        <picture class="background bottom">
+            <source src="/static/img2/banzuke/bottom.webp" type="image/webp">
+            <img src="/static/img2/banzuke/bottom.png" width="1100" height="70"
+                alt="Rules">
+        </picture>
 
         {% if !basho.has_started() -%}
             {%- if base.player.is_some() -%}

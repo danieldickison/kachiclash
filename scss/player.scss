@@ -1,6 +1,14 @@
 @use 'media';
 
 #p-player {
+    section {
+        border: solid 1px var(--color-border);
+        padding: var(--section-padding);
+        margin: 2rem 0;
+        background: var(--color-light-bg);
+        position: relative;
+    }
+
     #profile {
         &::after {
             content: '';
