@@ -145,7 +145,7 @@
         }
 
         .rope {
-            margin: 0 calc(-4 * var(--section-padding));
+            margin: 0 calc(-4 * var(--section-padding)) 2rem;
             width: calc(100% + 8 * var(--section-padding));
             height: auto;
             pointer-events: none;
@@ -250,7 +250,9 @@
             border-collapse: separate;
             border-spacing: 0;
             line-height: 2;
-            margin: 0 auto;
+            width: 100%;
+            border-radius: 1rem;
+            overflow: hidden;
             --group-boundary-color: transparent;
             --group-boundary-thickness: 10px;
 
