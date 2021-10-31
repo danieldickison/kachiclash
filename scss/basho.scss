@@ -94,23 +94,47 @@
         }
     }
 
-    #rules-and-banzuke {
+    #banzuke {
         background-color: #c0a688;
         background-image: url(/static/img2/banzuke/Wood-BG.jpg);
         background-size: 100% 100%;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
-        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        border-radius: 2rem;
 
         text-shadow: var(--emboss-text-shadow);
 
         h2 {
             text-align: center;
+            > img {
+                height: 2.5em;
+                width: auto;
+            }
+        }
+
+        .gunbai {
+            position: absolute;
+            top: 1rem;
+            right: 10%;
+            width: 20%;
+            height: auto;
+
+            @media (max-width: media.$narrow) {
+                display: none;
+            }
+        }
+
+        .rope {
+            margin: 0 calc(-4 * var(--section-padding));
+            width: calc(100% + 8 * var(--section-padding));
+            height: auto;
+            pointer-events: none;
         }
 
         .rules {
             font-size: larger;
             font-weight: bold;
             list-style: none;
+            padding: 0;
 
             > li {
                 display: flex;

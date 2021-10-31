@@ -24,7 +24,7 @@
     --section-padding: 1rem;
     --header-height: 28px;
 
-    --emboss-text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);
+    --emboss-text-shadow: none; //0 1px 1px rgba(255, 255, 255, 0.5);
 
     @media (max-width: media.$narrow) {
         --section-padding: 0.5rem;
