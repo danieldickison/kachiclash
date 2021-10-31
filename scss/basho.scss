@@ -11,7 +11,8 @@
     }
 
     #leaderboard {
-        background: var(--color-light-blue-bg);
+        background: var(--color-light-yellow-bg);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 
         table {
             border-collapse: collapse;
