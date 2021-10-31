@@ -147,13 +147,11 @@ body > main {
 }
 
 #g-hero {
-    background: url(/static/img2/2021-Kachi-Clash-Banner-2.png);
-    background-size: cover;
-    width: 100%;
-    height: 0;
-    padding-top: 42.57%; /* maintain aspect ratio of source image */
-    display: block;
-    margin: 0 auto;
+    margin: 0;
+    > img {
+        width: 100%;
+        height: auto;
+    }
 }
 
 #g-rules {
