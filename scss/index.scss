@@ -157,7 +157,7 @@
 
                         &.self {
                             background: var(--color-table-highlight-bg);
-                            outline: solid 2px var(--color-table-highlight-outline);
+                            box-shadow: var(--table-highlight-shadow);
                         }
                     }
                 }

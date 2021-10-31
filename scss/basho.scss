@@ -279,7 +279,7 @@
                 &.is-player-pick {
                     position: relative;
                     background: var(--color-table-highlight-bg);
-                    background-clip: content-box;
+                    background-clip: padding-box;
 
                     // put outline around the content area only:
                     &::before {
@@ -292,8 +292,7 @@
                         right: 0;
                         z-index: 1;
                         pointer-events: none;
-                        outline: 3px solid var(--color-table-highlight-outline);
-                        outline-offset: -1px;
+                        box-shadow: var(--table-highlight-shadow);
                     }
                 }
             }

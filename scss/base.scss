@@ -17,8 +17,9 @@
     --color-border: rgba(0, 0, 0, 0.125);
     --color-border-message: rgba(20, 220, 30, 0.7);
     --color-border-error: rgba(220, 20, 20, 0.7);
-    --color-table-highlight-bg: #fff8dd;
-    --color-table-highlight-outline: #d98907;
+    --color-table-highlight-bg: #fff9cc80;
+    --table-highlight-shadow: 0 2px 6px #00000040;
+    --color-table-highlight-outline: rgba(199, 174, 6, 0.83);
 
     --content-max-width: 950px;
     --section-padding: 1rem;
