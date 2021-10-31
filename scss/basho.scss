@@ -101,6 +101,10 @@
         background-size: 100% 100%;
         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
         border-radius: 2rem;
+        overflow: hidden;
+        @media (max-width: media.$narrow) {
+            border-radius: 0;
+        }
 
         text-shadow: var(--emboss-text-shadow);
 
