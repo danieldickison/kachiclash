@@ -529,6 +529,11 @@ impl BashoRikishi {
         }
         1
     }
+
+    pub fn result_chunks(&self)
+    -> Vec<&[Option<bool>]> {
+        self.results.chunks(5).collect()
+    }
 }
 
 pub struct BashoRikishiByRank {
