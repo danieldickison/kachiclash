@@ -15,15 +15,15 @@
         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
         overflow: scroll;
 
+        @media (hover: none) {
+            background: var(--color-light-yellow-bg-opaque);
+        }
+
         table {
             border-collapse: collapse;
             margin: 0 auto;
             font-size: 0.875rem;
 
-            tr.self {
-                background: var(--color-table-highlight-bg);
-                outline: solid 2px var(--color-table-highlight-outline);
-            }
             tr.min-max {
                 color: var(--color-gray-fg);
                 font-weight: 300;
@@ -49,6 +49,10 @@
 
             td.name {
                 padding-top: 3px; /* adjust baseline alignment of name cell with others */
+            }
+            tr.self > td.name {
+                background: var(--color-table-highlight-bg);
+                box-shadow: var(--table-highlight-shadow);
             }
 
             td.min-max-name {
