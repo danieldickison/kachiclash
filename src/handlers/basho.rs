@@ -22,6 +22,21 @@ pub struct BashoTemplate {
     initially_selectable: bool,
 }
 
+impl BashoTemplate {
+    fn self_rank(&self) -> Option<usize> {
+        if !self.basho.has_started() {
+            return None;
+        }
+
+        self.leaders.iter().find_map(|l|
+            match l.player {
+                ResultPlayer::RankedPlayer(_, rank) if l.is_self => Some(rank),
+                _ => None
+            }
+        )
+    }
+}
+
 pub async fn basho(path: web::Path<BashoId>, state: web::Data<AppState>, identity: Identity)
     -> Result<Either<BashoTemplate, HttpResponse>> {
 

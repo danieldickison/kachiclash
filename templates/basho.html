@@ -110,6 +110,16 @@
                 {{basho.player_count}} Entries
             {% endif %}
         </h2>
+
+        {% match self.self_rank() %}
+        {% when Some with (rank) %}
+        <p class="current-rank">
+            You are currently ranked
+            <a href="#self-leader">#{{rank}}</a>
+        </p>
+        {% when None %}
+        {% endmatch %}
+
         <table>
             <thead>
                 {% if basho.has_started() %}
@@ -142,6 +152,9 @@
                     {%- when _ -%}
                     {%- endmatch %}
                     "
+                    {% if leader.is_self %}
+                        id="self-leader"
+                    {% endif %}
                 >
                     {% match leader.player -%}
                     {%- when ResultPlayer::Max %}
