@@ -19,13 +19,15 @@
             {%- when Some with (player) -%}
                 {{player.render().unwrap()|safe}}
                 |
-                <a href="/settings">settings</a>
+                <a href="https://discordapp.com/invite/Wg4DsMt" target="_blank">discord</a>
                 |
                 <a class="dbox-donation-button" href="https://donorbox.org/kachi-clash-website-donations" target="_blank">donate</a>
                 |
                 <a href="/logout">log out</a>
 
             {%- when None -%}
+                <a href="https://discordapp.com/invite/Wg4DsMt" target="_blank">discord</a>
+                |
                 <a href="/login">sign in</a>
             {%- endmatch %}
         </div>
