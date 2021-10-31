@@ -27,33 +27,18 @@
         </section>
     {% endif %}
 
-    <section id="rules">
-        <picture class="background">
-            <source src="/static/img2/banzuke/top.webp" type="image/webp">
-            <img src="/static/img2/banzuke/top.png" width="1100" height="539"
-                alt="Rules">
-        </picture>
-    </section>
-
-    <section id="banzuke"
+    <section id="rules-and-banzuke"
         class="
             {% if basho.has_started() %} has-started {% endif %}
             {% if initially_selectable %} selectable {% endif %}
         "
     >
-        <!-- <h2>Banzuke</h2> -->
-
-        <picture class="background">
-            <source src="/static/img2/banzuke/stretch-middle.webp" type="image/webp">
-            <img src="/static/img2/banzuke/stretch-middle.png" width="1100" height="1060"
-                alt="Rules">
-        </picture>
-
-        <picture class="background bottom">
-            <source src="/static/img2/banzuke/bottom.webp" type="image/webp">
-            <img src="/static/img2/banzuke/bottom.png" width="1100" height="70"
-                alt="Rules">
-        </picture>
+        <h2><img alt="Rules" src="/static/img2/banzuke/Rules.png" width="323" height="76"></h2>
+        <ol class="rules">
+            <li>Pick 1 rikishi from each section.</li>
+            <li>Each time one of your picks wins a bout, you get 1 point.</li>
+            <li>The Emperor’s Cup is awarded to the highest points total, and player rankings are updated at the end of each basho.</li>
+        </ol>
 
         {% if !basho.has_started() -%}
             {%- if base.player.is_some() -%}

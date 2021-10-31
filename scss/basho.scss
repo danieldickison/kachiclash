@@ -94,43 +94,53 @@
         }
     }
 
-    #rules {
-        padding: 49% 0 0 0;
-        margin-bottom: 0;
-        > .background > img {
-            position: absolute;
-            z-index: -1;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-        }
-    }
-    
-    #banzuke {
-        margin-top: 0;
-        margin-bottom: 5rem;
-        padding-bottom: 0;
+    #rules-and-banzuke {
+        background-color: #c0a688;
+        background-image: url(/static/img2/banzuke/Wood-BG.jpg);
+        background-size: 100% 100%;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+        border-radius: 15px;
+
         text-shadow: var(--emboss-text-shadow);
 
-        > p {
-            margin-left: 5%;
-            margin-right: 5%;
+        h2 {
+            text-align: center;
         }
 
-        > .background > img {
-            position: absolute;
-            z-index: -1;
-            pointer-events: none;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-        }
-        > .background.bottom > img {
-            top: 100%;
-            height: auto;
+        .rules {
+            font-size: larger;
+            font-weight: bold;
+            list-style: none;
+
+            > li {
+                display: flex;
+                flex-flow: row nowrap;
+                align-items: center;
+            }
+            > li::before {
+                content: " ";
+                display: block;
+                flex-shrink: 0;
+                background-size: 100% 100%;
+                margin-right: 1em;
+            }
+            > li:nth-child(1)::before {
+                background-image: url(/static/img2/banzuke/Number-1.png);
+                width: 40px;
+                height: 58px;
+                margin-left: 12px;
+            }
+            > li:nth-child(2)::before {
+                background-image: url(/static/img2/banzuke/Number-2.png);
+                width: 46px;
+                height: 59px;
+                margin-left: 6px;
+            }
+            > li:nth-child(3)::before {
+                background-image: url(/static/img2/banzuke/Number-3.png);
+                width: 52px;
+                height: 61px;
+            }
         }
 
         .save-picks-button,
