@@ -122,8 +122,12 @@ impl Player {
         }
     }
 
+    pub fn url_path_for_name(name: &str) -> String {
+        format!("/player/{}", name)
+    }
+
     pub fn url_path(&self) -> String {
-        format!("/player/{}", self.name)
+        Self::url_path_for_name(&self.name)
     }
 
     pub fn login_service_name(&self) -> &'static str {

@@ -3,7 +3,7 @@ use actix_web::web;
 use actix_identity::Identity;
 
 use super::{Result, BaseTemplate, HandlerError};
-use crate::data::{Player, player::BashoScore};
+use crate::data::{player, Player, player::BashoScore};
 use crate::AppState;
 
 #[derive(Template)]
@@ -28,4 +28,11 @@ pub async fn player(path: web::Path<String>, state: web::Data<AppState>, identit
         player,
         basho_scores,
     })
+}
+
+impl PlayerTemplate {
+    fn is_self(&self) -> bool {
+        self.base.player.as_ref()
+        .map_or(false, |p| p.id == self.player.id)
+    }
 }
