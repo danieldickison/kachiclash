@@ -17,8 +17,8 @@
     --color-border: rgba(0, 0, 0, 0.125);
     --color-border-message: rgba(20, 220, 30, 0.7);
     --color-border-error: rgba(220, 20, 20, 0.7);
-    --color-table-highlight-bg: #ffccd7;
-    --color-table-highlight-outline: #ee004a;
+    --color-table-highlight-bg: #fff8dd;
+    --color-table-highlight-outline: #d98907;
 
     --content-max-width: 950px;
     --section-padding: 1rem;
@@ -73,6 +73,10 @@ a {
     &:hover {
         text-decoration: underline;
     }
+}
+
+h2 {
+    text-align: center;
 }
 
 button {

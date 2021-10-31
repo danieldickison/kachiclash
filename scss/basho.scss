@@ -104,10 +104,10 @@
         text-shadow: var(--emboss-text-shadow);
 
         h2 {
-            text-align: center;
             > img {
                 height: 2.5em;
                 width: auto;
+                max-width: 100%;
             }
         }
 
@@ -292,7 +292,8 @@
                         right: 0;
                         z-index: 1;
                         pointer-events: none;
-                        outline: 2px solid var(--color-table-highlight-outline);
+                        outline: 3px solid var(--color-table-highlight-outline);
+                        outline-offset: -1px;
                     }
                 }
             }
