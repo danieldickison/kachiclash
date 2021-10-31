@@ -91,11 +91,11 @@ impl Player {
     }
 
     pub fn tiny_thumb(&self) -> String {
-        self.image_url(ImageSize::TINY)
+        self.image_url(ImageSize::Tiny)
     }
 
     pub fn medium_thumb(&self) -> String {
-        self.image_url(ImageSize::MEDIUM)
+        self.image_url(ImageSize::Medium)
     }
 
     fn image_url(&self, size: ImageSize) -> String {
@@ -103,10 +103,10 @@ impl Player {
 
         if let Some(user_id) = &self.discord_user_id {
             discord::avatar_url(
-                &user_id,
+                user_id,
                 &self.discord_avatar,
-                &self.discord_discriminator.as_ref().unwrap_or(&"0".to_string()),
-                discord::ImageExt::PNG,
+                self.discord_discriminator.as_ref().unwrap_or(&"0".to_string()),
+                discord::ImageExt::Png,
                 size).to_string()
         } else if let Some(icon) = &self.reddit_icon {
             // It's unclear why, but reddit html-escapes the icon_img value in its api return value so we need to unescape it here. In practice, only &amp; appears in the URL so I'm doing a simple replacement.
@@ -114,7 +114,7 @@ impl Player {
                 .map(|url| url.to_string())
                 .unwrap_or_else(|_| DEFAULT.to_owned())
         } else if let Some(picture) = &self.google_picture {
-            Url::parse(&picture)
+            Url::parse(picture)
                 .map(|url| url.to_string())
                 .unwrap_or_else(|_| DEFAULT.to_owned())
         } else {
@@ -206,7 +206,7 @@ pub fn name_is_valid(name: &str) -> bool {
                 .unwrap();
     }
 
-    NAME_LENGTH.contains(&name.len()) && RE.is_match(&name)
+    NAME_LENGTH.contains(&name.len()) && RE.is_match(name)
 }
 
 #[derive(Debug)]

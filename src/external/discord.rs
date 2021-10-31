@@ -116,14 +116,14 @@ impl UserInfo for DiscordUserInfo {
 }
 
 pub enum ImageExt {
-    PNG,
+    Png,
     // JPEG,
 }
 
 impl fmt::Display for ImageExt {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", match self {
-            ImageExt::PNG => "png",
+            ImageExt::Png => "png",
             // ImageExt::JPEG => "jpg",
         })
     }

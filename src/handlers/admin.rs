@@ -57,7 +57,7 @@ impl BashoData {
                 Ok(Self {
                     start_date,
                     venue: row.get("venue")?,
-                    banzuke: Self::fetch_banzuke(&db, id)?,
+                    banzuke: Self::fetch_banzuke(db, id)?,
                  })
             })
             .optional()
@@ -122,7 +122,7 @@ pub async fn edit_basho_post(path: web::Path<BashoId>, basho: web::Json<BashoDat
 }
 
 fn admin_base(db: &Connection, identity: &Identity) -> Result<BaseTemplate> {
-    let base = BaseTemplate::new(&db, &identity)?;
+    let base = BaseTemplate::new(db, identity)?;
     if base.player.as_ref().map_or(false, |p| p.is_admin()) {
         Ok(base)
     } else {

@@ -239,7 +239,7 @@ impl HistoricLeader {
             .query_and_then(
                 params![first_basho, first_basho, player_limit],
                 |row| Ok(Self {
-                    player: Player::from_row(&row)?,
+                    player: Player::from_row(row)?,
                     ord: 0,
                     rank: Rank::top(),
                     wins: NumericStats {
@@ -270,7 +270,7 @@ impl HistoricLeader {
             for leader in group.iter_mut() {
                 leader.rank = rank;
             }
-            count = count + group.len();
+            count += group.len();
 
             let next_len = iter.peek().map_or(0, |next| next.len());
             let RankPlayerCounts {minimum, preferred} = RankPlayerCounts::for_rank(rank);

@@ -92,7 +92,7 @@ impl BaseTemplate {
     fn new(db: &Connection, identity: &Identity) -> Result<Self> {
         let player = match identity.player_id() {
             Some(id) => {
-                let player = Player::with_id(&db, id)?;
+                let player = Player::with_id(db, id)?;
                 match player.as_ref() {
                     Some(p) => debug!("Logged in player: {} ({})", p.name, p.id),
                     None => {

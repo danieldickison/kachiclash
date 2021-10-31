@@ -47,7 +47,7 @@ where
 
         let mut i = 1;
         while i < self.slice.len() && (self.by)(&self.slice[i-1], &self.slice[i]) {
-            i = i + 1;
+            i += 1;
         }
         let slice = mem::take(&mut self.slice);
         let (a, b): (Self::Item, Self::Item) = slice.split_at(i);
@@ -69,7 +69,7 @@ where
 
         let mut i = 1;
         while i < self.slice.len() && (self.by)(&self.slice[i-1], &self.slice[i]) {
-            i = i + 1;
+            i += 1;
         }
         let slice = mem::take(&mut self.slice);
         let (a, b): (Self::Item, Self::Item) = slice.split_at_mut(i);

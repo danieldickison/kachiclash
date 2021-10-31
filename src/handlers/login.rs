@@ -48,7 +48,7 @@ pub async fn reddit(state: web::Data<AppState>, session: Session) -> HttpRespons
 }
 
 fn oauth_login(config: &Config, session: Session, provider: impl AuthProvider) -> HttpResponse {
-    let (auth_url, csrf_token) = provider.authorize_url(&config);
+    let (auth_url, csrf_token) = provider.authorize_url(config);
     session.set("oauth_csrf", csrf_token)
         .expect("could not set oauth_csrf session value");
     web::HttpResponse::SeeOther()

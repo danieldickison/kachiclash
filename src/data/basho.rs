@@ -61,7 +61,7 @@ impl BashoInfo {
                                  external_link: row.get("external_link")?,
                                  player_count: row.get::<_, u32>("player_count")? as usize,
                                  winning_score: row.get("winning_score")?,
-                                 winners: BashoInfo::fetch_basho_winners(&db, id)?,
+                                 winners: BashoInfo::fetch_basho_winners(db, id)?,
                              }))
                          }
                      })
@@ -103,7 +103,7 @@ impl BashoInfo {
                      external_link: row.get("external_link")?,
                      player_count: row.get::<_, u32>("player_count")? as usize,
                      winning_score: row.get("winning_score")?,
-                     winners: BashoInfo::fetch_basho_winners(&db, basho_id)?,
+                     winners: BashoInfo::fetch_basho_winners(db, basho_id)?,
                  })
              })?;
         let first = infos.next_invert()?;
@@ -120,7 +120,7 @@ impl BashoInfo {
     }
 
     pub fn list_all(db: &Connection) -> Result<Vec<BashoInfo>> {
-        let mut winners = BashoInfo::fetch_all_winners(&db)?;
+        let mut winners = BashoInfo::fetch_all_winners(db)?;
         db.prepare("
                 SELECT
                     basho.id,
@@ -664,7 +664,7 @@ pub fn finalize_basho(db: &mut Connection, basho_id: BashoId) -> Result<()> {
 
 fn upsert_basho_results(txn: &Transaction, basho_id: BashoId, bestow_awards: bool) -> Result<()> {
     debug!("upsert_basho_results for {}; bestow_awards: {}", basho_id, bestow_awards);
-    let scores = BashoPlayerScore::fetch(&txn, basho_id)?;
+    let scores = BashoPlayerScore::fetch(txn, basho_id)?;
 
     if bestow_awards {
         let count = txn.prepare("
