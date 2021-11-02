@@ -14,6 +14,7 @@ pub mod login;
 pub mod admin;
 pub mod settings;
 pub mod player;
+pub mod stats;
 
 type Result<T> = std::result::Result<T, HandlerError>;
 

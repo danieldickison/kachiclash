@@ -1,4 +1,19 @@
+#p-stats {
+    section {
+        background: var(--color-light-bg);
+    }
 
+    table {
+        margin: 0 auto;
+    }
+
+    #prev-winners {
+        table {
+            border-spacing: 0.25em 1em;
+        }
+    }
+
+    #players {
         table {
             border-collapse: collapse;
 
@@ -22,4 +37,11 @@
             .sort-key {
                 font-weight: bold;
             }
+
+            #self-leader td.player {
+                background: var(--color-table-highlight-bg);
+                box-shadow: var(--table-highlight-shadow);
+            }
         }
+    }
+}

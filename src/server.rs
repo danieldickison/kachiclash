@@ -73,6 +73,10 @@ pub async fn run(config: Config) -> std::io::Result<()> {
                     .route(web::post().to(handlers::settings::settings_post)),
             )
             .service(
+                web::resource("/stats")
+                    .route(web::get().to(handlers::stats::stats_page))
+            )
+            .service(
                 web::scope("/basho/{basho_id}")
                     .service(web::resource("").to(handlers::basho::basho))
                     .service(
