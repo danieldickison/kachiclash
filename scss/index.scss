@@ -2,12 +2,13 @@
 
 #p-index {
     section {
-        background: none;
-        border: none;
         margin: 0;
     }
 
     #next-basho {
+        padding-top: 0;
+        padding-bottom: 0;
+
         .button-link {
             width: 100%;
             height: auto;
@@ -18,9 +19,19 @@
                 transition: transform ease-out 200ms;
             }
         }
+
+        .time-remaining {
+            text-align: center;
+            margin: 0 1rem;
+            > span {
+                white-space: nowrap;
+            }
+        }
     }
 
     #prev-winners {
+        padding-bottom: 0;
+
         h2 {
             position: absolute;
             z-index: 1;

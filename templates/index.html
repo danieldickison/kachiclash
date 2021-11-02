@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block main %}
-    <h1 id="g-hero"><img src="/static/img2/2021-Kachi-Clash-Banner-2.png" width="1877" height="799" alt="Kachi Clash logo"></h1>
+    <h1 id="g-hero"><img src="/static/img2/2021-Kachi-Clash-Banner-2.png" width="1877" height="799" alt="Kachi Clash — a Grand Sumo prediction game"></h1>
 
     {% match current_basho %}
     {% when Some with (basho) %}
@@ -19,8 +19,8 @@
                     width="1801" height="388">
             </a>
             {% if !basho.has_started() %}
-                <p>
-                    Time remaining to enter your picks:
+                <p class="time-remaining">
+                    Time remaining to enter/change your picks:
                     <span class="js-basho-count-down" data-start-date="{{basho.start_date.timestamp_millis()}}"></span>
                 </p>
             {% endif %}
