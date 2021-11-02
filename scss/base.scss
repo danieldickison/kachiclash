@@ -206,9 +206,17 @@ body > main {
     }
 }
 
+.g-time-remaining {
+    text-align: center;
+    margin: 0 1rem;
+    > span {
+        white-space: nowrap;
+    }
+}
+
 .g-big-button {
     font-size: 1.5rem;
-    background: var(--color-navy);
+    background: var(--color-dark-bg);
     color: var(--color-light-fg);
     border: solid 2px var(--color-border);
     border-radius: 5px;
@@ -216,7 +224,7 @@ body > main {
     margin: 1rem 1rem 1rem 0;
 
     &:active {
-        background: var(--color-navy-highlight);
+        background: var(--color-mauve);
     }
 }
 

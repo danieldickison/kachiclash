@@ -19,14 +19,6 @@
                 transition: transform ease-out 200ms;
             }
         }
-
-        .time-remaining {
-            text-align: center;
-            margin: 0 1rem;
-            > span {
-                white-space: nowrap;
-            }
-        }
     }
 
     #prev-winners {

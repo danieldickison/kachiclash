@@ -47,14 +47,12 @@
         <h2><img alt="Banzuke Picks" src="/static/img2/banzuke/Banzuke-Picks.png" width="1282" height="124"></h2>
 
         {% if !basho.has_started() -%}
-            {%- if base.player.is_some() -%}
-                <p>Select one rikishi from each group below, then click the Save Picks button. You can change your picks until the basho starts.</p>
-            {%- else -%}
+            {%- if base.player.is_none() -%}
                 <p><a href="/login">Log in or sign up</a> to play!</p>
             {%- endif -%}
 
-            <p>
-                Time remaining:
+            <p class="g-time-remaining">
+                Time remaining to enter/change your picks:
                 <span class="js-basho-count-down" data-start-date="{{basho.start_date.timestamp_millis()}}"></span>
             </p>
         {%- endif %}
