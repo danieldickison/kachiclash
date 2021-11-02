@@ -47,10 +47,6 @@
         <h2><img alt="Banzuke Picks" src="/static/img2/banzuke/Banzuke-Picks.png" width="1282" height="124"></h2>
 
         {% if !basho.has_started() -%}
-            {%- if base.player.is_none() -%}
-                <p><a href="/login">Log in or sign up</a> to play!</p>
-            {%- endif -%}
-
             <p class="g-time-remaining">
                 Time remaining to enter/change your picks:
                 <span class="js-basho-count-down" data-start-date="{{basho.start_date.timestamp_millis()}}"></span>
@@ -62,6 +58,10 @@
             {% if !basho.has_started() && base.player.is_some() -%}
                 <button class="g-big-button save-picks-button">Save Picks</button>
                 <button class="g-big-button change-picks-button">Change Picks</button>
+            {%- endif -%}
+
+            {%- if base.player.is_none() -%}
+                <p class="g-centered"><a href="/login">Log in or sign up</a> to play!</p>
             {%- endif -%}
 
             <table>
