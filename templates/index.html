@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block main %}
-    <h1 id="g-hero"><img src="/static/img2/2021-Kachi-Clash-Banner-2.png" width="1877" height="799" alt="Kachi Clash — a Grand Sumo prediction game"></h1>
+    <h1 id="g-hero"><img src="{{hero_img_src}}" width="1877" height="799" alt="Kachi Clash — a Grand Sumo prediction game"></h1>
 
     {% match current_basho %}
     {% when Some with (basho) %}
