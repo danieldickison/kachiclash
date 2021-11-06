@@ -16,6 +16,7 @@ pub struct IndexTemplate {
     current_basho: Option<BashoInfo>,
     prev_basho: Option<BashoInfo>,
     next_basho_id: BashoId,
+    hero_img_src: String,
 }
 
 impl IndexTemplate {
@@ -61,6 +62,7 @@ pub async fn index(state: web::Data<AppState>, identity: Identity) -> Result<Ind
         self_leader_index,
         current_basho,
         prev_basho,
-        next_basho_id
+        next_basho_id,
+        hero_img_src: state.config.hero_img_src.to_owned(),
     })
 }

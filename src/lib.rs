@@ -43,6 +43,9 @@ pub struct Config {
     #[envconfig(from = "KACHI_PORT")]
     pub port: u16,
 
+    #[envconfig(from = "KACHI_HERO", default = "/static/img2/2021-Kachi-Clash-Banner-2.png")]
+    pub hero_img_src: String,
+
     #[envconfig(from = "SESSION_SECRET", default = "abcdefghijklmnopqrstuvwxyz012345")]
     pub session_secret: String,
 
