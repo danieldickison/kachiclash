@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 use rusqlite::{Connection, Result as SqlResult};
 
-use super::{Result, PlayerId, Player, RikishiId, BashoId, BashoRikishi};
+use super::{BashoId, BashoRikishi, Player, PlayerId, Rank, RankName, RankSide, Result, RikishiId};
+use crate::util::GroupRuns;
 use std::sync::Arc;
 
 pub struct BashoPlayerResults {
@@ -28,13 +29,18 @@ impl BashoPlayerResults {
             .collect()
     }
 
-    fn sort_rank(&self) -> usize {
+    fn sort_key(&self) -> (usize, Vec<String>) {
         match &self.player {
-            ResultPlayer::RankedPlayer(p, rank) => {
-                if *rank == 0 { p.id as usize } else { *rank }
+            ResultPlayer::RankedPlayer(_, rank) => {
+                (
+                    if *rank == 0 { 1 } else { *rank },
+                    self.picks().iter().map(|rikishi|
+                        rikishi.map_or("".to_string(), |r| r.name.clone())
+                    ).collect()
+                )
             },
-            ResultPlayer::Max => 0,
-            ResultPlayer::Min => usize::max_value(),
+            ResultPlayer::Max => (0, vec![]),
+            ResultPlayer::Min => (usize::max_value(), vec![]),
         }
     }
 
@@ -64,7 +70,7 @@ impl BashoPlayerResults {
                 ORDER BY is_self DESC, wins DESC, player.id ASC
                 LIMIT :limit
             ").unwrap()
-            .query_map_named(
+            .query_map(
                 named_params! {
                     ":basho_id": basho_id,
                     ":player_id": player_id,
@@ -109,7 +115,7 @@ impl BashoPlayerResults {
         }
 
         // Sort to put self player at the bottom. (It's always first from the db query to ensure it doesn't get bumped off by the LIMIT clause.)
-        leaders.sort_by_key(|p| p.sort_rank());
+        leaders.sort_by_cached_key(|p| p.sort_key());
 
         Ok(leaders)
     }
@@ -119,7 +125,7 @@ fn make_min_max_results(rikishi: Arc<HashMap<RikishiId, BashoRikishi>>)
                         -> (BashoPlayerResults, BashoPlayerResults) {
     let mut mins = [None; 5];
     let mut maxes = [None; 5];
-    for r in rikishi.values() {
+    for r in rikishi.values().filter(|r| !r.is_kyujyo) {
         let group = r.rank.group().as_index();
         mins[group] = mins[group].map_or(Some(r), |min: &BashoRikishi| {
             Some(if r.wins < min.wins { r } else { min })
@@ -160,14 +166,12 @@ fn make_min_max_results(rikishi: Arc<HashMap<RikishiId, BashoRikishi>>)
 fn picks_to_days(picks: &[Option<&BashoRikishi>; 5]) -> ([Option<u8>; 15], u8) {
     let mut days = [None; 15];
     let mut total_validation = 0;
-    for pick in picks {
-        if let Some(r) = pick {
-            for (day, win) in r.results.iter().enumerate() {
-                if let Some(win) = win {
-                    let incr = if *win { 1 } else { 0 };
-                    days[day] = Some(days[day].unwrap_or(0) + incr);
-                    total_validation += incr;
-                }
+    for pick in picks.iter().flatten() {
+        for (day, win) in pick.results.iter().enumerate() {
+            if let Some(win) = win {
+                let incr = if *win { 1 } else { 0 };
+                days[day] = Some(days[day].unwrap_or(0) + incr);
+                total_validation += incr;
             }
         }
     }
@@ -178,7 +182,8 @@ fn picks_to_days(picks: &[Option<&BashoRikishi>; 5]) -> ([Option<u8>; 15], u8) {
 #[derive(Debug)]
 pub struct HistoricLeader {
     pub player: Player,
-    pub rank: usize,
+    pub ord: usize,
+    pub rank: Rank,
     pub wins: NumericStats,
     pub ranks: NumericStats,
 }
@@ -196,8 +201,8 @@ impl Rankable for HistoricLeader {
         self.wins.total.unwrap_or(0) as i32
     }
 
-    fn set_rank(&mut self, rank: usize) {
-        self.rank = rank;
+    fn set_rank(&mut self, ord: usize) {
+        self.ord = ord;
     }
 }
 
@@ -234,8 +239,9 @@ impl HistoricLeader {
             .query_and_then(
                 params![first_basho, first_basho, player_limit],
                 |row| Ok(Self {
-                    player: Player::from_row(&row)?,
-                    rank: 0,
+                    player: Player::from_row(row)?,
+                    ord: 0,
+                    rank: Rank::top(),
                     wins: NumericStats {
                         total: row.get("total_wins")?,
                         min: row.get("min_wins")?,
@@ -251,28 +257,69 @@ impl HistoricLeader {
                 })
             )?
             .collect::<Result<Vec<Self>>>()?;
-        assign_rank(&mut leaders.iter_mut());
+        assign_ord(&mut leaders.iter_mut());
+        Self::assign_rank(&mut leaders);
         Ok(leaders)
+    }
+
+    fn assign_rank(leaders: &mut [HistoricLeader]) {
+        let mut rank = Rank {name: RankName::Yokozuna, side: RankSide::East, number: 1};
+        let mut count = 0;
+        let mut iter = leaders.group_runs_mut(|a, b| a.ord == b.ord).peekable();
+        while let Some(group) = iter.next() {
+            for leader in group.iter_mut() {
+                leader.rank = rank;
+            }
+            count += group.len();
+
+            let next_len = iter.peek().map_or(0, |next| next.len());
+            let RankPlayerCounts {minimum, preferred} = RankPlayerCounts::for_rank(rank);
+            if count >= preferred ||
+                (count >= minimum && count + next_len > preferred)
+            {
+                rank = rank.next_lower();
+                count = 0;
+            }
+        }
     }
 }
 
 pub trait Rankable {
     fn get_score(&self) -> i32;
-    fn set_rank(&mut self, rank: usize);
+    fn set_rank(&mut self, ord: usize);
 }
 
-pub fn assign_rank<'a, I, R: 'a>(iter: &'a mut I)
+pub fn assign_ord<'a, I, R: 'a>(iter: &'a mut I)
 where
     I: Iterator<Item=&'a mut R>,
     R: Rankable
 {
     let mut last_score = i32::min_value();
-    let mut last_rank = 1;
+    let mut ord = 1;
+
     for (i, r) in iter.enumerate() {
         if r.get_score() != last_score {
             last_score = r.get_score();
-            last_rank = i + 1;
+            ord = i + 1;
         }
-        r.set_rank(last_rank);
+        r.set_rank(ord);
+    }
+}
+
+struct RankPlayerCounts {
+    minimum: usize,
+    preferred: usize,
+}
+
+impl RankPlayerCounts {
+    fn for_rank(rank: Rank) -> Self {
+        match rank.name {
+            RankName::Yokozuna  => Self {minimum: 1, preferred: 1},
+            RankName::Ozeki     => Self {minimum: 1, preferred: 2},
+            RankName::Sekiwake  => Self {minimum: 1, preferred: 4},
+            RankName::Komusubi  => Self {minimum: 1, preferred: 4},
+            RankName::Maegashira=> Self {minimum: 3, preferred: 4},
+            RankName::Juryo     => Self {minimum: 4, preferred: 4},
+        }
     }
 }

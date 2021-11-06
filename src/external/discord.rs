@@ -11,7 +11,7 @@ use oauth2::{
     RedirectUrl,
     TokenUrl
 };
-use oauth2::basic::{BasicClient};
+use oauth2::basic::BasicClient;
 use super::{AuthProvider, UserInfo, ImageSize};
 use rusqlite::Transaction;
 use chrono::{DateTime, Utc};
@@ -54,7 +54,7 @@ impl AuthProvider for DiscordAuthProvider {
         format!("https://discordapp.com/api/v6/users/{}", user_id)
     }
 
-    async fn parse_user_info_response(&self, res: reqwest::Response) -> Result<Box<dyn UserInfo>, failure::Error> {
+    async fn parse_user_info_response(&self, res: reqwest::Response) -> anyhow::Result<Box<dyn UserInfo>> {
         Ok(Box::new(res.json::<DiscordUserInfo>().await?))
     }
 }
@@ -116,14 +116,14 @@ impl UserInfo for DiscordUserInfo {
 }
 
 pub enum ImageExt {
-    PNG,
+    Png,
     // JPEG,
 }
 
 impl fmt::Display for ImageExt {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", match self {
-            ImageExt::PNG => "png",
+            ImageExt::Png => "png",
             // ImageExt::JPEG => "jpg",
         })
     }
@@ -134,7 +134,7 @@ pub fn avatar_url(user_id: &str, avatar: &Option<String>, discriminator: &str, e
     if let Some(hash) = &avatar {
         base.join(&format!("avatars/{}/{}.{}?size={}", user_id, hash, ext, size as i32)[..]).unwrap()
     } else {
-        let discrim = u16::from_str_radix(discriminator, 10).unwrap_or(0) % 5;
+        let discrim = str::parse(discriminator).unwrap_or(0) % 5;
         base.join(&format!("embed/avatars/{}.png?size={}", discrim, size as i32)[..]).unwrap()
     }
 }

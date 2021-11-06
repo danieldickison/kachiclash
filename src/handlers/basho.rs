@@ -22,6 +22,21 @@ pub struct BashoTemplate {
     initially_selectable: bool,
 }
 
+impl BashoTemplate {
+    fn self_rank(&self) -> Option<usize> {
+        if !self.basho.has_started() {
+            return None;
+        }
+
+        self.leaders.iter().find_map(|l|
+            match l.player {
+                ResultPlayer::RankedPlayer(_, rank) if l.is_self => Some(rank),
+                _ => None
+            }
+        )
+    }
+}
+
 pub async fn basho(path: web::Path<BashoId>, state: web::Data<AppState>, identity: Identity)
     -> Result<Either<BashoTemplate, HttpResponse>> {
 
@@ -43,7 +58,7 @@ pub async fn basho(path: web::Path<BashoId>, state: web::Data<AppState>, identit
     let player_id = base.player.as_ref().map(|p| p.id);
     let picks = fetch_player_picks(&db, player_id, basho_id)?;
     let FetchBashoRikishi {by_id: rikishi_by_id, by_rank: rikishi_by_rank} = FetchBashoRikishi::with_db(&db, basho_id, &picks)?;
-    let limit = if state.config.is_dev() {3} else {200};
+    let limit = if state.config.is_dev() {3} else {500};
     Ok(Either::A(BashoTemplate {
         leaders: BashoPlayerResults::fetch(&db, basho_id, player_id, rikishi_by_id, basho.has_started(), limit)?,
         next_day: rikishi_by_rank.iter()

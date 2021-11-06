@@ -1,11 +1,15 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <script async defer data-domain="kachiclash.com" src="https://plausible.io/js/plausible.js"></script>
+
     <title>Kachi Clash · {% block subtitle %}main{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" href="/static/img/favicon.png">
+    <meta name="theme-color" content="#1c1c1c">
+    <link rel="icon" type="image/png" href="/static/img2/2021-Site-Icon-200x200.png">
     <link rel="stylesheet" href="/static/css/base.css">
     <script src="/static/js/base.js" defer></script>
+    <script src="https://donorbox.org/install-popup-button.js" defer></script>
     {% block head %}{% endblock %}
 </head>
 <body>
@@ -15,20 +19,24 @@
             {%- when Some with (player) -%}
                 {{player.render().unwrap()|safe}}
                 |
-                <a href="/settings">settings</a>
+                <a href="https://discordapp.com/invite/Wg4DsMt" target="_blank">discord</a>
+                |
+                <a class="dbox-donation-button" href="https://donorbox.org/kachi-clash-website-donations" target="_blank">donate</a>
                 |
                 <a href="/logout">log out</a>
 
             {%- when None -%}
+                <a href="https://discordapp.com/invite/Wg4DsMt" target="_blank">discord</a>
+                |
                 <a href="/login">sign in</a>
             {%- endmatch %}
         </div>
 
         <a class="logo" href="/">
             <picture>
-                <source srcset="/static/img/favicon.png"
+                <source srcset="/static/img2/2021-Site-Icon-200x200-dark.png"
                         media="(max-width: 600px)">
-                <img src="/static/img/header-logo.png" alt="Kachi Clash">
+                <img src="/static/img2/2021-Top-Banner-Logo.png" alt="Kachi Clash">
             </picture>
         </a>
     </header>
@@ -40,12 +48,17 @@
     <footer id="g-footer">
         <ul>
             <li>
-                <a href="https://github.com/danieldickison/kachiclash" target="_blank">Source on Github</a>
-            </li>
-            <li>
                 <a href="https://discordapp.com/invite/Wg4DsMt" target="_blank">Discord Channel</a>
             </li>
+            <li>
+                <a href="https://plausible.io/kachiclash.com" target="_blank">Plausible Analytics</a>
+            </li>
+            <li>
+                <a href="https://github.com/danieldickison/kachiclash" target="_blank">Source on Github</a>
+            </li>
         </ul>
+        <a class="dbox-donation-button" style="background: #41a2d8 url(https://donorbox.org/images/red_logo.png) no-repeat 37px;color: #fff;text-decoration: none;font-family: Verdana,sans-serif;display: inline-block;font-size: 16px;padding: 15px 38px;padding-left: 75px;-webkit-border-radius: 2px;-moz-border-radius: 2px;border-radius: 2px;box-shadow: 0 1px 0 0 #1f5a89;text-shadow: 0 1px rgba(0, 0, 0, 0.3);" href="https://donorbox.org/kachi-clash-website-donations">Donate</a>
+
     </footer>
 </body>
 </html>

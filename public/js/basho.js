@@ -1,9 +1,10 @@
 'use strict';
 
 const banzukeSection = document.getElementById('banzuke');
+const pickForm = document.getElementById('banzuke-select-rikishi-form');
 
 document.querySelectorAll('.select-radio').forEach(radio => {
-    radio.addEventListener('change', event => {
+    radio.addEventListener('change', _event => {
         document.getElementsByName(radio.name).forEach(otherRadio => {
             otherRadio.closest('td').classList.toggle('is-player-pick', otherRadio === radio);
         });
@@ -11,44 +12,47 @@ document.querySelectorAll('.select-radio').forEach(radio => {
     });
 });
 
-document.querySelectorAll('.save-picks-button').forEach(button => {
-    button.addEventListener('click', event => {
-        savePicks();
-        setSelectable(false);
-
-    });
+pickForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const formData = new FormData(pickForm);
+    const url = pickForm.action;
+    setSelectable(false);
+    const success = await savePicks(formData, url);
+    if (success) {
+        location.reload();
+    } else {
+        setSelectable(true);
+    }
 });
 document.querySelectorAll('.change-picks-button').forEach(button => {
     button.addEventListener('click', event => {
+        event.preventDefault();
         setSelectable(true);
     });
 });
 
 function setSelectable(selectable) {
     banzukeSection.classList.toggle('selectable', selectable);
-    document.querySelectorAll('.select-radio').forEach(button => button.disabled = !selectable);
+    document.querySelectorAll('.select-radio').forEach(button => {
+        button.disabled = !selectable;
+    });
 }
 
-function savePicks() {
-    const form = document.getElementById('banzuke-select-rikishi-form');
-    const data = new URLSearchParams(new FormData(form));
-    const url = form.action;
-    return fetch(url, {
+async function savePicks(formData, url) {
+    const data = new URLSearchParams(formData);
+    const response = await fetch(url, {
         method: 'POST',
         body: data,
         credentials: 'same-origin',
-    })
-    .then(response => {
-        if (response.ok) {
-            alert("Your picks have been saved!");
-            location.reload();
-        } else {
-            response.text().then(text => {
-                alert("Error saving your picks: " + text);
-                setSelectable(true);
-            });
-        }
     });
+    if (response.ok) {
+        alert("Your picks have been saved!");
+        return true;
+    } else {
+        const text = await response.text();
+        alert("Error saving your picks: " + text);
+        return false;
+    }
 }
 
 document.querySelectorAll('.bestow-emperors-cup-button').forEach(button => {

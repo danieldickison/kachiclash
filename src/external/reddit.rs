@@ -1,11 +1,11 @@
 use oauth2::{RedirectUrl, TokenUrl, ClientId, ClientSecret, AuthUrl};
-use oauth2::basic::{BasicClient};
+use oauth2::basic::BasicClient;
 use rusqlite::{Transaction, Error};
 use chrono::{Utc, DateTime};
 use async_trait::async_trait;
 
 use crate::Config;
-use crate::data::{PlayerId};
+use crate::data::PlayerId;
 use super::AuthProvider;
 use crate::external::UserInfo;
 
@@ -43,7 +43,7 @@ impl AuthProvider for RedditAuthProvider {
         format!("https://oauth.reddit.com/api/v1/user/{}/about", user_id)
     }
 
-    async fn parse_user_info_response(&self, res: reqwest::Response) -> Result<Box<dyn UserInfo>, failure::Error> {
+    async fn parse_user_info_response(&self, res: reqwest::Response) -> anyhow::Result<Box<dyn UserInfo>> {
         Ok(Box::new(res.json::<RedditUserInfo>().await?))
     }
 }

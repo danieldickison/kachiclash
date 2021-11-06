@@ -16,7 +16,7 @@ use askama::Template;
 use super::{HandlerError, BaseTemplate, Result};
 use crate::{AppState, Config};
 use crate::data::player;
-use crate::external::{AuthProvider};
+use crate::external::AuthProvider;
 use crate::external::google::GoogleAuthProvider;
 use crate::external::discord::DiscordAuthProvider;
 use crate::external::reddit::RedditAuthProvider;
@@ -48,7 +48,7 @@ pub async fn reddit(state: web::Data<AppState>, session: Session) -> HttpRespons
 }
 
 fn oauth_login(config: &Config, session: Session, provider: impl AuthProvider) -> HttpResponse {
-    let (auth_url, csrf_token) = provider.authorize_url(&config);
+    let (auth_url, csrf_token) = provider.authorize_url(config);
     session.set("oauth_csrf", csrf_token)
         .expect("could not set oauth_csrf session value");
     web::HttpResponse::SeeOther()
@@ -78,13 +78,12 @@ pub async fn reddit_redirect(query: web::Query<OAuthRedirectQuery>, state: web::
 async fn oauth_redirect(query: &OAuthRedirectQuery, state: web::Data<AppState>, session: Session, id: Identity, provider: impl AuthProvider + Sync)
     -> Result<impl Responder> {
 
-    let mut db = state.db.lock().unwrap();
-
     match session.get::<String>("oauth_csrf").unwrap_or(None) {
         Some(ref session_csrf) if *session_csrf == query.state => {
             debug!("exchanging oauth code for access token from {:?}", provider);
             let auth_code = AuthorizationCode::new(query.code.to_owned());
             let token_res = provider.exchange_code(&state.config, auth_code)
+                .await
                 .map_err(|e| {
                     warn!("error exchanging auth code for access token from {:?}: {:?}", provider, e);
                     HandlerError::ExternalServiceError
@@ -97,7 +96,7 @@ async fn oauth_redirect(query: &OAuthRedirectQuery, state: web::Data<AppState>, 
                     warn!("error getting logged in user info from {:?}: {:?}", provider, e);
                     HandlerError::ExternalServiceError
                 })?;
-            let (player_id, is_new) = player::player_id_with_external_user(&mut db, user_info)
+            let (player_id, is_new) = player::player_id_with_external_user(&mut state.db.lock().unwrap(), user_info)
                 .map_err(|err| {
                     warn!("error creating player for {:?} login: {:?}", provider, err);
                     HandlerError::DatabaseError(err.into())

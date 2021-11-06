@@ -5,7 +5,8 @@ use crate::data::{Player, DataError, PlayerId};
 use actix_web::{error, HttpResponse};
 use actix_identity::Identity;
 use rusqlite::Connection;
-use failure::Fail;
+use std::error::Error;
+use std::fmt::{Display, Formatter};
 
 pub mod index;
 pub mod basho;
@@ -13,31 +14,36 @@ pub mod login;
 pub mod admin;
 pub mod settings;
 pub mod player;
+pub mod stats;
 
 type Result<T> = std::result::Result<T, HandlerError>;
 
-#[derive(Fail, Debug)]
+#[derive(Debug)]
 pub enum HandlerError {
-    #[fail(display = "{} not found", _0)]
     NotFound(String),
-
-    #[fail(display = "Must be logged in")]
     MustBeLoggedIn,
-
-    #[fail(display = "External service error")]
     ExternalServiceError,
-
-    #[fail(display = "Database error")]
     DatabaseError(DataError),
-
-    #[fail(display = "CSRF error")]
     CSRFError,
-
-    #[fail(display = "Unexpected failure")]
-    Failure(failure::Error),
-
-    #[fail(display = "actix-web error")]
+    Failure(anyhow::Error),
     ActixError(String),
+}
+
+impl Error for HandlerError {}
+
+impl Display for HandlerError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            HandlerError::NotFound(thing) => write!(f, "{} not found", thing),
+            HandlerError::MustBeLoggedIn => write!(f, "Must be logged in"),
+            HandlerError::ExternalServiceError => write!(f, "External service error"),
+            HandlerError::DatabaseError(_) => write!(f, "Database error"),
+            HandlerError::CSRFError => write!(f, "CRSF error"),
+            HandlerError::Failure(_) => write!(f, "Unexpected failure"),
+            HandlerError::ActixError(_) => write!(f, "actix-web error"),
+        }?;
+        Ok(())
+    }
 }
 
 impl error::ResponseError for HandlerError {
@@ -60,9 +66,15 @@ impl From<DataError> for HandlerError {
     }
 }
 
-impl From<failure::Error> for HandlerError {
-    fn from(err: failure::Error) -> Self {
+impl From<anyhow::Error> for HandlerError {
+    fn from(err: anyhow::Error) -> Self {
         Self::Failure(err)
+    }
+}
+
+impl From<reqwest::Error> for HandlerError {
+    fn from(_err: reqwest::Error) -> Self {
+        Self::ExternalServiceError
     }
 }
 
@@ -81,7 +93,7 @@ impl BaseTemplate {
     fn new(db: &Connection, identity: &Identity) -> Result<Self> {
         let player = match identity.player_id() {
             Some(id) => {
-                let player = Player::with_id(&db, id)?;
+                let player = Player::with_id(db, id)?;
                 match player.as_ref() {
                     Some(p) => debug!("Logged in player: {} ({})", p.name, p.id),
                     None => {

@@ -1,6 +1,6 @@
 
 use crate::data::{self, basho, Rank, BashoId, PlayerId, Award, DataError, Player};
-use crate::{AppState};
+use crate::AppState;
 use crate::external::AuthProvider;
 use crate::external::discord::DiscordAuthProvider;
 use crate::external::google::GoogleAuthProvider;
@@ -9,7 +9,6 @@ use super::{HandlerError, BaseTemplate, Result};
 
 use actix_web::{web, http, HttpResponse, Responder};
 use actix_identity::Identity;
-use actix_web::client::Client;
 use rusqlite::{Connection, Result as SqlResult, OptionalExtension};
 use askama::Template;
 use serde::{Deserializer, Deserialize};
@@ -17,6 +16,8 @@ use chrono::NaiveDateTime;
 use futures::prelude::*;
 use regex::{Regex, RegexBuilder};
 use actix_session::Session;
+use anyhow::anyhow;
+use std::time::Duration;
 
 #[derive(Template)]
 #[template(path = "edit_basho.html")]
@@ -56,7 +57,7 @@ impl BashoData {
                 Ok(Self {
                     start_date,
                     venue: row.get("venue")?,
-                    banzuke: Self::fetch_banzuke(&db, id)?,
+                    banzuke: Self::fetch_banzuke(db, id)?,
                  })
             })
             .optional()
@@ -85,7 +86,9 @@ fn deserialize_datetime<'de, D>(deserializer: D) -> std::result::Result<NaiveDat
         where D: Deserializer<'de> {
     let s: String = String::deserialize(deserializer)?;
     debug!("parsing datetime from {}", s);
-    NaiveDateTime::parse_from_str(&s, "%Y-%m-%d %H:%M").map_err(serde::de::Error::custom)
+    NaiveDateTime::parse_from_str(&s, "%FT%R")
+        .or_else(|_e| NaiveDateTime::parse_from_str(&s, "%FT%T%.f"))
+        .map_err(serde::de::Error::custom)
 }
 
 #[derive(Debug, Deserialize)]
@@ -119,7 +122,7 @@ pub async fn edit_basho_post(path: web::Path<BashoId>, basho: web::Json<BashoDat
 }
 
 fn admin_base(db: &Connection, identity: &Identity) -> Result<BaseTemplate> {
-    let base = BaseTemplate::new(&db, &identity)?;
+    let base = BaseTemplate::new(db, identity)?;
     if base.player.as_ref().map_or(false, |p| p.is_admin()) {
         Ok(base)
     } else {
@@ -142,15 +145,17 @@ pub struct TorikumiTemplate {
 pub async fn torikumi_page(path: web::Path<(BashoId, u8)>, state: web::Data<AppState>, identity: Identity)
     -> Result<TorikumiTemplate> {
 
-    let basho_id = path.0;
-    let day = path.1;
-    let db = state.db.lock().unwrap();
-    let base = async { admin_base(&db, &identity) }.await?;
+    let basho_id = path.0.0;
+    let day = path.0.1;
+    let base = {
+        let db = state.db.lock().unwrap();
+        admin_base(&db, &identity)?
+    };
     let sumo_db_text = fetch_sumo_db_torikumi(basho_id, day)
         .map_ok(Some)
         .or_else(|e| async move {
             warn!("failed to fetch sumodb data: {}", e);
-            Ok::<_, failure::Error>(None)
+            Ok::<_, anyhow::Error>(None)
         }).await?;
     Ok(TorikumiTemplate { base, basho_id, day, sumo_db_text})
 }
@@ -166,18 +171,19 @@ async fn fetch_sumo_db_torikumi(basho_id: BashoId, day: u8)
                 .unwrap();
     }
 
-    let client = Client::default();
     let url = format!("http://sumodb.sumogames.de/Results_text.aspx?b={}&d={}", basho_id.id(), day);
-    let mut response = client.get(url)
-        .header("User-Agent", "kachiclash")
-        .send()
-        .map_err(|e| format_err!("{}", e)).await?;
-    let body = response.body().map_err(|e| format_err!("{}", e)).await?;
-    let str = String::from_utf8(body.to_vec())
-        .map_err(|e| format_err!("{}", e))?;
+    debug!("sending request to {}", url);
+    let str = reqwest::Client::builder()
+        .connect_timeout(Duration::from_secs(5))
+        .timeout(Duration::from_secs(10))
+        .user_agent("kachiclash.com")
+        .build()?
+        .get(&url)
+        .send().await?
+        .text().await?;
     RE.captures(str.as_str())
         .map(|cap| cap.get(1).unwrap().as_str().to_string())
-        .ok_or_else(|| format_err!("sumodb response did not match regex").into())
+        .ok_or_else(|| anyhow!("sumodb response did not match regex").into())
 }
 
 #[derive(Debug, Deserialize)]
@@ -191,8 +197,8 @@ pub async fn torikumi_post(path: web::Path<(BashoId, u8)>, torikumi: web::Json<T
     admin_base(&db, &identity)?;
     let res = data::basho::update_torikumi(
         &mut db,
-        path.0,
-        path.1,
+        path.0.0,
+        path.0.1,
         &torikumi.torikumi
     );
     map_empty_response(res)

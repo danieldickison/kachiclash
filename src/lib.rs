@@ -1,13 +1,9 @@
 #[macro_use]
 extern crate log;
 extern crate env_logger;
-#[macro_use]
-extern crate envconfig_derive;
 extern crate envconfig;
 extern crate actix_web;
 extern crate actix_identity;
-#[macro_use]
-extern crate failure;
 extern crate reqwest;
 #[macro_use]
 extern crate serde_derive;
@@ -26,6 +22,7 @@ mod data;
 mod handlers;
 mod server;
 mod external;
+mod util;
 
 
 #[derive(Envconfig)]
@@ -96,7 +93,7 @@ pub async fn run_server() -> std::io::Result<()> {
     //std::env::set_var("RUST_LOG", "debug");
     env_logger::init();
 
-    let config = Config::init().expect("Could not read config from environment");
+    let config = Config::init_from_env().expect("Could not read config from environment");
     if config.env != "dev" && config.session_secret == "abcdefghijklmnopqrstuvwxyz012345" {
         panic!("default session_secret specified for non-dev deployment");
     }

@@ -1,6 +1,13 @@
 @use 'media';
 
 #p-player {
+    section {
+        border: solid 1px var(--color-border);
+        padding: var(--section-padding);
+        margin: 2rem 0;
+        background: var(--color-light-bg);
+    }
+
     #profile {
         &::after {
             content: '';
@@ -8,7 +15,7 @@
             display: block;
         }
 
-        .img-wrapper {
+        > .img-wrapper {
             float: left;
             margin-right: 1rem;
             width: 8rem;
@@ -35,10 +42,46 @@
             }
         }
 
-        .name {
+        > .name {
             font-size: 2rem;
             line-height: 3rem;
             margin-top: 2.5rem;
+        }
+
+        > .edit {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+        }
+
+        > form {
+            display: none;
+
+            input[name="name"] {
+                font-size: 1.5rem;
+                padding: 0.25rem;
+            }
+
+            .hint {
+                color: var(--color-gray-fg);
+            }
+
+            .cancel {
+                background: var(--color-gray-bg);
+                color: var(--color-dark-fg);
+            }
+            .buttons {
+                display: flex;
+                flex-flow: row wrap;
+            }
+        }
+        &.editing {
+            .hide-while-editing {
+                display: none;
+            }
+            > form {
+                display: block;
+            }
         }
     }
 

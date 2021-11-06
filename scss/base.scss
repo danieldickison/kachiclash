@@ -1,26 +1,30 @@
 @use 'media';
 
 :root {
-    --color-navy: #345f88;
+    --color-navy: #2b6caa;
     --color-navy-highlight: #5283a9;
     --color-navy-bg: #345f88;
-    --color-orange: #f0b810;
+    --color-orange: #fcb650;
     --color-mauve: #560030;
     --color-light-fg: #f3f3f3;
     --color-dark-fg: #333;
     --color-gray-fg: #666;
     --color-gray-bg: #dadbdd;
-    --color-light-bg: rgba(255, 255, 255, 0.6);
-    --color-light-blue-bg: rgba(242, 250, 255, 0.7);
-    --color-light-yellow-bg: rgba(255, 248, 224, 0.7);
+    --color-light-bg: rgba(250, 250, 250, 1);
+    --color-dark-bg: #111;
+    --color-light-yellow-bg: rgba(236, 226, 206, 0.75);
+    --color-light-yellow-bg-opaque: rgba(236, 226, 206, 1);
     --color-border: rgba(0, 0, 0, 0.125);
     --color-border-message: rgba(20, 220, 30, 0.7);
     --color-border-error: rgba(220, 20, 20, 0.7);
-    --color-table-highlight-bg: #ffc;
-    --color-table-highlight-outline: #ec0;
+    --color-table-highlight-bg: #fff9cc80;
+    --table-highlight-shadow: 0 2px 6px #00000040;
 
+    --content-max-width: 950px;
     --section-padding: 1rem;
-    --header-height: 49px;
+    --header-height: 28px;
+
+    --emboss-text-shadow: none; //0 1px 1px rgba(255, 255, 255, 0.5);
 
     @media (max-width: media.$narrow) {
         --section-padding: 0.5rem;
@@ -39,17 +43,24 @@ html {
 
 body {
     font-family: "Helvetica Neue", sans-serif;
+    -webkit-text-size-adjust: none;
+    text-size-adjust: none;
     color: #333;
     background-color: var(--color-gray-bg);
-    background-image: url(/static/img/background-gray-wave.jpg);
+    background-image: url(/static/img2/2021-BG.jpg);
     background-attachment: fixed;
     background-repeat: no-repeat;
-    background-size: 100% auto;
-    background-position: bottom;
+    background-size: cover;
+    background-position: top center;
     height: 100%;
     margin: 0;
     display: flex;
     flex-direction: column;
+
+    @media (max-width: media.$narrow) {
+        background-attachment: initial;
+        background-repeat: repeat-y;
+    }
 }
 
 a {
@@ -66,15 +77,18 @@ a {
     }
 }
 
+h2 {
+    text-align: center;
+}
+
 button {
     cursor: pointer;
 }
 
 section {
-    border: solid 1px var(--color-border);
     padding: var(--section-padding);
     margin: 2rem 0;
-    background: var(--color-light-bg);
+    position: relative;
 }
 
 #g-header {
@@ -86,16 +100,19 @@ section {
     width: 100%;
     min-height: var(--header-height);
     margin: 0;
-    background: url(/static/img/header-bg.jpg) var(--color-navy);
+    background-color: var(--color-dark-bg);
+    background-image: url(/static/img2/2021-Top-Banner-BG.png);
     background-repeat: repeat-x;
     background-size: auto 100%;
+    background-position-x: 122px;
     color: var(--color-light-fg);
-    border-bottom: solid 1px var(--color-border);
+    // border-bottom: solid 1px var(--color-border);
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
     z-index: 1;
 
     a {
         color: inherit;
+        font-weight: 400;
     }
     
     a.logo {
@@ -125,24 +142,17 @@ section {
 
 body > main {
     width: 100%;
-    max-width: 950px;
+    max-width: var(--content-max-width);
     flex-grow: 1;
-    margin: var(--header-height) auto 15rem auto;
+    margin: var(--header-height) auto 0 auto;
+    z-index: 0;
 }
 
 #g-hero {
-    background: url(/static/img/banner-2.jpg);
-    background-size: cover;
-    width: 100%;
-    height: 0;
-    padding-top: 42.7%; /* maintain aspect ratio of source image */
-    display: block;
-    margin: 0 auto;
-
-    @media (max-width: media.$narrow) {
-        background-color: var(--color-navy-bg);
-        background-image: url(/static/img/header-logo.png);
-        padding-top: 20.3%; /* maintain aspect ratio of source image */
+    margin: 0;
+    > img {
+        width: 100%;
+        height: auto;
     }
 }
 
@@ -163,17 +173,22 @@ body > main {
 }
 
 #g-footer {
+    z-index: 1;
     width: 100%;
     margin: 0;
     padding: 10px;
-    background: #662045;
-    border-top: solid 1px #33002a;
-    color: #ccc;
+    background-color: var(--color-dark-bg);
+    color: var(--color-light-fg);
+    display: flex;
+    flex-flow: row wrap;
+    align-items: center;
+    justify-content: space-between;
 
     > ul {
         list-style: none;
         margin: 0;
         padding: 0;
+        flex: 1 1;
         
         > li {
             display: inline-block;
@@ -182,13 +197,26 @@ body > main {
 
         a {
             color: inherit;
+            font-weight: normal;
         }
+    }
+
+    > .dbox-donation-button {
+        display: block;
+    }
+}
+
+.g-time-remaining {
+    text-align: center;
+    margin: 0 1rem;
+    > span {
+        white-space: nowrap;
     }
 }
 
 .g-big-button {
     font-size: 1.5rem;
-    background: var(--color-navy);
+    background: var(--color-dark-bg);
     color: var(--color-light-fg);
     border: solid 2px var(--color-border);
     border-radius: 5px;
@@ -196,8 +224,12 @@ body > main {
     margin: 1rem 1rem 1rem 0;
 
     &:active {
-        background: var(--color-navy-highlight);
+        background: var(--color-mauve);
     }
+}
+
+.g-centered {
+    text-align: center;
 }
 
 .g-player-listing {
@@ -210,7 +242,7 @@ body > main {
         flex: 0 1 auto;
         margin: 0 0.125em 0 0.25em;
         max-width: 7em;
-        line-height: 1.5rem;
+        line-height: 1.5;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -223,10 +255,10 @@ body > main {
 
     .img-wrapper {
         display: inline-block;
-        width: 1.5rem;
-        height: 1.5rem;
+        width: 1.5em;
+        height: 1.5em;
         align-self: center;
-        border-radius: 0.75rem;
+        border-radius: 0.75em;
         overflow: hidden;
         position: relative;
         flex: none;
