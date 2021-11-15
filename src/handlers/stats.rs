@@ -1,3 +1,5 @@
+use std::ops::Range;
+
 use crate::AppState;
 use crate::data::{BashoInfo, BashoId};
 use crate::data::leaders::HistoricLeader;
@@ -43,8 +45,8 @@ pub async fn stats_page(query: web::Query<QueryParams>, state: web::Data<AppStat
     let db = state.db.lock().unwrap();
     let basho_list = BashoInfo::list_all(&db)?;
     let leader_basho_count = query.b.unwrap_or(6);
-    let first_leaders_basho = nth_completed_basho_id(&basho_list, leader_basho_count);
-    let leaders = HistoricLeader::with_first_basho(&db, first_leaders_basho, LEADERS_LIMIT)?;
+    let basho_range = n_completed_basho(&basho_list, leader_basho_count);
+    let leaders = HistoricLeader::with_basho_range(&db, basho_range, LEADERS_LIMIT)?;
     let self_leader_index = match identity.player_id() {
         Some(id) => leaders.iter().position(|l| l.player.id == id),
         None => None
@@ -61,15 +63,17 @@ pub async fn stats_page(query: web::Query<QueryParams>, state: web::Data<AppStat
     })
 }
 
-fn nth_completed_basho_id(basho_list: &[BashoInfo], n: usize) -> Option<BashoId> {
-    if basho_list.is_empty() { return None; }
+fn n_completed_basho(basho_list: &[BashoInfo], n: usize) -> Range<BashoId> {
+    if basho_list.is_empty() {
+        return Range {start: "201901".parse().unwrap(), end: "202001".parse().unwrap()};
+    }
 
-    let mut n = n;
-    if basho_list.first().unwrap().winners.is_empty() {
-        n += 1;
+    let first = basho_list.first().unwrap();
+    let end;
+    if first.winners.is_empty() {
+        end = first.id;
+    } else {
+        end = first.id.incr(1);
     }
-    if n >= basho_list.len() {
-        n = basho_list.len() - 1;
-    }
-    basho_list.get(n).map(|b| b.id)
+    Range {end, start: end.incr(-(n as isize))}
 }

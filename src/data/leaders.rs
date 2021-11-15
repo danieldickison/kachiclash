@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, ops::Range};
 use rusqlite::{Connection, Result as SqlResult};
 
 use super::{BashoId, BashoRikishi, Player, PlayerId, Rank, RankName, RankSide, Result, RikishiId};
@@ -207,9 +207,8 @@ impl Rankable for HistoricLeader {
 }
 
 impl HistoricLeader {
-    pub fn with_first_basho(db: &Connection, first_basho: Option<BashoId>, player_limit: u32) -> Result<Vec<Self>> {
-        let first_basho = first_basho.unwrap_or_else(|| "201901".parse().unwrap());
-        debug!("Fetching {} leaders since basho {}", player_limit, first_basho);
+    pub fn with_basho_range(db: &Connection, range: Range<BashoId>, player_limit: u32) -> Result<Vec<Self>> {
+        debug!("Fetching {} leaders in {:?}", player_limit, range);
         let mut leaders = db.prepare("
                 SELECT
                     p.*,
@@ -223,13 +222,13 @@ impl HistoricLeader {
                 FROM (
                     SELECT p.id, r.basho_id, r.wins, r.rank
                     FROM player AS p
-                    LEFT JOIN basho_result AS r ON r.player_id = p.id AND r.basho_id >= ?
+                    LEFT JOIN basho_result AS r ON r.player_id = p.id AND r.basho_id >= ? AND r.basho_id < ?
 
                     UNION ALL
 
                     SELECT p.id, e.basho_id, e.wins, e.rank
                     FROM player AS p
-                    LEFT JOIN external_basho_player AS e ON e.name = p.name AND e.basho_id >= ?
+                    LEFT JOIN external_basho_player AS e ON e.name = p.name AND e.basho_id >= ? AND e.basho_id < ?
                 ) AS r
                 JOIN player_info AS p ON p.id = r.id
                 GROUP BY p.id
@@ -237,7 +236,7 @@ impl HistoricLeader {
                 LIMIT ?
             ")?
             .query_and_then(
-                params![first_basho, first_basho, player_limit],
+                params![range.start, range.end, range.start, range.end, player_limit],
                 |row| Ok(Self {
                     player: Player::from_row(row)?,
                     ord: 0,
