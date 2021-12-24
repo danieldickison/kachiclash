@@ -44,8 +44,7 @@
             <span class="winners">
                 {% for player in basho.winners -%}
                     {{player.render().unwrap()|safe}}
-                    {%- if !loop.last %}, {% endif -%}
-                {%- endfor %}
+                {% endfor %}
             </span>
         </section>
     {% when None %}
