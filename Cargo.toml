@@ -7,7 +7,7 @@ publish = false
 
 [dependencies]
 #tokio = "0.2"
-actix-web = "3.3"
+actix-web = "3"
 actix-rt = "1.1"
 actix-identity = "0.3"
 actix-session = "0.4"
@@ -29,9 +29,18 @@ lazy_static = "1.4"
 rand = "0.8"
 oauth2 = "=4.0.0-alpha.2" # 4.0.0 release bumps reqwest to 0.11 which bumps tokio to 1.0, which is incompat with actix-rt
 anyhow = "1.0"
-askama = "0.10"
-askama_actix = "0.11"
 num_cpus = "1.13"
+
+[dependencies.askama]
+version = "0.11"
+git = "https://github.com/djc/askama"
+rev = "refs/pull/584/head"
+features = ["with-actix-web"]
+
+[dependencies.askama_actix]
+version = "0.12"
+git = "https://github.com/djc/askama"
+rev = "refs/pull/584/head"
 
 [dependencies.rusqlite]
 version = "0.25"
