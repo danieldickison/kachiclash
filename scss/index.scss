@@ -45,7 +45,7 @@
             display: flex;
             flex-flow: row;
             align-items: baseline;
-            justify-content: center;
+            justify-content: space-evenly;
             z-index: 2;
 
             @media (max-width: media.$medium-width) {
