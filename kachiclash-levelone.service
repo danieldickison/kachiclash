@@ -14,6 +14,7 @@ Environment=KACHI_STATIC_PATH=/storage/kachiclash.com/public
 Environment=KACHI_HERO=/static/levelone/2021-banner-levelone.png
 Environment=KACHI_HOST=levelone.kachiclash.com
 Environment=KACHI_PORT=8002
+Environment=RUST_BACKTRACE=1
 EnvironmentFile=/storage/kachiclash.com/prod_secrets-levelone
 ExecStart=/storage/kachiclash.com/server
 Restart=on-failure
