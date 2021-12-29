@@ -41,7 +41,7 @@ impl Player {
                 SELECT *
                 FROM player_info AS p
                 WHERE p.id = ?
-            ", params![player_id], |row| Player::from_row(row))
+            ", params![player_id], Player::from_row)
             .optional()
             .map_err(|e| e.into())
     }
@@ -51,7 +51,7 @@ impl Player {
                 SELECT *
                 FROM player_info AS p
                 WHERE p.name = ?
-            ", params![name], |row| Player::from_row(row))
+            ", params![name], Player::from_row)
             .optional()
             .map_err(|e| e.into())
     }
@@ -60,7 +60,7 @@ impl Player {
         db.prepare("
                 SELECT * FROM player_info
             ").unwrap()
-            .query_map([], |row| Player::from_row(row))
+            .query_map([], Player::from_row)
             .map(|mapped_rows| {
                 mapped_rows.map(|r| r.unwrap()).collect::<Vec<Player>>()
             })

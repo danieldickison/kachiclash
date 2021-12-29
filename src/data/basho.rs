@@ -174,7 +174,7 @@ impl BashoInfo {
                 JOIN player_info AS p ON p.id = a.player_id
                 WHERE a.basho_id = ? AND a.type = ?
             ").unwrap()
-            .query_map(params![basho_id, Award::EmperorsCup], |row| Player::from_row(row))?
+            .query_map(params![basho_id, Award::EmperorsCup], Player::from_row)?
             .map(|r| r.unwrap())
             .collect())
     }

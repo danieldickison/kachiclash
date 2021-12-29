@@ -161,7 +161,7 @@ impl DbWatchdog {
         }
     }
 
-    async fn run(self) -> () {
+    async fn run(self) {
         let mut interval = interval(Duration::from_secs(10));
         while !self.db.is_poisoned() {
             // debug!("db watchdog: ok");
