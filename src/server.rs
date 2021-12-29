@@ -18,26 +18,23 @@ use std::time::Duration;
 use std::cmp::max;
 
 pub async fn run(config: Config) -> std::io::Result<()> {
-    let config2 = config.clone();
+    let is_dev = config.is_dev();
+    let port = config.port;
     let session_secret: [u8; 32] = config
         .session_secret
         .as_bytes()
         .try_into()
         .expect("session key should be 32 utf8 bytes");
-    let db_mutex = data::make_conn(&config2.db_path);
+    let db_mutex = data::make_conn(&config.db_path);
     let db_mutex2 = db_mutex.clone();
-
-    if config.is_dev() {
-        info!("starting sass --watch scss/:public/css/");
-        // Not sure if we need to .wait on the child process or kill it manually. On my mac it seems to be unnecessary.
-        let _sass = Command::new("sass")
-            .arg("--watch")
-            .arg("scss/:public/css/")
-            .spawn()
-            .expect("run sass");
+    let workers;
+    if is_dev {
+        workers = 2
+    } else {
+        workers = max(num_cpus::get(), 4)
     }
 
-    info!("starting server at {}:{}", config2.host, config2.port);
+    info!("starting server at {}:{}", config.host, config.port);
     let server = HttpServer::new(move || {
         let mut app = App::new()
             .data(AppState {
@@ -127,11 +124,21 @@ pub async fn run(config: Config) -> std::io::Result<()> {
         }
         app
     })
-    .workers(max(num_cpus::get(), 4))
-    .bind(("0.0.0.0", config2.port))?
+    .workers(workers)
+    .bind(("0.0.0.0", port))?
     .run();
 
     Arbiter::spawn(DbWatchdog::new(&db_mutex2, &server).run());
+
+    if is_dev {
+        info!("starting sass --watch scss/:public/css/");
+        // Not sure if we need to .wait on the child process or kill it manually. On my mac it seems to be unnecessary.
+        let _sass = Command::new("sass")
+            .arg("--watch")
+            .arg("scss/:public/css/")
+            .spawn()
+            .expect("run sass");
+    }
 
     server.await
 }
