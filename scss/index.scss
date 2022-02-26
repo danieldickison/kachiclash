@@ -43,10 +43,14 @@
             padding-bottom: 50px;
             font-size: 1.75rem;
             display: flex;
-            flex-flow: row;
+            flex-flow: row wrap;
             align-items: baseline;
             justify-content: space-evenly;
             z-index: 2;
+
+            .g-player-listing {
+                margin-right: 1ex;
+            }
 
             @media (max-width: media.$medium-width) {
                 font-size: 1.5rem;
