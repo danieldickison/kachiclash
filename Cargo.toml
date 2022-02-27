@@ -1,17 +1,15 @@
 [package]
 name = "kachiclash"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["Daniel Dickison <kachiclash@danieldickison.com>"]
 edition = "2021"
 publish = false
 
 [dependencies]
-#tokio = "0.2"
-actix-web = "3"
-actix-rt = "1.1"
-actix-identity = "0.3"
-actix-session = "0.4"
-actix-files = "0.5"
+actix-web = "4"
+actix-identity = "0.4.0-beta.9"
+actix-session = "0.5.0-beta.8"
+actix-files = "0.6"
 async-trait = "0.1"
 url = "2.2"
 serde = "1.0"
@@ -20,32 +18,36 @@ serde_json = "1.0"
 futures = "0.3"
 envconfig = "0.10"
 log = "0.4"
-env_logger = "0.8"
+env_logger = "0.9"
 chrono = "0.4"
 itertools = "0.10"
 result = "1.0"
 regex = "1.4"
 lazy_static = "1.4"
 rand = "0.8"
-oauth2 = "=4.0.0-alpha.2" # 4.0.0 release bumps reqwest to 0.11 which bumps tokio to 1.0, which is incompat with actix-rt
+oauth2 = "4.1"
 anyhow = "1.0"
 num_cpus = "1.13"
+
+[dependencies.tokio]
+version = "1"
+features = ["full"]
 
 [dependencies.askama]
 version = "0.11"
 git = "https://github.com/djc/askama"
-rev = "refs/pull/584/head"
+# rev = "refs/pull/584/head"
 features = ["with-actix-web"]
 
 [dependencies.askama_actix]
-version = "0.12"
+version = "0.13"
 git = "https://github.com/djc/askama"
-rev = "refs/pull/584/head"
+# rev = "refs/pull/584/head"
 
 [dependencies.rusqlite]
-version = "0.25"
+version = "0.26"
 features = ["bundled", "chrono"]
 
 [dependencies.reqwest]
-version = "0.10"
+version = "0.11"
 features = ["gzip", "json"]

@@ -145,8 +145,8 @@ pub struct TorikumiTemplate {
 pub async fn torikumi_page(path: web::Path<(BashoId, u8)>, state: web::Data<AppState>, identity: Identity)
     -> Result<TorikumiTemplate> {
 
-    let basho_id = path.0.0;
-    let day = path.0.1;
+    let basho_id = path.0;
+    let day = path.1;
     let base = {
         let db = state.db.lock().unwrap();
         admin_base(&db, &identity)?
@@ -197,8 +197,8 @@ pub async fn torikumi_post(path: web::Path<(BashoId, u8)>, torikumi: web::Json<T
     admin_base(&db, &identity)?;
     let res = data::basho::update_torikumi(
         &mut db,
-        path.0.0,
-        path.0.1,
+        path.0,
+        path.1,
         &torikumi.torikumi
     );
     map_empty_response(res)
@@ -279,10 +279,10 @@ pub async fn update_user_images(json: web::Json<ImageUpdateData>, state: web::Da
         "reddit" => Ok(Box::new(RedditAuthProvider) as Box<dyn AuthProvider>),
         _ => Err(HandlerError::NotFound("auth service".to_string())),
     }?;
-    session.set("image_update_data", serde_json::to_string(&json.0).unwrap())?;
+    session.insert("image_update_data", serde_json::to_string(&json.0).unwrap())?;
     let (auth_url, csrf_token) = provider.authorize_url(&state.config);
-    session.set("oauth_csrf", csrf_token)?;
-    Ok(web::HttpResponse::SeeOther()
+    session.insert("oauth_csrf", csrf_token)?;
+    Ok(HttpResponse::SeeOther()
         .set_header(http::header::LOCATION, auth_url.to_string())
         .finish())
 }

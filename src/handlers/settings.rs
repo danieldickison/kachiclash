@@ -43,7 +43,7 @@ pub async fn settings_post(form: web::Form<FormData>, state: web::Data<AppState>
     let db = state.db.lock().unwrap();
 
     if !player::name_is_valid(&form.name) {
-        return Ok(Either::A(SettingsTemplate {
+        return Ok(Either::Left(SettingsTemplate {
             base: BaseTemplate::new(&db, &identity)?,
             message: None,
             error: Some(format!("Invalid name: {}", form.name)),
@@ -55,13 +55,13 @@ pub async fn settings_post(form: web::Form<FormData>, state: web::Data<AppState>
         params![form.name, player_id]
     ) {
         Ok(_) =>
-            Ok(Either::B(
+            Ok(Either::Right(
                 HttpResponse::SeeOther()
                 .header(header::LOCATION, Player::url_path_for_name(&form.name))
                 .finish()
             )),
         Err(e) =>
-            Ok(Either::A(SettingsTemplate {
+            Ok(Either::Left(SettingsTemplate {
                 base: BaseTemplate::new(&db, &identity)?,
                 message: None,
                 error: Some(format!("Error: {}", e)),

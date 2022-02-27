@@ -36,7 +36,7 @@ impl AuthProvider for RedditAuthProvider {
             AuthUrl::new("https://www.reddit.com/api/v1/authorize?duration=temporary".to_string()).unwrap(),
             Some(TokenUrl::new("https://www.reddit.com/api/v1/access_token".to_string()).unwrap())
         )
-        .set_redirect_url(RedirectUrl::from_url(redirect_url))
+        .set_redirect_uri(RedirectUrl::from_url(redirect_url))
     }
 
     fn make_user_info_url(&self, user_id: &str) -> String {

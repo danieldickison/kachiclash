@@ -8,14 +8,14 @@ use std::process::Command;
 
 use actix_files::Files;
 use actix_identity::{CookieIdentityPolicy, IdentityService};
-use actix_rt::Arbiter;
-use actix_rt::time::interval;
 use actix_session::CookieSession;
 use actix_web::cookie::SameSite;
-use actix_web::dev::Server;
+use actix_web::rt::time::interval;
+use actix_web::dev::ServerHandle;
 use actix_web::{middleware, web, App, HttpResponse, HttpServer};
 use std::time::Duration;
 use std::cmp::max;
+use tokio::task::spawn;
 
 pub async fn run(config: Config) -> std::io::Result<()> {
     let is_dev = config.is_dev();
@@ -26,27 +26,28 @@ pub async fn run(config: Config) -> std::io::Result<()> {
         .try_into()
         .expect("session key should be 32 utf8 bytes");
     let db_mutex = data::make_conn(&config.db_path);
-    let db_mutex2 = db_mutex.clone();
     let workers;
     if is_dev {
         workers = 2
     } else {
         workers = max(num_cpus::get(), 4)
     }
+    let app_data = web::Data::new(AppState {
+        config: config.clone(),
+        db: db_mutex.clone(),
+    });
+
 
     info!("starting server at {}:{}", config.host, config.port);
     let server = HttpServer::new(move || {
         let mut app = App::new()
-            .data(AppState {
-                config: config.clone(),
-                db: db_mutex.clone(),
-            })
+            .app_data(web::Data::clone(&app_data))
             .wrap(middleware::Logger::default())
             .wrap(IdentityService::new(
                 CookieIdentityPolicy::new(&session_secret)
                     .secure(!config.is_dev())
                     .same_site(SameSite::Lax)
-                    .max_age(10 * 365 * 24 * 60 * 60),
+                    .max_age_secs(10 * 365 * 24 * 60 * 60)
             ))
             .wrap(CookieSession::signed(&session_secret).secure(config.env != "dev"))
             .wrap(
@@ -128,7 +129,7 @@ pub async fn run(config: Config) -> std::io::Result<()> {
     .bind(("0.0.0.0", port))?
     .run();
 
-    Arbiter::spawn(DbWatchdog::new(&db_mutex2, &server).run());
+    spawn(DbWatchdog::new(&db_mutex, &server.handle()).run());
 
     if is_dev {
         info!("starting sass --watch scss/:public/css/");
@@ -150,14 +151,14 @@ async fn default_not_found() -> Result<HttpResponse, handlers::HandlerError> {
 
 struct DbWatchdog {
     db: DbConn,
-    server: Server,
+    handle: ServerHandle,
 }
 
 impl DbWatchdog {
-    fn new(db: &DbConn, server: &Server) -> Self {
+    fn new(db: &DbConn, handle: &ServerHandle) -> Self {
         Self {
             db: db.clone(),
-            server: server.clone(),
+            handle: handle.clone(),
         }
     }
 
@@ -168,6 +169,6 @@ impl DbWatchdog {
             interval.tick().await;
         }
         error!("watchdog: db mutex is poisoned; graceful shutdown");
-        self.server.stop(true).await;
+        self.handle.stop(true).await;
     }
 }
