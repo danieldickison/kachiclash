@@ -16,7 +16,7 @@ use askama::Template;
 use super::{HandlerError, BaseTemplate, Result};
 use crate::{AppState, Config};
 use crate::data::{player, PlayerId};
-use crate::external::{AuthProvider};
+use crate::external::AuthProvider;
 use crate::external::google::GoogleAuthProvider;
 use crate::external::discord::DiscordAuthProvider;
 use crate::external::reddit::RedditAuthProvider;
@@ -35,7 +35,7 @@ pub async fn index(state: web::Data<AppState>, identity: Identity) -> Result<imp
     let s = LoginTemplate {
         base: BaseTemplate::new(&db, &identity)?
     }.render().unwrap();
-    Ok(web::HttpResponse::Ok().body(s))
+    Ok(HttpResponse::Ok().body(s))
 }
 
 pub async fn discord(state: web::Data<AppState>, session: Session) -> HttpResponse {
@@ -51,11 +51,11 @@ pub async fn reddit(state: web::Data<AppState>, session: Session) -> HttpRespons
 }
 
 fn oauth_login(config: &Config, session: Session, provider: impl AuthProvider) -> HttpResponse {
-    let (auth_url, csrf_token) = provider.authorize_url(&config);
-    session.set("oauth_csrf", csrf_token)
+    let (auth_url, csrf_token) = provider.authorize_url(config);
+    session.insert("oauth_csrf", csrf_token)
         .expect("could not set oauth_csrf session value");
-    web::HttpResponse::SeeOther()
-        .set_header(http::header::LOCATION, auth_url.to_string())
+    HttpResponse::SeeOther()
+        .insert_header((http::header::LOCATION, auth_url.to_string()))
         .finish()
 }
 
@@ -121,13 +121,14 @@ async fn oauth_redirect(query: &OAuthRedirectQuery, state: web::Data<AppState>, 
 
             debug!("logged in as player {}, is_new: {}", player_id, is_new);
             id.remember(player_id.to_string());
+            session.remove("oauth_csrf");
 
             if let Some(image_update_player_ids) = image_update_player_ids {
                 player::update_player_images(&image_update_player_ids, &state.db, &provider, &access_token);
             }
 
-            Ok(web::HttpResponse::SeeOther()
-                .set_header(http::header::LOCATION, if is_new {"/settings"} else {"/"})
+            Ok(HttpResponse::SeeOther()
+                .insert_header((http::header::LOCATION, if is_new {"/settings"} else {"/"}))
                 .finish())
         },
         Some(_) | None => {
@@ -139,8 +140,8 @@ async fn oauth_redirect(query: &OAuthRedirectQuery, state: web::Data<AppState>, 
 
 pub async fn logout(id: Identity) -> impl Responder {
     id.forget();
-    web::HttpResponse::SeeOther()
-        .set_header(http::header::LOCATION, "/")
+    HttpResponse::SeeOther()
+        .insert_header((http::header::LOCATION, "/"))
         .finish()
 }
 

@@ -21,9 +21,9 @@ impl fmt::Display for RankError {
 
 impl Error for RankError {}
 
-impl Into<FromSqlError> for RankError {
-    fn into(self) -> FromSqlError {
-        FromSqlError::Other(Box::new(self))
+impl From<RankError> for FromSqlError {
+    fn from(e: RankError) -> Self {
+        Self::Other(Box::new(e))
     }
 }
 
@@ -37,16 +37,42 @@ pub enum RankName {
     Juryo,
 }
 
+impl RankName {
+    fn next(self) -> Option<Self> {
+        match self {
+            RankName::Yokozuna  => Some(Self::Ozeki),
+            RankName::Ozeki     => Some(Self::Sekiwake),
+            RankName::Sekiwake  => Some(Self::Komusubi),
+            RankName::Komusubi  => Some(Self::Maegashira),
+            RankName::Maegashira=> Some(Self::Juryo),
+            RankName::Juryo     => None,
+        }
+    }
+}
+
 impl fmt::Display for RankName {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", match self {
-            RankName::Yokozuna => 'Y',
-            RankName::Ozeki => 'O',
-            RankName::Sekiwake => 'S',
-            RankName::Komusubi => 'K',
-            RankName::Maegashira => 'M',
-            RankName::Juryo => 'J',
-        })
+        f.write_str(
+            if f.alternate() {
+                match self {
+                    RankName::Yokozuna => "Yokozuna",
+                    RankName::Ozeki => "Ozeki",
+                    RankName::Sekiwake => "Sekiwake",
+                    RankName::Komusubi => "Komusubi",
+                    RankName::Maegashira => "Maegashira",
+                    RankName::Juryo => "Juryo",
+                }
+            } else {
+                match self {
+                    RankName::Yokozuna => "Y",
+                    RankName::Ozeki => "O",
+                    RankName::Sekiwake => "S",
+                    RankName::Komusubi => "K",
+                    RankName::Maegashira => "M",
+                    RankName::Juryo => "J",
+                }
+            }
+        )
     }
 }
 
@@ -82,10 +108,19 @@ impl RankSide {
 
 impl fmt::Display for RankSide {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", match self {
-            RankSide::East => 'e',
-            RankSide::West => 'w',
-        })
+        f.write_str(
+            if f.alternate() {
+                match self {
+                    RankSide::East => "East",
+                    RankSide::West => "West",
+                }
+            } else {
+                match self {
+                    RankSide::East => "e",
+                    RankSide::West => "w",
+                }
+            }
+        )
     }
 }
 
@@ -154,6 +189,14 @@ pub struct Rank {
 }
 
 impl Rank {
+    pub fn top() -> Self {
+        Self {
+            name: RankName::Yokozuna,
+            number: 1,
+            side: RankSide::East,
+        }
+    }
+
     pub fn group(self) -> RankGroup {
         RankGroup::for_rank(self.name, self.number)
     }
@@ -161,11 +204,56 @@ impl Rank {
     pub fn is_makuuchi(self) -> bool {
         self.name <= RankName::Maegashira
     }
+
+    pub fn next_lower(self) -> Self {
+        match self {
+            Self {
+                name: RankName::Yokozuna | RankName::Ozeki | RankName::Sekiwake | RankName::Komusubi,
+                side: RankSide::West,
+                ..
+            } => Self {
+                name: self.name.next().unwrap(),
+                side: RankSide::East,
+                number: 1,
+            },
+
+            Self {
+                name: RankName::Maegashira,
+                side: RankSide::West,
+                number: 17,
+            } => Self {
+                name: RankName::Juryo,
+                side: RankSide::East,
+                number: 1,
+            },
+
+            Self {
+                side: RankSide::East,
+                ..
+            } => Self {
+                name: self.name,
+                side: RankSide::West,
+                number: self.number,
+            },
+
+            _ => {
+                Self {
+                    name: self.name,
+                    side: RankSide::East,
+                    number: self.number + 1,
+                }
+            }
+        }
+    }
 }
 
 impl fmt::Display for Rank {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}{}{}", self.name, self.number, self.side)
+        if f.alternate() {
+            write!(f, "{:#} {} ({:#})", self.name, self.number, self.side)
+        } else {
+            write!(f, "{}{}{}", self.name, self.number, self.side)
+        }
     }
 }
 

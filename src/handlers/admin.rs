@@ -1,6 +1,6 @@
 
 use crate::data::{self, basho, Rank, BashoId, PlayerId, Award, DataError, Player};
-use crate::{AppState};
+use crate::AppState;
 use crate::external::AuthProvider;
 use crate::external::discord::DiscordAuthProvider;
 use crate::external::google::GoogleAuthProvider;
@@ -58,7 +58,7 @@ impl BashoData {
                 Ok(Self {
                     start_date,
                     venue: row.get("venue")?,
-                    banzuke: Self::fetch_banzuke(&db, id)?,
+                    banzuke: Self::fetch_banzuke(db, id)?,
                  })
             })
             .optional()
@@ -123,7 +123,7 @@ pub async fn edit_basho_post(path: web::Path<BashoId>, basho: web::Json<BashoDat
 }
 
 fn admin_base(db: &Connection, identity: &Identity) -> Result<BaseTemplate> {
-    let base = BaseTemplate::new(&db, &identity)?;
+    let base = BaseTemplate::new(db, identity)?;
     if base.player.as_ref().map_or(false, |p| p.is_admin()) {
         Ok(base)
     } else {
@@ -146,8 +146,8 @@ pub struct TorikumiTemplate {
 pub async fn torikumi_page(path: web::Path<(BashoId, u8)>, state: web::Data<AppState>, identity: Identity)
     -> Result<TorikumiTemplate> {
 
-    let basho_id = path.0.0;
-    let day = path.0.1;
+    let basho_id = path.0;
+    let day = path.1;
     let base = {
     let db = state.db.lock().unwrap();
         admin_base(&db, &identity)?
@@ -198,8 +198,8 @@ pub async fn torikumi_post(path: web::Path<(BashoId, u8)>, torikumi: web::Json<T
     admin_base(&db, &identity)?;
     let res = data::basho::update_torikumi(
         &mut db,
-        path.0.0,
-        path.0.1,
+        path.0,
+        path.1,
         &torikumi.torikumi
     );
     map_empty_response(res)
@@ -241,7 +241,7 @@ pub async fn finalize_basho(path: web::Path<BashoId>, state: web::Data<AppState>
     basho::finalize_basho(&mut db, *path)?;
     Ok(
         HttpResponse::SeeOther()
-            .set_header(http::header::LOCATION, &*path.url_path())
+            .insert_header((http::header::LOCATION, &*path.url_path()))
             .finish()
     )
 }
@@ -286,10 +286,10 @@ pub async fn update_user_images(json: web::Json<ImageUpdateData>, state: web::Da
         "reddit" => Ok(Box::new(RedditAuthProvider) as Box<dyn AuthProvider>),
         _ => Err(HandlerError::NotFound("auth service".to_string())),
     }?;
-    session.set("image_update_player_ids",
+    session.insert("image_update_player_ids",
                 json.player_ids.iter().join(","))?;
     let (auth_url, csrf_token) = provider.authorize_url(&state.config);
-    session.set("oauth_csrf", csrf_token)?;
+    session.insert("oauth_csrf", csrf_token)?;
     Ok(web::Json(ImageUpdateResponseData {
         login_url: auth_url.to_string()
     }))

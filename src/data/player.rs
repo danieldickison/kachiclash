@@ -1,4 +1,4 @@
-use rusqlite::{Row, Connection, OptionalExtension, ErrorCode, Error as SqlError, Result as SqlResult, NO_PARAMS};
+use rusqlite::{Row, Connection, OptionalExtension, ErrorCode, Error as SqlError, Result as SqlResult};
 use chrono::{DateTime, Utc};
 
 use crate::external::{discord, ImageSize, AuthProvider, UserInfo};
@@ -42,7 +42,7 @@ impl Player {
                 SELECT *
                 FROM player_info AS p
                 WHERE p.id = ?
-            ", params![player_id], |row| Player::from_row(row))
+            ", params![player_id], Player::from_row)
             .optional()
             .map_err(|e| e.into())
     }
@@ -52,7 +52,7 @@ impl Player {
                 SELECT *
                 FROM player_info AS p
                 WHERE p.name = ?
-            ", params![name], |row| Player::from_row(row))
+            ", params![name], Player::from_row)
             .optional()
             .map_err(|e| e.into())
     }
@@ -61,7 +61,7 @@ impl Player {
         db.prepare("
                 SELECT * FROM player_info
             ").unwrap()
-            .query_map(NO_PARAMS, |row| Player::from_row(row))
+            .query_map([], Player::from_row)
             .map(|mapped_rows| {
                 mapped_rows.map(|r| r.unwrap()).collect::<Vec<Player>>()
             })
@@ -92,11 +92,11 @@ impl Player {
     }
 
     pub fn tiny_thumb(&self) -> String {
-        self.image_url(ImageSize::TINY)
+        self.image_url(ImageSize::Tiny)
     }
 
     pub fn medium_thumb(&self) -> String {
-        self.image_url(ImageSize::MEDIUM)
+        self.image_url(ImageSize::Medium)
     }
 
     fn image_url(&self, size: ImageSize) -> String {
@@ -104,10 +104,10 @@ impl Player {
 
         if let Some(user_id) = &self.discord_user_id {
             discord::avatar_url(
-                &user_id,
+                user_id,
                 &self.discord_avatar,
-                &self.discord_discriminator.as_ref().unwrap_or(&"0".to_string()),
-                discord::ImageExt::PNG,
+                self.discord_discriminator.as_ref().unwrap_or(&"0".to_string()),
+                discord::ImageExt::Png,
                 size).to_string()
         } else if let Some(icon) = &self.reddit_icon {
             // It's unclear why, but reddit html-escapes the icon_img value in its api return value so we need to unescape it here. In practice, only &amp; appears in the URL so I'm doing a simple replacement.
@@ -115,7 +115,7 @@ impl Player {
                 .map(|url| url.to_string())
                 .unwrap_or_else(|_| DEFAULT.to_owned())
         } else if let Some(picture) = &self.google_picture {
-            Url::parse(&picture)
+            Url::parse(picture)
                 .map(|url| url.to_string())
                 .unwrap_or_else(|_| DEFAULT.to_owned())
         } else {
@@ -123,8 +123,12 @@ impl Player {
         }
     }
 
+    pub fn url_path_for_name(name: &str) -> String {
+        format!("/player/{}", name)
+    }
+
     pub fn url_path(&self) -> String {
-        format!("/player/{}", self.name)
+        Self::url_path_for_name(&self.name)
     }
 
     pub fn login_service_name(&self) -> &'static str {
@@ -198,7 +202,7 @@ pub fn name_is_valid(name: &str) -> bool {
                 .unwrap();
     }
 
-    NAME_LENGTH.contains(&name.len()) && RE.is_match(&name)
+    NAME_LENGTH.contains(&name.len()) && RE.is_match(name)
 }
 
 pub async fn update_player_images(player_ids: &Vec<PlayerId>, db: &DbConn, auth: &dyn AuthProvider, access_token: &AccessToken)

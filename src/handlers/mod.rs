@@ -6,8 +6,7 @@ use actix_web::{error, HttpResponse};
 use actix_identity::Identity;
 use rusqlite::Connection;
 use std::error::Error;
-use std::fmt::Display;
-use serde::export::Formatter;
+use std::fmt::{Display, Formatter};
 
 pub mod index;
 pub mod basho;
@@ -15,6 +14,7 @@ pub mod login;
 pub mod admin;
 pub mod settings;
 pub mod player;
+pub mod stats;
 
 type Result<T> = std::result::Result<T, HandlerError>;
 
@@ -93,7 +93,7 @@ impl BaseTemplate {
     fn new(db: &Connection, identity: &Identity) -> Result<Self> {
         let player = match identity.player_id() {
             Some(id) => {
-                let player = Player::with_id(&db, id)?;
+                let player = Player::with_id(db, id)?;
                 match player.as_ref() {
                     Some(p) => debug!("Logged in player: {} ({})", p.name, p.id),
                     None => {

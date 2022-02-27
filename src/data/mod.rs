@@ -16,7 +16,6 @@ pub mod award;
 pub use award::Award;
 use std::error::Error;
 use std::fmt;
-use serde::export::Formatter;
 
 pub mod leaders;
 
@@ -58,7 +57,7 @@ impl From<rusqlite::Error> for DataError {
 impl Error for DataError {}
 
 impl fmt::Display for DataError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             DataError::BashoHasStarted => write!(f, "Basho has already started"),
             DataError::InvalidPicks => write!(f, "Invalid picks"),

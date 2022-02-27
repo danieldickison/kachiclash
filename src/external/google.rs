@@ -1,11 +1,11 @@
 use oauth2::{RedirectUrl, TokenUrl, ClientId, ClientSecret, AuthUrl};
-use oauth2::basic::{BasicClient};
+use oauth2::basic::BasicClient;
 use rusqlite::{Transaction, Error};
 use chrono::{Utc, DateTime};
 use async_trait::async_trait;
 
 use crate::Config;
-use crate::data::{PlayerId};
+use crate::data::PlayerId;
 use super::AuthProvider;
 use crate::external::UserInfo;
 
@@ -36,7 +36,7 @@ impl AuthProvider for GoogleAuthProvider {
             AuthUrl::new("https://accounts.google.com/o/oauth2/v2/auth".to_string()).unwrap(),
             Some(TokenUrl::new("https://oauth2.googleapis.com/token".to_string()).unwrap())
         )
-        .set_redirect_url(RedirectUrl::from_url(redirect_url))
+        .set_redirect_uri(RedirectUrl::from_url(redirect_url))
     }
 
     fn make_user_info_url(&self, user_id: &str) -> String {

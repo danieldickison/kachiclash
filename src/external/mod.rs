@@ -15,9 +15,9 @@ pub mod google;
 pub mod reddit;
 
 pub enum ImageSize {
-    TINY    = 64,
+    Tiny    = 64,
     // SMALL   = 128,
-    MEDIUM  = 512,
+    Medium  = 512,
     // LARGE   = 1024,
 }
 
@@ -36,7 +36,7 @@ pub trait UserInfo {
 }
 
 #[async_trait]
-pub trait AuthProvider: Debug {
+pub trait AuthProvider: Send + Sync + Debug {
     fn service_name(&self) -> &'static str;
     fn logged_in_user_info_url(&self) -> &'static str;
     fn oauth_scopes(&self) -> &'static [&'static str];
@@ -46,7 +46,7 @@ pub trait AuthProvider: Debug {
     fn player_id_to_user_id_mapping_sql(&self) -> &'static str;
 
     fn authorize_url(&self, config: &Config) -> (Url, CsrfToken) {
-        let client = self.make_oauth_client(&config);
+        let client = self.make_oauth_client(config);
         let mut req = client.authorize_url(CsrfToken::new_random);
         for &scope in self.oauth_scopes() {
             req = req.add_scope(Scope::new(scope.to_string()));
@@ -57,7 +57,7 @@ pub trait AuthProvider: Debug {
     async fn exchange_code(&self, config: &Config, auth_code: AuthorizationCode)
         -> anyhow::Result<BasicTokenResponse> {
 
-        self.make_oauth_client(&config)
+        self.make_oauth_client(config)
             .exchange_code(auth_code)
             .request_async(oauth2::reqwest::async_http_client)
             .await

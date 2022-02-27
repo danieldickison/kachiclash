@@ -7,111 +7,100 @@
 {% endblock %}
 
 {% block main %}
-    <a id="g-hero" href="/"></a>
+    <h1 id="g-hero"><img src="{{hero_img_src}}" width="1877" height="799" alt="Kachi Clash — a Grand Sumo prediction game"></h1>
 
-    {% match basho_list.first() %}
+    {% match current_basho %}
     {% when Some with (basho) %}
-        {% if basho.has_started() %}
-            <section id="next-basho">
-                <h2>The Current Basho is {{basho.id}}</h2>
-                <a class="button-link" href="{{basho.link_url()}}">View Results</a>
-
-                {% if base.is_admin() %}
-                    <p>Admin: <a href="{{next_basho_id.url_path()}}/edit">enter banzuke for {{next_basho_id}}</a></p>
-                {% endif %}
-            </section>
-        {% else %}
-            {% include "rules.html" %}
-            <section id="next-basho">
-                <h2>The Next Basho is {{basho.id}}</h2>
-                <p>
-                    Time remaining:
+        <section id="next-basho">
+            <a href="{{basho.link_url()}}">
+                <img class="button-link"
+                    alt="Enter current tournament"
+                    src="/static/img2/2021-Current-Tournament.png"
+                    width="1801" height="388">
+            </a>
+            {% if !basho.has_started() %}
+                <p class="g-time-remaining">
+                    Time remaining to enter/change your picks:
                     <span class="js-basho-count-down" data-start-date="{{basho.start_date.timestamp_millis()}}"></span>
                 </p>
-                <a class="button-link" href="{{basho.link_url()}}">Click here to enter {{basho.id}}!</a>
-            </section>
+            {% endif %}
+        </section>
+    {% when None %}
+        {% if base.is_admin() %}
+            <p>Admin: <a href="{{next_basho_id.url_path()}}/edit">enter banzuke for {{next_basho_id}}</a></p>
         {% endif %}
+    {% endmatch %}
+
+    {% match prev_basho %}
+    {% when Some with (basho) %}
+        <section id="prev-winners">
+            <h2>
+                <a href="{{basho.link_url()}}">
+                    <img src="/static/img2/2021-Basho-Champion.png"
+                        width="1801" height="448"
+                        alt="Congratulations to the previous basho champion">
+                </a>
+            </h2>
+            <span class="winners">
+                {% for player in basho.winners -%}
+                    {{player.render().unwrap()|safe}}
+                {% endfor %}
+            </span>
+        </section>
     {% when None %}
     {% endmatch %}
 
-    <section id="prev-winners">
-        <h2>Previous Emperor's Cup Winners</h2>
-        <table class="basho-list">
-            <thead>
-                <th>Basho</th>
-                <th>Players</th>
-                <th>Winner</th>
-                <th>Score</th>
-            </thead>
-            <tbody>
-                {% for basho in basho_list -%}
-                    {% if !basho.winners.is_empty() %}
-                        <tr>
-                            <td class="basho"><a href="{{basho.link_url()}}">{{basho.id}}</a></td>
-                            <td>{{basho.player_count}}</td>
-                            <td class="winner">
-                                {% for player in basho.winners -%}
-                                    {{player.render().unwrap()|safe}}
-                                    {%- if !loop.last %}, {% endif -%}
-                                {%- endfor %}
-                            </td>
-                            <td>
-                                {% match basho.winning_score %}
-                                {% when Some with (score) %}{{score}}
-                                {% when None %}
-                                {% endmatch %}
-                            </td>
-                        </tr>
-                        {% endif %}
-                {%- endfor %}
-            </tbody>
-        </table>
-    </section>
-
     <section id="leaderboard">
-        <h2 class="leaderboard-heading">Leaderboard</h2>
-        <p>Ranked by total wins recorded in the <strong>past {{leader_basho_count}} basho</strong>.</p>
-        <p>
-            See also: past
-            {% for c in leader_basho_count_options %}
-                <a href="?b={{c}}">{{c}} basho</a>{% if !loop.last %},{% endif -%}
-            {%- endfor %}.
-        </p>
-        <table class="leaderboard">
-            <thead>
-                <tr>
-                    <th rowspan="2">Rank</th>
-                    <th rowspan="2">Player</th>
-                    <th colspan="3" class="border-left">Basho Ranks</th>
-                    <th colspan="4" class="border-left">Wins</th>
-                </tr>
-                <tr>
-                    <th class="border-left">best</th>
-                    <th>worst</th>
-                    <th>avg</th>
-                    <th class="border-left">most</th>
-                    <th>least</th>
-                    <th>avg</th>
-                    <th>total</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for leader in leaders %}
-                <tr>
-                    <td class="rank">{{leader.rank}}</td>
-                    <td>{{leader.player.render().unwrap()|safe}}</td>
-                    <td class="num border-left">{% call numeric_stat(leader.ranks.min) %}</td>
-                    <td class="num">{% call numeric_stat(leader.ranks.max) %}</td>
-                    <td class="num">{% call numeric_stat(leader.ranks.mean) %}</td>
-                    <td class="num border-left">{% call numeric_stat(leader.wins.max) %}</td>
-                    <td class="num">{% call numeric_stat(leader.wins.min) %}</td>
-                    <td class="num">{% call numeric_stat(leader.wins.mean) %}</td>
-                    <td class="num sort-key">{% call numeric_stat(leader.wins.total) %}</td>
-                </tr>
+        <picture class="background">
+            <source src="/static/img2/2021-Player-Rankings3.webp" type="image/webp">
+            <img src="/static/img2/2021-Player-Rankings3.png" width="1100" height="1350">
+        </picture>
+        
+        <div class="scroll-container">
+            {% if base.player.is_some() %}
+            <p class="current-rank">
+                You are currently ranked
+                {% match self.self_leader() %}
+                {% when Some with (leader) %}
+                    <a href="#leaderboard-rank-{{leader.rank}}">
+                        {{"{:#}"|format(leader.rank)}}
+                    </a>
+                {% when None %}
+                    below Juryo
+                {% endmatch %}
+            </p>
+            {% endif %}
+            <div class="grid">
+            {% for (rank, players) in self.leaders_by_rank() %}
+                <div id="leaderboard-rank-{{rank}}"
+                    class="group side-{{rank.side}} rank-name-{{rank.name|lower}}"
+                >
+                    <h3>{{"{:#}"|format(rank)}}</h3>
+                    <ol class="players">
+                    {% for player in players %}
+                        <li {% if self.is_self(player) %}class="self"{% endif %}>
+                            <span class="ord">
+                                {{-player.ord-}}
+                            </span>
+                            <span class="player">
+                                {{player.player.render().unwrap()|safe}}
+                            </span>
+                            <span class="wins">
+                                {%- call numeric_stat(player.wins.total) -%}
+                            </span>
+                        </li>
+                    {% endfor %}
+                    </ol>
+                </div>
             {% endfor %}
-                
-            </tbody>
-        </table>
+            </div>
+
+            <p>
+                Rankings are based on total wins over the past 6 basho (one year).
+            </p>
+
+            <a class="all-stats" href="/stats">All player stats</a>
+        </div>
     </section>
 {% endblock %}
 
@@ -121,4 +110,3 @@
     {%- when None -%}
     {%- endmatch -%}
 {%- endmacro -%}
-

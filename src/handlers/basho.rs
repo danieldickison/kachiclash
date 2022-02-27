@@ -22,6 +22,21 @@ pub struct BashoTemplate {
     initially_selectable: bool,
 }
 
+impl BashoTemplate {
+    fn self_rank(&self) -> Option<usize> {
+        if !self.basho.has_started() {
+            return None;
+        }
+
+        self.leaders.iter().find_map(|l|
+            match l.player {
+                ResultPlayer::RankedPlayer(_, rank) if l.is_self => Some(rank),
+                _ => None
+            }
+        )
+    }
+}
+
 pub async fn basho(path: web::Path<BashoId>, state: web::Data<AppState>, identity: Identity)
     -> Result<Either<BashoTemplate, HttpResponse>> {
 
@@ -32,9 +47,9 @@ pub async fn basho(path: web::Path<BashoId>, state: web::Data<AppState>, identit
             .ok_or_else(|| HandlerError::NotFound("basho".to_string()))?;
     if let Some(external_link) = basho.external_link {
         return Ok(
-            Either::B(
+            Either::Right(
                 HttpResponse::SeeOther()
-                .header(http::header::LOCATION, external_link)
+                .insert_header((http::header::LOCATION, external_link))
                 .finish()
             )
         );
@@ -44,7 +59,7 @@ pub async fn basho(path: web::Path<BashoId>, state: web::Data<AppState>, identit
     let picks = fetch_player_picks(&db, player_id, basho_id)?;
     let FetchBashoRikishi {by_id: rikishi_by_id, by_rank: rikishi_by_rank} = FetchBashoRikishi::with_db(&db, basho_id, &picks)?;
     let limit = if state.config.is_dev() {3} else {500};
-    Ok(Either::A(BashoTemplate {
+    Ok(Either::Left(BashoTemplate {
         leaders: BashoPlayerResults::fetch(&db, basho_id, player_id, rikishi_by_id, basho.has_started(), limit)?,
         next_day: rikishi_by_rank.iter()
             .map(|rr| rr.next_day())

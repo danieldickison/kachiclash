@@ -4,7 +4,8 @@ use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::cmp::max;
 use std::result::Result as StdResult;
-use rusqlite::{Connection, NO_PARAMS, Result as SqlResult, Transaction};
+use result::ResultIteratorExt;
+use rusqlite::{Connection, Result as SqlResult, Transaction, params_from_iter};
 use rusqlite::types::{ToSql, ToSqlOutput, ValueRef, FromSql, FromSqlResult};
 use chrono::naive::{NaiveDate, NaiveDateTime};
 use chrono::offset::Utc;
@@ -13,7 +14,7 @@ use serde::{Deserialize, Deserializer};
 use itertools::Itertools;
 
 use super::{Result, DataError, PlayerId, Player, RikishiId, Rank, RankGroup, RankSide, Day, Award};
-use crate::data::leaders::{Rankable, assign_rank};
+use crate::data::leaders::{Rankable, assign_ord};
 
 pub struct BashoInfo {
     pub id: BashoId,
@@ -60,15 +61,66 @@ impl BashoInfo {
                                  external_link: row.get("external_link")?,
                                  player_count: row.get::<_, u32>("player_count")? as usize,
                                  winning_score: row.get("winning_score")?,
-                                 winners: BashoInfo::fetch_basho_winners(&db, id)?,
+                                 winners: BashoInfo::fetch_basho_winners(db, id)?,
                              }))
                          }
                      })
             .map_err(|e| e.into())
     }
 
+    pub fn current_and_previous(db: &Connection) -> Result<(Option<BashoInfo>, Option<BashoInfo>)> {
+         let mut stmt = db.prepare("
+                SELECT
+                    basho.id,
+                    basho.start_date,
+                    basho.venue,
+                    ebr.url AS external_link,
+                    CASE
+                        WHEN ebr.basho_id IS NULL THEN
+                            CASE
+                                WHEN COUNT(br.player_id) = 0 THEN (
+                                    SELECT COUNT(DISTINCT player_id) FROM pick AS p WHERE p.basho_id = basho.id
+                                )
+                                ELSE COUNT(*)
+                            END
+                        ELSE ebr.players
+                    END AS player_count,
+                    COALESCE(MAX(br.wins), ebr.winning_score) AS winning_score
+                FROM basho
+                LEFT JOIN basho_result AS br ON br.basho_id = basho.id
+                LEFT JOIN external_basho_result AS ebr ON ebr.basho_id = basho.id
+                GROUP BY basho.id
+                ORDER BY basho.id DESC
+                LIMIT 2")?;
+        let mut infos = stmt.query_map(
+            [],
+            |row| {
+                let basho_id = row.get("id")?;
+                 Ok(BashoInfo {
+                     id: basho_id,
+                     start_date: row.get("start_date")?,
+                     venue: row.get("venue")?,
+                     external_link: row.get("external_link")?,
+                     player_count: row.get::<_, u32>("player_count")? as usize,
+                     winning_score: row.get("winning_score")?,
+                     winners: BashoInfo::fetch_basho_winners(db, basho_id)?,
+                 })
+             })?;
+        let first = infos.next_invert()?;
+        let second = infos.next_invert()?;
+        if let Some(f) = &first {
+            if f.winners.is_empty() {
+                Ok((first, second))
+            } else {
+                Ok((None, first))
+            }
+        } else {
+            Ok((None, None))
+        }
+    }
+
     pub fn list_all(db: &Connection) -> Result<Vec<BashoInfo>> {
-        let mut winners = BashoInfo::fetch_all_winners(&db)?;
+        let mut winners = BashoInfo::fetch_all_winners(db)?;
         db.prepare("
                 SELECT
                     basho.id,
@@ -86,7 +138,7 @@ impl BashoInfo {
                 GROUP BY basho.id
                 ORDER BY basho.id DESC")?
             .query_map(
-                NO_PARAMS,
+                [],
                 |row| {
                     let basho_id = row.get("id")?;
                     Ok(BashoInfo {
@@ -122,7 +174,7 @@ impl BashoInfo {
                 JOIN player_info AS p ON p.id = a.player_id
                 WHERE a.basho_id = ? AND a.type = ?
             ").unwrap()
-            .query_map(params![basho_id, Award::EmperorsCup], |row| Player::from_row(row))?
+            .query_map(params![basho_id, Award::EmperorsCup], Player::from_row)?
             .map(|r| r.unwrap())
             .collect())
     }
@@ -136,6 +188,7 @@ impl BashoInfo {
                 FROM award AS a
                 JOIN player_info AS p ON p.id = a.player_id
                 WHERE a.type = ?
+                ORDER BY basho_id DESC
             ")?;
         let rows = stmt.query_map(params![Award::EmperorsCup], |row| {
                 Ok((row.get::<_, BashoId>("basho_id")?, Player::from_row(row)?))
@@ -183,19 +236,26 @@ impl BashoId {
         format!("{}", date.format("%B"))
     }
 
-    pub fn next_honbasho(self) -> BashoId {
-        let next_month = self.month + 2;
-        if next_month > 12 {
-            BashoId {
-                year: self.year + 1,
-                month: 1,
-            }
-        } else {
-            BashoId {
-                year: self.year,
-                month: next_month,
-            }
+    pub fn next(self) -> BashoId {
+        self.incr(1)
+    }
+
+    pub fn incr(self, count: isize) -> BashoId {
+        self.incr_month(count * 2)
+    }
+
+    fn incr_month(self, months: isize) -> BashoId {
+        let mut year = self.year;
+        let mut month = (self.month as isize) + months;
+        while month > 12 {
+            year += 1;
+            month -= 12;
         }
+        while month < 1 {
+            year -= 1;
+            month += 12;
+        }
+        BashoId {year, month: month as u8}
     }
 }
 
@@ -281,14 +341,12 @@ pub fn save_player_picks(db: &mut Connection, player_id: PlayerId, basho_id: Bas
         DELETE FROM pick
         WHERE player_id = ? AND basho_id = ?",
         params![player_id, basho_id])?;
-    for rikishi_id in &picks {
-        if let Some(rikishi_id) = rikishi_id {
-            debug!("inserting player {} pick {} for {}", player_id, rikishi_id, basho_id);
-            txn.execute("
-                INSERT INTO pick (player_id, basho_id, rikishi_id)
-                VALUES (?, ?, ?)",
-                params![player_id, basho_id, rikishi_id])?;
-        }
+    for rikishi_id in picks.iter().flatten() {
+        debug!("inserting player {} pick {} for {}", player_id, rikishi_id, basho_id);
+        txn.execute("
+            INSERT INTO pick (player_id, basho_id, rikishi_id)
+            VALUES (?, ?, ?)",
+            params![player_id, basho_id, rikishi_id])?;
     }
     txn.commit()?;
 
@@ -319,7 +377,7 @@ pub fn update_basho(db: &mut Connection, basho_id: BashoId, venue: &str, start_d
     let mut ambiguous_shikona = Vec::<String>::new();
     txn.prepare(query_str.as_str())?
         .query_map(
-            banzuke.iter().map(|(name, _)| name),
+            params_from_iter(banzuke.iter().map(|(name, _)| name)),
             |row| {
                 let id: i64 = row.get("id")?;
                 let family_name: String = row.get("family_name")?;
@@ -471,6 +529,11 @@ impl BashoRikishi {
         }
         1
     }
+
+    pub fn result_chunks(&self)
+    -> Vec<&[Option<bool>]> {
+        self.results.chunks(5).collect()
+    }
 }
 
 pub struct BashoRikishiByRank {
@@ -606,7 +669,7 @@ pub fn finalize_basho(db: &mut Connection, basho_id: BashoId) -> Result<()> {
 
 fn upsert_basho_results(txn: &Transaction, basho_id: BashoId, bestow_awards: bool) -> Result<()> {
     debug!("upsert_basho_results for {}; bestow_awards: {}", basho_id, bestow_awards);
-    let scores = BashoPlayerScore::fetch(&txn, basho_id)?;
+    let scores = BashoPlayerScore::fetch(txn, basho_id)?;
 
     if bestow_awards {
         let count = txn.prepare("
@@ -651,8 +714,8 @@ impl Rankable for BashoPlayerScore {
         self.wins as i32
     }
 
-    fn set_rank(&mut self, rank: usize) {
-        self.rank = rank
+    fn set_rank(&mut self, ord: usize) {
+        self.rank = ord
     }
 }
 
@@ -680,7 +743,7 @@ impl BashoPlayerScore {
                 }
             )?
             .collect::<SqlResult<_>>()?;
-        assign_rank(&mut players.iter_mut());
+        assign_ord(&mut players.iter_mut());
         Ok(players)
     }
 }
