@@ -240,7 +240,7 @@ pub async fn finalize_basho(path: web::Path<BashoId>, state: web::Data<AppState>
     basho::finalize_basho(&mut db, *path)?;
     Ok(
         HttpResponse::SeeOther()
-            .set_header(http::header::LOCATION, &*path.url_path())
+            .insert_header((http::header::LOCATION, &*path.url_path()))
             .finish()
     )
 }
@@ -283,6 +283,6 @@ pub async fn update_user_images(json: web::Json<ImageUpdateData>, state: web::Da
     let (auth_url, csrf_token) = provider.authorize_url(&state.config);
     session.insert("oauth_csrf", csrf_token)?;
     Ok(HttpResponse::SeeOther()
-        .set_header(http::header::LOCATION, auth_url.to_string())
+        .insert_header((http::header::LOCATION, auth_url.to_string()))
         .finish())
 }

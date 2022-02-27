@@ -52,7 +52,7 @@ fn oauth_login(config: &Config, session: Session, provider: impl AuthProvider) -
     session.insert("oauth_csrf", csrf_token)
         .expect("could not set oauth_csrf session value");
     HttpResponse::SeeOther()
-        .set_header(http::header::LOCATION, auth_url.to_string())
+        .insert_header((http::header::LOCATION, auth_url.to_string()))
         .finish()
 }
 
@@ -107,7 +107,7 @@ async fn oauth_redirect(query: &OAuthRedirectQuery, state: web::Data<AppState>, 
             session.remove("oauth_csrf");
 
             Ok(HttpResponse::SeeOther()
-                .set_header(http::header::LOCATION, if is_new {"/settings"} else {"/"})
+                .insert_header((http::header::LOCATION, if is_new {"/settings"} else {"/"}))
                 .finish())
         },
         Some(_) | None => {
@@ -120,7 +120,7 @@ async fn oauth_redirect(query: &OAuthRedirectQuery, state: web::Data<AppState>, 
 pub async fn logout(id: Identity) -> impl Responder {
     id.forget();
     HttpResponse::SeeOther()
-        .set_header(http::header::LOCATION, "/")
+        .insert_header((http::header::LOCATION, "/"))
         .finish()
 }
 

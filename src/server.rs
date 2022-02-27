@@ -10,11 +10,11 @@ use actix_files::Files;
 use actix_identity::{CookieIdentityPolicy, IdentityService};
 use actix_session::CookieSession;
 use actix_web::cookie::SameSite;
-use actix_web::rt::time::interval;
 use actix_web::dev::ServerHandle;
+use actix_web::rt::time::interval;
 use actix_web::{middleware, web, App, HttpResponse, HttpServer};
-use std::time::Duration;
 use std::cmp::max;
+use std::time::Duration;
 use tokio::task::spawn;
 
 pub async fn run(config: Config) -> std::io::Result<()> {
@@ -37,7 +37,6 @@ pub async fn run(config: Config) -> std::io::Result<()> {
         db: db_mutex.clone(),
     });
 
-
     info!("starting server at {}:{}", config.host, config.port);
     let server = HttpServer::new(move || {
         let mut app = App::new()
@@ -47,13 +46,10 @@ pub async fn run(config: Config) -> std::io::Result<()> {
                 CookieIdentityPolicy::new(&session_secret)
                     .secure(!config.is_dev())
                     .same_site(SameSite::Lax)
-                    .max_age_secs(10 * 365 * 24 * 60 * 60)
+                    .max_age_secs(10 * 365 * 24 * 60 * 60),
             ))
             .wrap(CookieSession::signed(&session_secret).secure(config.env != "dev"))
-            .wrap(
-                middleware::DefaultHeaders::new()
-                    .header("Content-Type", "text/html; charset=utf-8"),
-            )
+            .wrap(middleware::DefaultHeaders::new().add(("Content-Type", "text/html; charset=utf-8")))
             .service(Files::new("/static", &config.static_path).prefer_utf8(true))
             .service(web::resource("/").to(handlers::index::index))
             .service(web::resource("/logout").to(handlers::login::logout))
@@ -76,10 +72,7 @@ pub async fn run(config: Config) -> std::io::Result<()> {
                     .route(web::get().to(handlers::settings::settings_page))
                     .route(web::post().to(handlers::settings::settings_post)),
             )
-            .service(
-                web::resource("/stats")
-                    .route(web::get().to(handlers::stats::stats_page))
-            )
+            .service(web::resource("/stats").route(web::get().to(handlers::stats::stats_page)))
             .service(
                 web::scope("/basho/{basho_id}")
                     .service(web::resource("").to(handlers::basho::basho))
@@ -147,7 +140,6 @@ pub async fn run(config: Config) -> std::io::Result<()> {
 async fn default_not_found() -> Result<HttpResponse, handlers::HandlerError> {
     Err(handlers::HandlerError::NotFound("Page".to_string()))
 }
-
 
 struct DbWatchdog {
     db: DbConn,

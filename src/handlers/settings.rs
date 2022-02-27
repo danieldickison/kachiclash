@@ -57,7 +57,7 @@ pub async fn settings_post(form: web::Form<FormData>, state: web::Data<AppState>
         Ok(_) =>
             Ok(Either::Right(
                 HttpResponse::SeeOther()
-                .header(header::LOCATION, Player::url_path_for_name(&form.name))
+                .insert_header((header::LOCATION, Player::url_path_for_name(&form.name)))
                 .finish()
             )),
         Err(e) =>

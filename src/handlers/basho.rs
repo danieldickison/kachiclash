@@ -49,7 +49,7 @@ pub async fn basho(path: web::Path<BashoId>, state: web::Data<AppState>, identit
         return Ok(
             Either::Right(
                 HttpResponse::SeeOther()
-                .header(http::header::LOCATION, external_link)
+                .insert_header((http::header::LOCATION, external_link))
                 .finish()
             )
         );
