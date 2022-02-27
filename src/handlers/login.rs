@@ -21,8 +21,7 @@ use crate::external::google::GoogleAuthProvider;
 use crate::external::discord::DiscordAuthProvider;
 use crate::external::reddit::RedditAuthProvider;
 use result::ResultOptionExt;
-use anyhow::{anyhow};
-use crate::handlers::admin;
+use anyhow::anyhow;
 
 #[derive(Template)]
 #[template(path = "login.html")]
@@ -124,7 +123,7 @@ async fn oauth_redirect(query: &OAuthRedirectQuery, state: web::Data<AppState>, 
             session.remove("oauth_csrf");
 
             if let Some(image_update_player_ids) = image_update_player_ids {
-                player::update_player_images(&image_update_player_ids, &state.db, &provider, &access_token);
+                player::update_player_images(&image_update_player_ids, &state.db, &provider, &access_token).await;
             }
 
             Ok(HttpResponse::SeeOther()

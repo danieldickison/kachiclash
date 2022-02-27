@@ -61,7 +61,7 @@ impl AuthProvider for DiscordAuthProvider {
     fn player_id_to_user_id_mapping_sql(&self) -> &'static str {
         "
             SELECT player_id, user_id
-            FROM player_discord WHERE player_id IN ({})
+            FROM player_discord WHERE player_id = ?
         "
     }
 }

@@ -205,21 +205,28 @@ pub fn name_is_valid(name: &str) -> bool {
     NAME_LENGTH.contains(&name.len()) && RE.is_match(name)
 }
 
-pub async fn update_player_images(player_ids: &Vec<PlayerId>, db: &DbConn, auth: &dyn AuthProvider, access_token: &AccessToken)
-                                  -> Result<()> {
+pub async fn update_player_images(player_ids: &Vec<PlayerId>, db: &DbConn, auth: &dyn AuthProvider, access_token: &AccessToken) {
     for player_id in player_ids {
+        let user_id: String = match db.lock().unwrap()
+            .query_row(auth.player_id_to_user_id_mapping_sql(), params![player_id], |row| {
+                row.get("user_id")
+            }).optional().unwrap() {
+                Some(s) => s,
+                None => {
+                    error!("failed to find user_id for player_id {}", player_id);
+                    continue;
+                },
+            };
+        
         match auth.get_user_info(&access_token, &user_id).await {
             Ok(user_info) => {
-
+                debug!("got user info {:?}", user_info);
             }
             Err(e) => {
-                error!("failed to get user info for image update for player {}", player_id);
+                error!("failed to get user info for image update for player {}: {}", player_id, e);
             }
         };
     }
-
-
-    Ok(())
 }
 
 #[derive(Debug)]

@@ -49,8 +49,8 @@ impl AuthProvider for GoogleAuthProvider {
 
     fn player_id_to_user_id_mapping_sql(&self) -> &'static str {
         "
-            SELECT player_id, id
-            FROM player_google WHERE player_id IN ({})
+            SELECT player_id, id AS user_id
+            FROM player_google WHERE player_id = ?
         "
     }
 }

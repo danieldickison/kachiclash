@@ -21,7 +21,7 @@ pub enum ImageSize {
     // LARGE   = 1024,
 }
 
-pub trait UserInfo {
+pub trait UserInfo: Debug {
     fn update_existing_player(&self, txn: &Transaction, mod_date: DateTime<Utc>)
         -> Result<Option<PlayerId>, rusqlite::Error>;
 
