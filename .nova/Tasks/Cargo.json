@@ -1,0 +1,16 @@
+{
+  "actions" : {
+    "build" : {
+      "enabled" : true,
+      "script" : "cargo build"
+    },
+    "clean" : {
+      "enabled" : true,
+      "script" : "cargo clean"
+    },
+    "run" : {
+      "enabled" : true,
+      "path" : "run-dev-server"
+    }
+  }
+}
