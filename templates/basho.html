@@ -147,6 +147,7 @@
                     {% match leader.player -%}
                     {%- when ResultPlayer::Max -%} min-max
                     {%- when ResultPlayer::Min -%} min-max
+                    {%- when ResultPlayer::RankedPlayer with (_, 1) -%} top-leader
                     {%- when _ -%}
                     {%- endmatch %}
                     "

@@ -28,6 +28,13 @@
                 color: var(--color-gray-fg);
                 font-weight: 300;
             }
+            
+            tr.top-leader {
+                font-weight: 500;
+                a {
+                    font-weight: 500;
+                }
+            }
 
             th {
                 font-weight: bold;

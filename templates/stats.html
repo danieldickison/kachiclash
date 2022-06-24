@@ -53,7 +53,7 @@
 
         {% match self.self_leader() %}
         {% when Some with (leader) %}
-            <p>You are currently ranked <a href="#self-leader">#{{leader.ord}}</a></p>
+            <p class="current-rank">You are currently ranked <a href="#self-leader">#{{leader.ord}}</a></p>
         {% when None %}
         {% endmatch %}
 

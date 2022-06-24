@@ -232,6 +232,11 @@ body > main {
     text-align: center;
 }
 
+.current-rank {
+    font-style: italic;
+    font-size: larger;
+}
+
 .g-player-listing {
     display: inline-flex;
     flex-flow: row nowrap;
