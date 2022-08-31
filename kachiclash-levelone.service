@@ -17,7 +17,7 @@ Environment=KACHI_PORT=8002
 Environment=RUST_BACKTRACE=1
 EnvironmentFile=/storage/kachiclash.com/prod_secrets-levelone
 ExecStart=/storage/kachiclash.com/server
-Restart=on-failure
+Restart=always
 
 [Install]
 WantedBy=multi-user.target
