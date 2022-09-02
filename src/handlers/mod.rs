@@ -1,19 +1,19 @@
 extern crate askama;
 
-use crate::data::{Player, DataError, PlayerId};
+use crate::data::{DataError, Player, PlayerId};
 
-use actix_web::{error, HttpResponse};
 use actix_identity::Identity;
+use actix_web::{error, HttpResponse};
 use rusqlite::Connection;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 
-pub mod index;
-pub mod basho;
-pub mod login;
 pub mod admin;
-pub mod settings;
+pub mod basho;
+pub mod index;
+pub mod login;
 pub mod player;
+pub mod settings;
 pub mod stats;
 
 type Result<T> = std::result::Result<T, HandlerError>;
@@ -48,15 +48,20 @@ impl Display for HandlerError {
 
 impl error::ResponseError for HandlerError {
     fn error_response(&self) -> HttpResponse {
-        debug!("HandlerError {:?}, responding with error message: {}", self, self);
+        debug!(
+            "HandlerError {:?}, responding with error message: {}",
+            self, self
+        );
         match self {
             HandlerError::NotFound(_) => HttpResponse::NotFound(),
             HandlerError::ExternalServiceError => HttpResponse::InternalServerError(),
-            HandlerError::DatabaseError(_) | HandlerError::Failure(_) | HandlerError::ActixError(_) => HttpResponse::InternalServerError(),
+            HandlerError::DatabaseError(_)
+            | HandlerError::Failure(_)
+            | HandlerError::ActixError(_) => HttpResponse::InternalServerError(),
             HandlerError::CSRFError | HandlerError::MustBeLoggedIn => HttpResponse::Forbidden(),
         }
-            .content_type("text/plain")
-            .body(self.to_string())
+        .content_type("text/plain")
+        .body(self.to_string())
     }
 }
 
@@ -102,18 +107,16 @@ impl BaseTemplate {
                     }
                 };
                 player
-            },
+            }
             None => None,
         };
-        Ok(Self {
-            player
-        })
+        Ok(Self { player })
     }
 
     fn is_admin(&self) -> bool {
         match &self.player {
             Some(p) => p.is_admin(),
-            None => false
+            None => false,
         }
     }
 }
@@ -128,7 +131,6 @@ trait IdentityExt {
 
 impl IdentityExt for Identity {
     fn player_id(&self) -> Option<PlayerId> {
-        self.identity()
-            .and_then(|str| str.parse().ok())
+        self.identity().and_then(|str| str.parse().ok())
     }
 }

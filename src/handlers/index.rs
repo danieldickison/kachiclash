@@ -1,12 +1,12 @@
 use std::ops::Range;
 
-use crate::AppState;
-use crate::data::{BashoId, BashoInfo, Rank};
-use crate::data::leaders::HistoricLeader;
-use crate::util::GroupRuns;
 use super::{BaseTemplate, IdentityExt, Result};
-use actix_web::web;
+use crate::data::leaders::HistoricLeader;
+use crate::data::{BashoId, BashoInfo, Rank};
+use crate::util::GroupRuns;
+use crate::AppState;
 use actix_identity::Identity;
+use actix_web::web;
 use askama::Template;
 
 #[derive(Template)]
@@ -22,12 +22,11 @@ pub struct IndexTemplate {
 }
 
 impl IndexTemplate {
-    fn leaders_by_rank(&self)
-    -> Vec<(Rank, &[HistoricLeader])> {
+    fn leaders_by_rank(&self) -> Vec<(Rank, &[HistoricLeader])> {
         self.leaders
-        .group_runs(|a, b| a.rank == b.rank)
-        .map(|group| (group.first().unwrap().rank, group))
-        .collect()
+            .group_runs(|a, b| a.rank == b.rank)
+            .map(|group| (group.first().unwrap().rank, group))
+            .collect()
     }
 
     fn self_leader(&self) -> Option<&HistoricLeader> {
@@ -48,15 +47,18 @@ const LEADERS_LIMIT: u32 = 270;
 pub async fn index(state: web::Data<AppState>, identity: Identity) -> Result<IndexTemplate> {
     let db = state.db.lock().unwrap();
     let (current_basho, prev_basho) = BashoInfo::current_and_previous(&db)?;
-    let next_basho_id =
-        prev_basho.as_ref()
+    let next_basho_id = prev_basho
+        .as_ref()
         .map(|basho| basho.id.next())
         .unwrap_or_else(|| "201911".parse().unwrap());
-    let leaders_basho_range = Range {start: next_basho_id.incr(-6), end: next_basho_id};
+    let leaders_basho_range = Range {
+        start: next_basho_id.incr(-6),
+        end: next_basho_id,
+    };
     let leaders = HistoricLeader::with_basho_range(&db, leaders_basho_range, LEADERS_LIMIT)?;
     let self_leader_index = match identity.player_id() {
         Some(id) => leaders.iter().position(|l| l.player.id == id),
-        None => None
+        None => None,
     };
     Ok(IndexTemplate {
         base: BaseTemplate::new(&db, &identity)?,

@@ -1,9 +1,9 @@
 #[macro_use]
 extern crate log;
+extern crate actix_identity;
+extern crate actix_web;
 extern crate env_logger;
 extern crate envconfig;
-extern crate actix_web;
-extern crate actix_identity;
 extern crate reqwest;
 #[macro_use]
 extern crate serde_derive;
@@ -14,19 +14,17 @@ extern crate rusqlite;
 #[macro_use]
 extern crate lazy_static;
 
-use url::Url;
-use std::path::PathBuf;
 use envconfig::Envconfig;
+use std::path::PathBuf;
+use url::Url;
 
 mod data;
+mod external;
 mod handlers;
 mod server;
-mod external;
 mod util;
 
-
-#[derive(Envconfig)]
-#[derive(Clone, Debug)]
+#[derive(Envconfig, Clone, Debug)]
 pub struct Config {
     #[envconfig(from = "KACHI_ENV", default = "dev")]
     pub env: String,
@@ -43,7 +41,10 @@ pub struct Config {
     #[envconfig(from = "KACHI_PORT")]
     pub port: u16,
 
-    #[envconfig(from = "KACHI_HERO", default = "/static/img2/2021-Kachi-Clash-Banner-2.png")]
+    #[envconfig(
+        from = "KACHI_HERO",
+        default = "/static/img2/2021-Kachi-Clash-Banner-2.png"
+    )]
     pub hero_img_src: String,
 
     #[envconfig(from = "SESSION_SECRET", default = "abcdefghijklmnopqrstuvwxyz012345")]
@@ -100,6 +101,6 @@ pub async fn run_server() -> std::io::Result<()> {
     if config.env != "dev" && config.session_secret == "abcdefghijklmnopqrstuvwxyz012345" {
         panic!("default session_secret specified for non-dev deployment");
     }
-    
+
     server::run(config).await
 }

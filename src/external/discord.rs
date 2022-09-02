@@ -1,22 +1,15 @@
-
 use crate::Config;
 
 use std::fmt;
 use url::Url;
 
-use oauth2::{
-    AuthUrl,
-    ClientId,
-    ClientSecret,
-    RedirectUrl,
-    TokenUrl
-};
-use oauth2::basic::BasicClient;
-use super::{AuthProvider, UserInfo, ImageSize};
-use rusqlite::Transaction;
-use chrono::{DateTime, Utc};
+use super::{AuthProvider, ImageSize, UserInfo};
 use crate::data::PlayerId;
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
+use oauth2::basic::BasicClient;
+use oauth2::{AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl};
+use rusqlite::Transaction;
 
 const IMG_BASE: &str = "https://cdn.discordapp.com/";
 
@@ -45,7 +38,7 @@ impl AuthProvider for DiscordAuthProvider {
             ClientId::new(config.discord_client_id.to_owned()),
             Some(ClientSecret::new(config.discord_client_secret.to_owned())),
             AuthUrl::new("https://discordapp.com/api/oauth2/authorize".to_string()).unwrap(),
-            Some(TokenUrl::new("https://discordapp.com/api/oauth2/token".to_string()).unwrap())
+            Some(TokenUrl::new("https://discordapp.com/api/oauth2/token".to_string()).unwrap()),
         )
         .set_redirect_uri(RedirectUrl::from_url(redirect_url))
     }
@@ -54,7 +47,10 @@ impl AuthProvider for DiscordAuthProvider {
         format!("https://discordapp.com/api/v6/users/{}", user_id)
     }
 
-    async fn parse_user_info_response(&self, res: reqwest::Response) -> anyhow::Result<Box<dyn UserInfo>> {
+    async fn parse_user_info_response(
+        &self,
+        res: reqwest::Response,
+    ) -> anyhow::Result<Box<dyn UserInfo>> {
         Ok(Box::new(res.json::<DiscordUserInfo>().await?))
     }
 }
@@ -68,9 +64,11 @@ pub struct DiscordUserInfo {
 }
 
 impl UserInfo for DiscordUserInfo {
-    fn update_existing_player(&self, txn: &Transaction, mod_date: DateTime<Utc>)
-        -> Result<Option<PlayerId>, rusqlite::Error> {
-
+    fn update_existing_player(
+        &self,
+        txn: &Transaction,
+        mod_date: DateTime<Utc>,
+    ) -> Result<Option<PlayerId>, rusqlite::Error> {
         match txn
             .prepare("SELECT player_id, username, discriminator, avatar FROM player_discord WHERE user_id = ?")?
             .query_map(
@@ -99,11 +97,14 @@ impl UserInfo for DiscordUserInfo {
             },
             Some(Err(e)) => Err(e),
         }
-
     }
 
-    fn insert_into_db(&self, txn: &Transaction, mod_date: DateTime<Utc>, player_id: PlayerId)
-        -> Result<usize, rusqlite::Error> {
+    fn insert_into_db(
+        &self,
+        txn: &Transaction,
+        mod_date: DateTime<Utc>,
+        player_id: PlayerId,
+    ) -> Result<usize, rusqlite::Error> {
         txn.execute("
             INSERT INTO player_discord (player_id, user_id, username, discriminator, avatar, mod_date)
             VALUES (?, ?, ?, ?, ?, ?)",
@@ -122,19 +123,31 @@ pub enum ImageExt {
 
 impl fmt::Display for ImageExt {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", match self {
-            ImageExt::Png => "png",
-            // ImageExt::JPEG => "jpg",
-        })
+        write!(
+            f,
+            "{}",
+            match self {
+                ImageExt::Png => "png",
+                // ImageExt::JPEG => "jpg",
+            }
+        )
     }
 }
 
-pub fn avatar_url(user_id: &str, avatar: &Option<String>, discriminator: &str, ext: ImageExt, size: ImageSize) -> Url {
+pub fn avatar_url(
+    user_id: &str,
+    avatar: &Option<String>,
+    discriminator: &str,
+    ext: ImageExt,
+    size: ImageSize,
+) -> Url {
     let base = Url::parse(IMG_BASE).unwrap();
     if let Some(hash) = &avatar {
-        base.join(&format!("avatars/{}/{}.{}?size={}", user_id, hash, ext, size as i32)[..]).unwrap()
+        base.join(&format!("avatars/{}/{}.{}?size={}", user_id, hash, ext, size as i32)[..])
+            .unwrap()
     } else {
         let discrim = str::parse(discriminator).unwrap_or(0) % 5;
-        base.join(&format!("embed/avatars/{}.png?size={}", discrim, size as i32)[..]).unwrap()
+        base.join(&format!("embed/avatars/{}.png?size={}", discrim, size as i32)[..])
+            .unwrap()
     }
 }

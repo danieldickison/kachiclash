@@ -49,7 +49,9 @@ pub async fn run(config: Config) -> std::io::Result<()> {
                     .max_age_secs(10 * 365 * 24 * 60 * 60),
             ))
             .wrap(CookieSession::signed(&session_secret).secure(config.env != "dev"))
-            .wrap(middleware::DefaultHeaders::new().add(("Content-Type", "text/html; charset=utf-8")))
+            .wrap(
+                middleware::DefaultHeaders::new().add(("Content-Type", "text/html; charset=utf-8")),
+            )
             .service(Files::new("/static", &config.static_path).prefer_utf8(true))
             .service(web::resource("/").to(handlers::index::index))
             .service(web::resource("/logout").to(handlers::login::logout))

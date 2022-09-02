@@ -1,13 +1,12 @@
-use actix_web::{Either, HttpResponse, web};
 use actix_identity::Identity;
+use actix_web::{web, Either, HttpResponse};
 use askama::Template;
 use reqwest::header;
 
-use crate::AppState;
-use super::{BaseTemplate, Result, HandlerError};
+use super::{BaseTemplate, HandlerError, Result};
 use crate::data::player::{self, Player};
 use crate::handlers::IdentityExt;
-
+use crate::AppState;
 
 #[derive(Template)]
 #[template(path = "settings.html")]
@@ -22,7 +21,10 @@ pub struct FormData {
     name: String,
 }
 
-pub async fn settings_page(state: web::Data<AppState>, identity: Identity) -> Result<SettingsTemplate> {
+pub async fn settings_page(
+    state: web::Data<AppState>,
+    identity: Identity,
+) -> Result<SettingsTemplate> {
     let db = state.db.lock().unwrap();
     let base = BaseTemplate::new(&db, &identity)?;
     if base.player.is_some() {
@@ -36,9 +38,11 @@ pub async fn settings_page(state: web::Data<AppState>, identity: Identity) -> Re
     }
 }
 
-pub async fn settings_post(form: web::Form<FormData>, state: web::Data<AppState>, identity: Identity)
--> Result<Either<SettingsTemplate, HttpResponse>> {
-
+pub async fn settings_post(
+    form: web::Form<FormData>,
+    state: web::Data<AppState>,
+    identity: Identity,
+) -> Result<Either<SettingsTemplate, HttpResponse>> {
     let player_id = identity.require_player_id()?;
     let db = state.db.lock().unwrap();
 
@@ -52,19 +56,17 @@ pub async fn settings_post(form: web::Form<FormData>, state: web::Data<AppState>
 
     match db.execute(
         "UPDATE player SET name = ? WHERE id = ?",
-        params![form.name, player_id]
+        params![form.name, player_id],
     ) {
-        Ok(_) =>
-            Ok(Either::Right(
-                HttpResponse::SeeOther()
+        Ok(_) => Ok(Either::Right(
+            HttpResponse::SeeOther()
                 .insert_header((header::LOCATION, Player::url_path_for_name(&form.name)))
-                .finish()
-            )),
-        Err(e) =>
-            Ok(Either::Left(SettingsTemplate {
-                base: BaseTemplate::new(&db, &identity)?,
-                message: None,
-                error: Some(format!("Error: {}", e)),
-            })),
+                .finish(),
+        )),
+        Err(e) => Ok(Either::Left(SettingsTemplate {
+            base: BaseTemplate::new(&db, &identity)?,
+            message: None,
+            error: Some(format!("Error: {}", e)),
+        })),
     }
 }

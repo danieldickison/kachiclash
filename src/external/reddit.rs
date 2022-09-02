@@ -1,13 +1,13 @@
-use oauth2::{RedirectUrl, TokenUrl, ClientId, ClientSecret, AuthUrl};
-use oauth2::basic::BasicClient;
-use rusqlite::{Transaction, Error};
-use chrono::{Utc, DateTime};
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
+use oauth2::basic::BasicClient;
+use oauth2::{AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl};
+use rusqlite::{Error, Transaction};
 
-use crate::Config;
-use crate::data::PlayerId;
 use super::AuthProvider;
+use crate::data::PlayerId;
 use crate::external::UserInfo;
+use crate::Config;
 
 #[derive(Debug)]
 pub struct RedditAuthProvider;
@@ -33,8 +33,9 @@ impl AuthProvider for RedditAuthProvider {
         BasicClient::new(
             ClientId::new(config.reddit_client_id.to_owned()),
             Some(ClientSecret::new(config.reddit_client_secret.to_owned())),
-            AuthUrl::new("https://www.reddit.com/api/v1/authorize?duration=temporary".to_string()).unwrap(),
-            Some(TokenUrl::new("https://www.reddit.com/api/v1/access_token".to_string()).unwrap())
+            AuthUrl::new("https://www.reddit.com/api/v1/authorize?duration=temporary".to_string())
+                .unwrap(),
+            Some(TokenUrl::new("https://www.reddit.com/api/v1/access_token".to_string()).unwrap()),
         )
         .set_redirect_uri(RedirectUrl::from_url(redirect_url))
     }
@@ -43,7 +44,10 @@ impl AuthProvider for RedditAuthProvider {
         format!("https://oauth.reddit.com/api/v1/user/{}/about", user_id)
     }
 
-    async fn parse_user_info_response(&self, res: reqwest::Response) -> anyhow::Result<Box<dyn UserInfo>> {
+    async fn parse_user_info_response(
+        &self,
+        res: reqwest::Response,
+    ) -> anyhow::Result<Box<dyn UserInfo>> {
         Ok(Box::new(res.json::<RedditUserInfo>().await?))
     }
 }
@@ -56,9 +60,11 @@ pub struct RedditUserInfo {
 }
 
 impl UserInfo for RedditUserInfo {
-    fn update_existing_player(&self, txn: &Transaction, mod_date: DateTime<Utc>)
-        -> Result<Option<PlayerId>, Error> {
-
+    fn update_existing_player(
+        &self,
+        txn: &Transaction,
+        mod_date: DateTime<Utc>,
+    ) -> Result<Option<PlayerId>, Error> {
         //debug!("reddit user info: {:?}", self);
 
         match txn
@@ -66,37 +72,45 @@ impl UserInfo for RedditUserInfo {
             .query_map(
                 params![self.id],
                 |row| -> Result<(PlayerId, String, Option<String>), _> {
-                    Ok((row.get("player_id")?,
+                    Ok((
+                        row.get("player_id")?,
                         row.get("name")?,
                         row.get("icon_img")?,
                     ))
-                }
+                },
             )?
-            .next() {
-
+            .next()
+        {
             None => Ok(None),
             Some(Ok((player_id, name, icon_img))) => {
                 if name != self.name || icon_img != self.icon_img {
-                    txn.execute("
+                    txn.execute(
+                        "
                             UPDATE player_reddit
                             SET name = ?, icon_img = ?, mod_date = ?
                             WHERE id = ?
                         ",
-                                params![self.name, self.icon_img, mod_date, self.id])?;
+                        params![self.name, self.icon_img, mod_date, self.id],
+                    )?;
                 }
                 Ok(Some(player_id))
-            },
+            }
             Some(Err(e)) => Err(e),
         }
-
     }
 
-    fn insert_into_db(&self, txn: &Transaction, mod_date: DateTime<Utc>, player_id: PlayerId)
-        -> Result<usize, rusqlite::Error> {
-        txn.execute("
+    fn insert_into_db(
+        &self,
+        txn: &Transaction,
+        mod_date: DateTime<Utc>,
+        player_id: PlayerId,
+    ) -> Result<usize, rusqlite::Error> {
+        txn.execute(
+            "
             INSERT INTO player_reddit (player_id, id, name, icon_img, mod_date)
             VALUES (?, ?, ?, ?, ?)",
-        params![player_id, self.id, self.name, self.icon_img, mod_date])
+            params![player_id, self.id, self.name, self.icon_img, mod_date],
+        )
     }
 
     fn name_suggestion(&self) -> Option<String> {

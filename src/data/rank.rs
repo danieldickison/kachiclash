@@ -1,16 +1,16 @@
+use rusqlite::types::{FromSql, FromSqlError, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
+use serde::{Deserialize, Deserializer};
+use std::convert::TryFrom;
+use std::error::Error;
+use std::fmt;
 use std::ops::Deref;
 use std::str::FromStr;
-use std::error::Error;
-use std::convert::TryFrom;
-use std::fmt;
-use serde::{Deserialize, Deserializer};
-use rusqlite::types::{FromSql, ToSql, ValueRef, FromSqlResult, FromSqlError, ToSqlOutput};
 
 #[derive(Debug)]
 pub enum RankError {
     UnknownChar(char),
     MissingChar,
-    ParseIntError(std::num::ParseIntError)
+    ParseIntError(std::num::ParseIntError),
 }
 
 impl fmt::Display for RankError {
@@ -40,39 +40,37 @@ pub enum RankName {
 impl RankName {
     fn next(self) -> Option<Self> {
         match self {
-            RankName::Yokozuna  => Some(Self::Ozeki),
-            RankName::Ozeki     => Some(Self::Sekiwake),
-            RankName::Sekiwake  => Some(Self::Komusubi),
-            RankName::Komusubi  => Some(Self::Maegashira),
-            RankName::Maegashira=> Some(Self::Juryo),
-            RankName::Juryo     => None,
+            RankName::Yokozuna => Some(Self::Ozeki),
+            RankName::Ozeki => Some(Self::Sekiwake),
+            RankName::Sekiwake => Some(Self::Komusubi),
+            RankName::Komusubi => Some(Self::Maegashira),
+            RankName::Maegashira => Some(Self::Juryo),
+            RankName::Juryo => None,
         }
     }
 }
 
 impl fmt::Display for RankName {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str(
-            if f.alternate() {
-                match self {
-                    RankName::Yokozuna => "Yokozuna",
-                    RankName::Ozeki => "Ozeki",
-                    RankName::Sekiwake => "Sekiwake",
-                    RankName::Komusubi => "Komusubi",
-                    RankName::Maegashira => "Maegashira",
-                    RankName::Juryo => "Juryo",
-                }
-            } else {
-                match self {
-                    RankName::Yokozuna => "Y",
-                    RankName::Ozeki => "O",
-                    RankName::Sekiwake => "S",
-                    RankName::Komusubi => "K",
-                    RankName::Maegashira => "M",
-                    RankName::Juryo => "J",
-                }
+        f.write_str(if f.alternate() {
+            match self {
+                RankName::Yokozuna => "Yokozuna",
+                RankName::Ozeki => "Ozeki",
+                RankName::Sekiwake => "Sekiwake",
+                RankName::Komusubi => "Komusubi",
+                RankName::Maegashira => "Maegashira",
+                RankName::Juryo => "Juryo",
             }
-        )
+        } else {
+            match self {
+                RankName::Yokozuna => "Y",
+                RankName::Ozeki => "O",
+                RankName::Sekiwake => "S",
+                RankName::Komusubi => "K",
+                RankName::Maegashira => "M",
+                RankName::Juryo => "J",
+            }
+        })
     }
 }
 
@@ -86,7 +84,7 @@ impl TryFrom<char> for RankName {
             'K' => Ok(RankName::Komusubi),
             'M' => Ok(RankName::Maegashira),
             'J' => Ok(RankName::Juryo),
-            _ => Err(RankError::UnknownChar(c))
+            _ => Err(RankError::UnknownChar(c)),
         }
     }
 }
@@ -108,19 +106,17 @@ impl RankSide {
 
 impl fmt::Display for RankSide {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str(
-            if f.alternate() {
-                match self {
-                    RankSide::East => "East",
-                    RankSide::West => "West",
-                }
-            } else {
-                match self {
-                    RankSide::East => "e",
-                    RankSide::West => "w",
-                }
+        f.write_str(if f.alternate() {
+            match self {
+                RankSide::East => "East",
+                RankSide::West => "West",
             }
-        )
+        } else {
+            match self {
+                RankSide::East => "e",
+                RankSide::West => "w",
+            }
+        })
     }
 }
 
@@ -130,7 +126,7 @@ impl TryFrom<char> for RankSide {
         match c {
             'E' | 'e' => Ok(RankSide::East),
             'W' | 'w' => Ok(RankSide::West),
-            _ => Err(RankError::UnknownChar(c))
+            _ => Err(RankError::UnknownChar(c)),
         }
     }
 }
@@ -236,13 +232,11 @@ impl Rank {
                 number: self.number,
             },
 
-            _ => {
-                Self {
-                    name: self.name,
-                    side: RankSide::East,
-                    number: self.number + 1,
-                }
-            }
+            _ => Self {
+                name: self.name,
+                side: RankSide::East,
+                number: self.number + 1,
+            },
         }
     }
 }
@@ -281,14 +275,16 @@ impl FromStr for Rank {
         Ok(Rank {
             name: RankName::try_from(name_char)?,
             side: RankSide::try_from(side_char)?,
-            number: num_str.parse().map_err(RankError::ParseIntError)?
+            number: num_str.parse().map_err(RankError::ParseIntError)?,
         })
     }
 }
 
 impl<'de> Deserialize<'de> for Rank {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where D: Deserializer<'de> {
+    where
+        D: Deserializer<'de>,
+    {
         let s = String::deserialize(deserializer)?;
         s.parse().map_err(serde::de::Error::custom)
     }

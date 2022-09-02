@@ -1,13 +1,13 @@
-use oauth2::{RedirectUrl, TokenUrl, ClientId, ClientSecret, AuthUrl};
-use oauth2::basic::BasicClient;
-use rusqlite::{Transaction, Error};
-use chrono::{Utc, DateTime};
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
+use oauth2::basic::BasicClient;
+use oauth2::{AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl};
+use rusqlite::{Error, Transaction};
 
-use crate::Config;
-use crate::data::PlayerId;
 use super::AuthProvider;
+use crate::data::PlayerId;
 use crate::external::UserInfo;
+use crate::Config;
 
 #[derive(Debug)]
 pub struct GoogleAuthProvider;
@@ -34,16 +34,22 @@ impl AuthProvider for GoogleAuthProvider {
             ClientId::new(config.google_client_id.to_owned()),
             Some(ClientSecret::new(config.google_client_secret.to_owned())),
             AuthUrl::new("https://accounts.google.com/o/oauth2/v2/auth".to_string()).unwrap(),
-            Some(TokenUrl::new("https://oauth2.googleapis.com/token".to_string()).unwrap())
+            Some(TokenUrl::new("https://oauth2.googleapis.com/token".to_string()).unwrap()),
         )
         .set_redirect_uri(RedirectUrl::from_url(redirect_url))
     }
 
     fn make_user_info_url(&self, user_id: &str) -> String {
-        format!("https://people.googleapis.com/v1/{{resourceName=people/{}}}?personFields=photos", user_id)
+        format!(
+            "https://people.googleapis.com/v1/{{resourceName=people/{}}}?personFields=photos",
+            user_id
+        )
     }
 
-    async fn parse_user_info_response(&self, res: reqwest::Response) -> anyhow::Result<Box<dyn UserInfo>> {
+    async fn parse_user_info_response(
+        &self,
+        res: reqwest::Response,
+    ) -> anyhow::Result<Box<dyn UserInfo>> {
         Ok(Box::new(res.json::<GoogleUserInfo>().await?))
     }
 }
@@ -56,45 +62,51 @@ pub struct GoogleUserInfo {
 }
 
 impl UserInfo for GoogleUserInfo {
-    fn update_existing_player(&self, txn: &Transaction, mod_date: DateTime<Utc>)
-        -> Result<Option<PlayerId>, Error> {
-
+    fn update_existing_player(
+        &self,
+        txn: &Transaction,
+        mod_date: DateTime<Utc>,
+    ) -> Result<Option<PlayerId>, Error> {
         match txn
             .prepare("SELECT player_id, name, picture FROM player_google WHERE id = ?")?
             .query_map(
                 params![self.id],
                 |row| -> Result<(PlayerId, Option<String>, Option<String>), _> {
-                    Ok((row.get("player_id")?,
-                        row.get("name")?,
-                        row.get("picture")?,
-                    ))
-                }
+                    Ok((row.get("player_id")?, row.get("name")?, row.get("picture")?))
+                },
             )?
-            .next() {
-
+            .next()
+        {
             None => Ok(None),
             Some(Ok((player_id, name, picture))) => {
                 if name != self.name || picture != self.picture {
-                    txn.execute("
+                    txn.execute(
+                        "
                             UPDATE player_google
                             SET name = ?, picture = ?, mod_date = ?
                             WHERE id = ?
                         ",
-                                params![self.name, self.picture, mod_date, self.id])?;
+                        params![self.name, self.picture, mod_date, self.id],
+                    )?;
                 }
                 Ok(Some(player_id))
-            },
+            }
             Some(Err(e)) => Err(e),
         }
-
     }
 
-    fn insert_into_db(&self, txn: &Transaction, mod_date: DateTime<Utc>, player_id: PlayerId)
-        -> Result<usize, rusqlite::Error> {
-        txn.execute("
+    fn insert_into_db(
+        &self,
+        txn: &Transaction,
+        mod_date: DateTime<Utc>,
+        player_id: PlayerId,
+    ) -> Result<usize, rusqlite::Error> {
+        txn.execute(
+            "
             INSERT INTO player_google (player_id, id, name, picture, mod_date)
             VALUES (?, ?, ?, ?, ?)",
-        params![player_id, self.id, self.name, self.picture, mod_date])
+            params![player_id, self.id, self.name, self.picture, mod_date],
+        )
     }
 
     fn name_suggestion(&self) -> Option<String> {

@@ -1,11 +1,11 @@
 use std::ops::Range;
 
-use crate::AppState;
-use crate::data::{BashoInfo, BashoId};
-use crate::data::leaders::HistoricLeader;
 use super::{BaseTemplate, IdentityExt, Result};
-use actix_web::web;
+use crate::data::leaders::HistoricLeader;
+use crate::data::{BashoId, BashoInfo};
+use crate::AppState;
 use actix_identity::Identity;
+use actix_web::web;
 use askama::Template;
 
 #[derive(Template)]
@@ -35,13 +35,17 @@ impl StatsTemplate {
 
 #[derive(Deserialize)]
 pub struct QueryParams {
-    b: Option<usize>
+    b: Option<usize>,
 }
 
 const LEADER_BASHO_COUNT_OPTIONS: [usize; 3] = [6, 3, 2];
 const LEADERS_LIMIT: u32 = 500;
 
-pub async fn stats_page(query: web::Query<QueryParams>, state: web::Data<AppState>, identity: Identity) -> Result<StatsTemplate> {
+pub async fn stats_page(
+    query: web::Query<QueryParams>,
+    state: web::Data<AppState>,
+    identity: Identity,
+) -> Result<StatsTemplate> {
     let db = state.db.lock().unwrap();
     let basho_list = BashoInfo::list_all(&db)?;
     let leader_basho_count = query.b.unwrap_or(6);
@@ -49,13 +53,15 @@ pub async fn stats_page(query: web::Query<QueryParams>, state: web::Data<AppStat
     let leaders = HistoricLeader::with_basho_range(&db, basho_range, LEADERS_LIMIT)?;
     let self_leader_index = match identity.player_id() {
         Some(id) => leaders.iter().position(|l| l.player.id == id),
-        None => None
+        None => None,
     };
     Ok(StatsTemplate {
         base: BaseTemplate::new(&db, &identity)?,
         basho_list,
         leader_basho_count,
-        leader_basho_count_options: LEADER_BASHO_COUNT_OPTIONS.iter().copied()
+        leader_basho_count_options: LEADER_BASHO_COUNT_OPTIONS
+            .iter()
+            .copied()
             .filter(|c| *c != leader_basho_count)
             .collect(),
         leaders,
@@ -65,7 +71,10 @@ pub async fn stats_page(query: web::Query<QueryParams>, state: web::Data<AppStat
 
 fn n_completed_basho(basho_list: &[BashoInfo], n: usize) -> Range<BashoId> {
     if basho_list.is_empty() {
-        return Range {start: "201901".parse().unwrap(), end: "202001".parse().unwrap()};
+        return Range {
+            start: "201901".parse().unwrap(),
+            end: "202001".parse().unwrap(),
+        };
     }
 
     let first = basho_list.first().unwrap();
@@ -75,5 +84,8 @@ fn n_completed_basho(basho_list: &[BashoInfo], n: usize) -> Range<BashoId> {
     } else {
         end = first.id.incr(1);
     }
-    Range {end, start: end.incr(-(n as isize))}
+    Range {
+        end,
+        start: end.incr(-(n as isize)),
+    }
 }

@@ -1,18 +1,20 @@
-use rusqlite::{Row, Connection, OptionalExtension, ErrorCode, Error as SqlError, Result as SqlResult};
 use chrono::{DateTime, Utc};
+use rusqlite::{
+    Connection, Error as SqlError, ErrorCode, OptionalExtension, Result as SqlResult, Row,
+};
 
-use crate::external::{discord, ImageSize, AuthProvider, UserInfo};
-use super::{Result, BashoId, Rank, Award};
-use rand::random;
-use url::Url;
-use std::ops::RangeInclusive;
-use regex::{Regex, RegexBuilder};
+use super::{Award, BashoId, Rank, Result};
+use crate::data::DataError;
 use crate::external::discord::DiscordAuthProvider;
 use crate::external::google::GoogleAuthProvider;
 use crate::external::reddit::RedditAuthProvider;
-use std::collections::HashMap;
+use crate::external::{discord, AuthProvider, ImageSize, UserInfo};
 use askama_actix::Template;
-use crate::data::DataError;
+use rand::random;
+use regex::{Regex, RegexBuilder};
+use std::collections::HashMap;
+use std::ops::RangeInclusive;
+use url::Url;
 
 pub type PlayerId = i64;
 
@@ -37,34 +39,43 @@ pub struct Player {
 
 impl Player {
     pub fn with_id(db: &Connection, player_id: PlayerId) -> Result<Option<Self>> {
-        db.query_row("
+        db.query_row(
+            "
                 SELECT *
                 FROM player_info AS p
                 WHERE p.id = ?
-            ", params![player_id], Player::from_row)
-            .optional()
-            .map_err(|e| e.into())
+            ",
+            params![player_id],
+            Player::from_row,
+        )
+        .optional()
+        .map_err(|e| e.into())
     }
 
     pub fn with_name(db: &Connection, name: String) -> Result<Option<Self>> {
-        db.query_row("
+        db.query_row(
+            "
                 SELECT *
                 FROM player_info AS p
                 WHERE p.name = ?
-            ", params![name], Player::from_row)
-            .optional()
-            .map_err(|e| e.into())
+            ",
+            params![name],
+            Player::from_row,
+        )
+        .optional()
+        .map_err(|e| e.into())
     }
 
     pub fn list_all(db: &Connection) -> Result<Vec<Self>> {
-        db.prepare("
+        db.prepare(
+            "
                 SELECT * FROM player_info
-            ").unwrap()
-            .query_map([], Player::from_row)
-            .map(|mapped_rows| {
-                mapped_rows.map(|r| r.unwrap()).collect::<Vec<Player>>()
-            })
-            .map_err(|e| e.into())
+            ",
+        )
+        .unwrap()
+        .query_map([], Player::from_row)
+        .map(|mapped_rows| mapped_rows.map(|r| r.unwrap()).collect::<Vec<Player>>())
+        .map_err(|e| e.into())
     }
 
     pub fn from_row(row: &Row) -> SqlResult<Self> {
@@ -105,9 +116,13 @@ impl Player {
             discord::avatar_url(
                 user_id,
                 &self.discord_avatar,
-                self.discord_discriminator.as_ref().unwrap_or(&"0".to_string()),
+                self.discord_discriminator
+                    .as_ref()
+                    .unwrap_or(&"0".to_string()),
                 discord::ImageExt::Png,
-                size).to_string()
+                size,
+            )
+            .to_string()
         } else if let Some(icon) = &self.reddit_icon {
             // It's unclear why, but reddit html-escapes the icon_img value in its api return value so we need to unescape it here. In practice, only &amp; appears in the URL so I'm doing a simple replacement.
             Url::parse(&icon.replace("&amp;", "&"))
@@ -147,17 +162,17 @@ impl Player {
         }
     }
 
-    pub async fn update_image(&self, _db: &mut Connection)
-        -> Result<()> {
-
+    pub async fn update_image(&self, _db: &mut Connection) -> Result<()> {
         let _auth = self.login_service_provider()?;
-
 
         Ok(())
     }
 }
 
-pub fn player_id_with_external_user(db: &mut Connection, user_info: Box<dyn UserInfo>) -> SqlResult<(PlayerId, bool)> {
+pub fn player_id_with_external_user(
+    db: &mut Connection,
+    user_info: Box<dyn UserInfo>,
+) -> SqlResult<(PlayerId, bool)> {
     let txn = db.transaction()?;
     let now = Utc::now();
     let existing_player = user_info.update_existing_player(&txn, now)?;
@@ -166,7 +181,7 @@ pub fn player_id_with_external_user(db: &mut Connection, user_info: Box<dyn User
             let name_suggestion = match user_info.name_suggestion() {
                 None => user_info.anon_name_suggestion(),
                 Some(name) => {
-                    let mut name = name.replace(" ", "").replace("_", "");
+                    let mut name = name.replace(' ', "").replace('_', "");
                     name.truncate(*NAME_LENGTH.end());
                     if name_is_valid(&name) {
                         name
@@ -177,15 +192,21 @@ pub fn player_id_with_external_user(db: &mut Connection, user_info: Box<dyn User
             };
             let mut name_suffix = "".to_string();
             loop {
-
                 let name = format!("{}{}", name_suggestion, name_suffix);
-                match txn.execute("INSERT INTO player (join_date, name) VALUES (?, ?)",
-                                  params![now, name]) {
-                    Err(SqlError::SqliteFailure(rusqlite::ffi::Error { code: ErrorCode::ConstraintViolation, .. }, Some(ref str)))
-                    if str.contains("player.name") => {
+                match txn.execute(
+                    "INSERT INTO player (join_date, name) VALUES (?, ?)",
+                    params![now, name],
+                ) {
+                    Err(SqlError::SqliteFailure(
+                        rusqlite::ffi::Error {
+                            code: ErrorCode::ConstraintViolation,
+                            ..
+                        },
+                        Some(ref str),
+                    )) if str.contains("player.name") => {
                         name_suffix = random::<u16>().to_string();
                         continue;
-                    },
+                    }
                     Err(e) => return Err(e),
                     Ok(_) => break,
                 }
@@ -194,7 +215,7 @@ pub fn player_id_with_external_user(db: &mut Connection, user_info: Box<dyn User
             user_info.insert_into_db(&txn, now, player_id)?;
             txn.commit()?;
             Ok((player_id, true))
-        },
+        }
         Some(player_id) => {
             txn.commit()?;
             Ok((player_id, false))
@@ -204,10 +225,7 @@ pub fn player_id_with_external_user(db: &mut Connection, user_info: Box<dyn User
 
 pub fn name_is_valid(name: &str) -> bool {
     lazy_static! {
-        static ref RE: Regex =
-            RegexBuilder::new(NAME_REGEX)
-                .build()
-                .unwrap();
+        static ref RE: Regex = RegexBuilder::new(NAME_REGEX).build().unwrap();
     }
 
     NAME_LENGTH.contains(&name.len()) && RE.is_match(name)
@@ -223,12 +241,18 @@ pub struct BashoScore {
 }
 
 impl BashoScore {
-    pub fn with_player_id(db: &Connection, player_id: PlayerId, player_name: &str) -> Result<Vec<Self>> {
+    pub fn with_player_id(
+        db: &Connection,
+        player_id: PlayerId,
+        player_name: &str,
+    ) -> Result<Vec<Self>> {
         // Build mapping of bashi_id => PlayerBashoRikishi that can be inserted into the BashoScores later
         let mut basho_rikishi = HashMap::new();
         {
             struct RikishiRow(BashoId, String, Rank, u8, u8);
-            let mut stmt = db.prepare("
+            let mut stmt = db
+                .prepare(
+                    "
                     SELECT
                         b.basho_id,
                         b.rikishi_id,
@@ -243,17 +267,18 @@ impl BashoScore {
                     LEFT NATURAL JOIN torikumi AS t
                     WHERE p.player_id = ?
                     GROUP BY b.basho_id, b.rikishi_id
-                ").unwrap();
-            let rikishi_rows = stmt.query_map(
-                    params![player_id],
-                    |row| Ok(RikishiRow(
-                        row.get("basho_id")?,
-                        row.get("family_name")?,
-                        row.get("rank")?,
-                        row.get("wins")?,
-                        row.get("losses")?
-                    ))
-                )?;
+                ",
+                )
+                .unwrap();
+            let rikishi_rows = stmt.query_map(params![player_id], |row| {
+                Ok(RikishiRow(
+                    row.get("basho_id")?,
+                    row.get("family_name")?,
+                    row.get("rank")?,
+                    row.get("wins")?,
+                    row.get("losses")?,
+                ))
+            })?;
             for rr in rikishi_rows {
                 let rr = rr?;
                 let picks = basho_rikishi
@@ -267,7 +292,8 @@ impl BashoScore {
             }
         }
 
-        db.prepare("
+        db.prepare(
+            "
                 SELECT
                     b.id AS basho_id,
                     COALESCE(r.wins, e.wins) AS wins,
@@ -281,21 +307,24 @@ impl BashoScore {
                 LEFT JOIN basho_result AS r ON r.basho_id = b.id AND r.player_id = ?
                 LEFT JOIN external_basho_player AS e ON e.basho_id = b.id AND e.name = ?
                 ORDER BY b.id DESC
-            ").unwrap()
-            .query_map(
-                params![player_id, player_id, player_name],
-                |row| -> SqlResult<Self> {
-                    let basho_id = row.get("basho_id")?;
-                    Ok(BashoScore {
-                        basho_id,
-                        rikishi: basho_rikishi.remove(&basho_id).unwrap_or_default(),
-                        wins: row.get("wins")?,
-                        rank: row.get("rank")?,
-                        awards: Award::parse_list(row.get("awards")?),
-                    })
-                })?
-            .collect::<SqlResult<_>>()
-            .map_err(|e| e.into())
+            ",
+        )
+        .unwrap()
+        .query_map(
+            params![player_id, player_id, player_name],
+            |row| -> SqlResult<Self> {
+                let basho_id = row.get("basho_id")?;
+                Ok(BashoScore {
+                    basho_id,
+                    rikishi: basho_rikishi.remove(&basho_id).unwrap_or_default(),
+                    wins: row.get("wins")?,
+                    rank: row.get("rank")?,
+                    awards: Award::parse_list(row.get("awards")?),
+                })
+            },
+        )?
+        .collect::<SqlResult<_>>()
+        .map_err(|e| e.into())
     }
 }
 

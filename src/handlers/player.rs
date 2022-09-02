@@ -1,9 +1,9 @@
-use askama::Template;
-use actix_web::web;
 use actix_identity::Identity;
+use actix_web::web;
+use askama::Template;
 
-use super::{Result, BaseTemplate, HandlerError};
-use crate::data::{player, Player, player::BashoScore};
+use super::{BaseTemplate, HandlerError, Result};
+use crate::data::{player, player::BashoScore, Player};
 use crate::AppState;
 
 #[derive(Template)]
@@ -14,9 +14,11 @@ pub struct PlayerTemplate {
     basho_scores: Vec<BashoScore>,
 }
 
-pub async fn player(path: web::Path<String>, state: web::Data<AppState>, identity: Identity)
-    -> Result<PlayerTemplate> {
-
+pub async fn player(
+    path: web::Path<String>,
+    state: web::Data<AppState>,
+    identity: Identity,
+) -> Result<PlayerTemplate> {
     let name = path.into_inner();
     let db = state.db.lock().unwrap();
     let player = Player::with_name(&db, name)?
@@ -32,7 +34,9 @@ pub async fn player(path: web::Path<String>, state: web::Data<AppState>, identit
 
 impl PlayerTemplate {
     fn is_self(&self) -> bool {
-        self.base.player.as_ref()
-        .map_or(false, |p| p.id == self.player.id)
+        self.base
+            .player
+            .as_ref()
+            .map_or(false, |p| p.id == self.player.id)
     }
 }

@@ -1,22 +1,21 @@
-
-use crate::data::{self, basho, Rank, BashoId, PlayerId, Award, DataError, Player};
-use crate::AppState;
-use crate::external::AuthProvider;
+use super::{BaseTemplate, HandlerError, Result};
+use crate::data::{self, basho, Award, BashoId, DataError, Player, PlayerId, Rank};
 use crate::external::discord::DiscordAuthProvider;
 use crate::external::google::GoogleAuthProvider;
 use crate::external::reddit::RedditAuthProvider;
-use super::{HandlerError, BaseTemplate, Result};
+use crate::external::AuthProvider;
+use crate::AppState;
 
-use actix_web::{web, http, HttpResponse, Responder};
 use actix_identity::Identity;
-use rusqlite::{Connection, Result as SqlResult, OptionalExtension};
+use actix_session::Session;
+use actix_web::{http, web, HttpResponse, Responder};
+use anyhow::anyhow;
 use askama::Template;
-use serde::{Deserializer, Deserialize};
 use chrono::NaiveDateTime;
 use futures::prelude::*;
 use regex::{Regex, RegexBuilder};
-use actix_session::Session;
-use anyhow::anyhow;
+use rusqlite::{Connection, OptionalExtension, Result as SqlResult};
+use serde::{Deserialize, Deserializer};
 use std::time::Duration;
 
 #[derive(Template)]
@@ -26,7 +25,11 @@ pub struct EditBashoTemplate {
     basho: Option<BashoData>,
 }
 
-pub async fn edit_basho_page(path: web::Path<BashoId>, state: web::Data<AppState>, identity: Identity) -> Result<EditBashoTemplate> {
+pub async fn edit_basho_page(
+    path: web::Path<BashoId>,
+    state: web::Data<AppState>,
+    identity: Identity,
+) -> Result<EditBashoTemplate> {
     let db = state.db.lock().unwrap();
     Ok(EditBashoTemplate {
         base: admin_base(&db, &identity)?,
@@ -37,14 +40,15 @@ pub async fn edit_basho_page(path: web::Path<BashoId>, state: web::Data<AppState
 #[derive(Debug, Deserialize)]
 pub struct BashoData {
     venue: String,
-    #[serde(deserialize_with="deserialize_datetime")]
+    #[serde(deserialize_with = "deserialize_datetime")]
     start_date: NaiveDateTime,
     banzuke: Vec<BanzukeRikishi>,
 }
 
 impl BashoData {
     fn with_id(db: &Connection, id: BashoId) -> Result<Option<Self>> {
-        db.query_row("
+        db.query_row(
+            "
             SELECT
                 basho.start_date,
                 basho.venue
@@ -58,32 +62,35 @@ impl BashoData {
                     start_date,
                     venue: row.get("venue")?,
                     banzuke: Self::fetch_banzuke(db, id)?,
-                 })
-            })
-            .optional()
-            .map_err(|e| DataError::from(e).into())
+                })
+            },
+        )
+        .optional()
+        .map_err(|e| DataError::from(e).into())
     }
 
     fn fetch_banzuke(db: &Connection, id: BashoId) -> SqlResult<Vec<BanzukeRikishi>> {
-        db.prepare("
+        db.prepare(
+            "
             SELECT family_name, rank
             FROM banzuke
-            WHERE basho_id = ?")?
-            .query_map(
-                params![id],
-                |row| {
-                    //debug!("got banzuke row with name {:?}", row.get("family_name")?);
-                    Ok(BanzukeRikishi {
-                        name: row.get("family_name")?,
-                        rank: row.get("rank")?,
-                    })
-                })?
-            .collect::<SqlResult<Vec<BanzukeRikishi>>>()
+            WHERE basho_id = ?",
+        )?
+        .query_map(params![id], |row| {
+            //debug!("got banzuke row with name {:?}", row.get("family_name")?);
+            Ok(BanzukeRikishi {
+                name: row.get("family_name")?,
+                rank: row.get("rank")?,
+            })
+        })?
+        .collect::<SqlResult<Vec<BanzukeRikishi>>>()
     }
 }
 
 fn deserialize_datetime<'de, D>(deserializer: D) -> std::result::Result<NaiveDateTime, D::Error>
-        where D: Deserializer<'de> {
+where
+    D: Deserializer<'de>,
+{
     let s: String = String::deserialize(deserializer)?;
     debug!("parsing datetime from {}", s);
     NaiveDateTime::parse_from_str(&s, "%FT%R")
@@ -102,8 +109,12 @@ pub struct BanzukeResponseData {
     basho_url: String,
 }
 
-pub async fn edit_basho_post(path: web::Path<BashoId>, basho: web::Json<BashoData>, state: web::Data<AppState>, identity: Identity)
--> Result<web::Json<BanzukeResponseData>> {
+pub async fn edit_basho_post(
+    path: web::Path<BashoId>,
+    basho: web::Json<BashoData>,
+    state: web::Data<AppState>,
+    identity: Identity,
+) -> Result<web::Json<BanzukeResponseData>> {
     let mut db = state.db.lock().unwrap();
     admin_base(&db, &identity)?;
     let basho_id = data::basho::update_basho(
@@ -111,13 +122,14 @@ pub async fn edit_basho_post(path: web::Path<BashoId>, basho: web::Json<BashoDat
         *path,
         &basho.venue,
         &basho.start_date,
-        &basho.banzuke
+        &basho
+            .banzuke
             .iter()
             .map(|b| (b.name.to_owned(), b.rank.to_owned()))
-            .collect::<Vec<_>>()
+            .collect::<Vec<_>>(),
     )?;
     Ok(web::Json(BanzukeResponseData {
-        basho_url: basho_id.url_path()
+        basho_url: basho_id.url_path(),
     }))
 }
 
@@ -130,7 +142,6 @@ fn admin_base(db: &Connection, identity: &Identity) -> Result<BaseTemplate> {
     }
 }
 
-
 ///////
 
 #[derive(Template)]
@@ -142,9 +153,11 @@ pub struct TorikumiTemplate {
     sumo_db_text: Option<String>,
 }
 
-pub async fn torikumi_page(path: web::Path<(BashoId, u8)>, state: web::Data<AppState>, identity: Identity)
-    -> Result<TorikumiTemplate> {
-
+pub async fn torikumi_page(
+    path: web::Path<(BashoId, u8)>,
+    state: web::Data<AppState>,
+    identity: Identity,
+) -> Result<TorikumiTemplate> {
     let basho_id = path.0;
     let day = path.1;
     let base = {
@@ -156,13 +169,17 @@ pub async fn torikumi_page(path: web::Path<(BashoId, u8)>, state: web::Data<AppS
         .or_else(|e| async move {
             warn!("failed to fetch sumodb data: {}", e);
             Ok::<_, anyhow::Error>(None)
-        }).await?;
-    Ok(TorikumiTemplate { base, basho_id, day, sumo_db_text})
+        })
+        .await?;
+    Ok(TorikumiTemplate {
+        base,
+        basho_id,
+        day,
+        sumo_db_text,
+    })
 }
 
-async fn fetch_sumo_db_torikumi(basho_id: BashoId, day: u8)
-    -> Result<String> {
-
+async fn fetch_sumo_db_torikumi(basho_id: BashoId, day: u8) -> Result<String> {
     lazy_static! {
         static ref RE: Regex =
             RegexBuilder::new(r#"<div +class="simplecontent">\s*<pre>.*?\WMakuuchi\s+(.*?)</pre>"#)
@@ -171,7 +188,11 @@ async fn fetch_sumo_db_torikumi(basho_id: BashoId, day: u8)
                 .unwrap();
     }
 
-    let url = format!("http://sumodb.sumogames.de/Results_text.aspx?b={}&d={}", basho_id.id(), day);
+    let url = format!(
+        "http://sumodb.sumogames.de/Results_text.aspx?b={}&d={}",
+        basho_id.id(),
+        day
+    );
     debug!("sending request to {}", url);
     let str = reqwest::Client::builder()
         .connect_timeout(Duration::from_secs(5))
@@ -179,8 +200,10 @@ async fn fetch_sumo_db_torikumi(basho_id: BashoId, day: u8)
         .user_agent("kachiclash.com")
         .build()?
         .get(&url)
-        .send().await?
-        .text().await?;
+        .send()
+        .await?
+        .text()
+        .await?;
     RE.captures(str.as_str())
         .map(|cap| cap.get(1).unwrap().as_str().to_string())
         .ok_or_else(|| anyhow!("sumodb response did not match regex").into())
@@ -191,35 +214,41 @@ pub struct TorikumiData {
     torikumi: Vec<data::basho::TorikumiMatchUpdateData>,
 }
 
-pub async fn torikumi_post(path: web::Path<(BashoId, u8)>, torikumi: web::Json<TorikumiData>, state: web::Data<AppState>, identity: Identity)
--> Result<impl Responder> {
+pub async fn torikumi_post(
+    path: web::Path<(BashoId, u8)>,
+    torikumi: web::Json<TorikumiData>,
+    state: web::Data<AppState>,
+    identity: Identity,
+) -> Result<impl Responder> {
     let mut db = state.db.lock().unwrap();
     admin_base(&db, &identity)?;
-    let res = data::basho::update_torikumi(
-        &mut db,
-        path.0,
-        path.1,
-        &torikumi.torikumi
-    );
+    let res = data::basho::update_torikumi(&mut db, path.0, path.1, &torikumi.torikumi);
     map_empty_response(res)
 }
 
-
 #[derive(Debug, Deserialize)]
 pub struct AwardData {
-    player_id: PlayerId
+    player_id: PlayerId,
 }
 
-pub async fn bestow_emperors_cup(path: web::Path<BashoId>, award: web::Json<AwardData>, state: web::Data<AppState>, identity: Identity)
--> Result<impl Responder> {
+pub async fn bestow_emperors_cup(
+    path: web::Path<BashoId>,
+    award: web::Json<AwardData>,
+    state: web::Data<AppState>,
+    identity: Identity,
+) -> Result<impl Responder> {
     let mut db = state.db.lock().unwrap();
     admin_base(&db, &identity)?;
     let res = Award::EmperorsCup.bestow(&mut db, *path, award.player_id);
     map_empty_response(res)
 }
 
-pub async fn revoke_emperors_cup(path: web::Path<BashoId>, award: web::Json<AwardData>, state: web::Data<AppState>, identity: Identity)
--> Result<impl Responder> {
+pub async fn revoke_emperors_cup(
+    path: web::Path<BashoId>,
+    award: web::Json<AwardData>,
+    state: web::Data<AppState>,
+    identity: Identity,
+) -> Result<impl Responder> {
     let mut db = state.db.lock().unwrap();
     admin_base(&db, &identity)?;
     let res = Award::EmperorsCup.revoke(&mut db, *path, award.player_id);
@@ -229,20 +258,21 @@ pub async fn revoke_emperors_cup(path: web::Path<BashoId>, award: web::Json<Awar
 fn map_empty_response(res: std::result::Result<(), DataError>) -> Result<impl Responder> {
     match res {
         Ok(_) => Ok(HttpResponse::Ok()),
-        Err(e) => Err(e.into())
+        Err(e) => Err(e.into()),
     }
 }
 
-pub async fn finalize_basho(path: web::Path<BashoId>, state: web::Data<AppState>, identity: Identity)
-    -> Result<impl Responder> {
+pub async fn finalize_basho(
+    path: web::Path<BashoId>,
+    state: web::Data<AppState>,
+    identity: Identity,
+) -> Result<impl Responder> {
     let mut db = state.db.lock().unwrap();
     admin_base(&db, &identity)?;
     basho::finalize_basho(&mut db, *path)?;
-    Ok(
-        HttpResponse::SeeOther()
-            .insert_header((http::header::LOCATION, &*path.url_path()))
-            .finish()
-    )
+    Ok(HttpResponse::SeeOther()
+        .insert_header((http::header::LOCATION, &*path.url_path()))
+        .finish())
 }
 
 #[derive(Template)]
@@ -252,9 +282,10 @@ pub struct ListPlayersTemplate {
     players: Vec<Player>,
 }
 
-pub async fn list_players(state: web::Data<AppState>, identity: Identity)
-    -> Result<ListPlayersTemplate> {
-
+pub async fn list_players(
+    state: web::Data<AppState>,
+    identity: Identity,
+) -> Result<ListPlayersTemplate> {
     let db = state.db.lock().unwrap();
     let base = admin_base(&db, &identity)?;
     Ok(ListPlayersTemplate {
@@ -263,16 +294,17 @@ pub async fn list_players(state: web::Data<AppState>, identity: Identity)
     })
 }
 
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ImageUpdateData {
     service_name: String,
     player_ids: Vec<PlayerId>,
 }
 
-
-pub async fn update_user_images(json: web::Json<ImageUpdateData>, state: web::Data<AppState>, session: Session)
-    -> Result<HttpResponse> {
+pub async fn update_user_images(
+    json: web::Json<ImageUpdateData>,
+    state: web::Data<AppState>,
+    session: Session,
+) -> Result<HttpResponse> {
     let provider = match json.service_name.as_str() {
         "discord" => Ok(Box::new(DiscordAuthProvider) as Box<dyn AuthProvider>),
         "google" => Ok(Box::new(GoogleAuthProvider) as Box<dyn AuthProvider>),

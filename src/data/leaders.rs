@@ -1,5 +1,5 @@
-use std::{collections::HashMap, ops::Range};
 use rusqlite::{Connection, Result as SqlResult};
+use std::{collections::HashMap, ops::Range};
 
 use super::{BashoId, BashoRikishi, Player, PlayerId, Rank, RankName, RankSide, Result, RikishiId};
 use crate::util::GroupRuns;
@@ -31,31 +31,32 @@ impl BashoPlayerResults {
 
     fn sort_key(&self) -> (usize, Vec<String>) {
         match &self.player {
-            ResultPlayer::RankedPlayer(_, rank) => {
-                (
-                    if *rank == 0 { 1 } else { *rank },
-                    self.picks().iter().map(|rikishi|
-                        rikishi.map_or("".to_string(), |r| r.name.clone())
-                    ).collect()
-                )
-            },
+            ResultPlayer::RankedPlayer(_, rank) => (
+                if *rank == 0 { 1 } else { *rank },
+                self.picks()
+                    .iter()
+                    .map(|rikishi| rikishi.map_or("".to_string(), |r| r.name.clone()))
+                    .collect(),
+            ),
             ResultPlayer::Max => (0, vec![]),
             ResultPlayer::Min => (usize::max_value(), vec![]),
         }
     }
 
-    pub fn fetch(db: &Connection,
-                 basho_id: BashoId,
-                 player_id: Option<PlayerId>,
-                 rikishi: HashMap<RikishiId, BashoRikishi>,
-                 include_best_worst: bool,
-                 limit: usize)
-        -> Result<Vec<Self>> {
-
+    pub fn fetch(
+        db: &Connection,
+        basho_id: BashoId,
+        player_id: Option<PlayerId>,
+        rikishi: HashMap<RikishiId, BashoRikishi>,
+        include_best_worst: bool,
+        limit: usize,
+    ) -> Result<Vec<Self>> {
         debug!("fetching {} leaders for basho {}", limit, basho_id);
 
         let rikishi = Arc::new(rikishi);
-        let mut leaders: Vec<BashoPlayerResults> = db.prepare("
+        let mut leaders: Vec<BashoPlayerResults> = db
+            .prepare(
+                "
                 SELECT
                     player.*,
                     COALESCE(br.wins, 0) AS wins,
@@ -69,7 +70,9 @@ impl BashoPlayerResults {
                 GROUP BY player.id
                 ORDER BY is_self DESC, wins DESC, player.id ASC
                 LIMIT :limit
-            ").unwrap()
+            ",
+            )
+            .unwrap()
             .query_map(
                 named_params! {
                     ":basho_id": basho_id,
@@ -83,14 +86,17 @@ impl BashoPlayerResults {
                         row.get("rank")?,
                         row.get("pick_ids")?,
                     ))
-                }
+                },
             )?
             .collect::<SqlResult<Vec<(Player, u8, u32, String)>>>()?
             .into_iter()
             .map(|(player, total, rank, picks_str)| {
                 let mut picks = [None; 5];
                 let mut pick_rikishi = [None; 5];
-                for r in picks_str.split(',').filter_map(|id| rikishi.get(&id.parse().unwrap())) {
+                for r in picks_str
+                    .split(',')
+                    .filter_map(|id| rikishi.get(&id.parse().unwrap()))
+                {
                     let group = r.rank.group().as_index();
                     picks[group] = Some(r.id);
                     pick_rikishi[group] = Some(r);
@@ -121,8 +127,9 @@ impl BashoPlayerResults {
     }
 }
 
-fn make_min_max_results(rikishi: Arc<HashMap<RikishiId, BashoRikishi>>)
-                        -> (BashoPlayerResults, BashoPlayerResults) {
+fn make_min_max_results(
+    rikishi: Arc<HashMap<RikishiId, BashoRikishi>>,
+) -> (BashoPlayerResults, BashoPlayerResults) {
     let mut mins = [None; 5];
     let mut maxes = [None; 5];
     for r in rikishi.values().filter(|r| !r.is_kyujyo) {
@@ -178,7 +185,6 @@ fn picks_to_days(picks: &[Option<&BashoRikishi>; 5]) -> ([Option<u8>; 15], u8) {
     (days, total_validation)
 }
 
-
 #[derive(Debug)]
 pub struct HistoricLeader {
     pub player: Player,
@@ -207,7 +213,11 @@ impl Rankable for HistoricLeader {
 }
 
 impl HistoricLeader {
-    pub fn with_basho_range(db: &Connection, range: Range<BashoId>, player_limit: u32) -> Result<Vec<Self>> {
+    pub fn with_basho_range(
+        db: &Connection,
+        range: Range<BashoId>,
+        player_limit: u32,
+    ) -> Result<Vec<Self>> {
         debug!("Fetching {} leaders in {:?}", player_limit, range);
         let mut leaders = db.prepare("
                 SELECT
@@ -262,7 +272,11 @@ impl HistoricLeader {
     }
 
     fn assign_rank(leaders: &mut [HistoricLeader]) {
-        let mut rank = Rank {name: RankName::Yokozuna, side: RankSide::East, number: 1};
+        let mut rank = Rank {
+            name: RankName::Yokozuna,
+            side: RankSide::East,
+            number: 1,
+        };
         let mut count = 0;
         let mut iter = leaders.group_runs_mut(|a, b| a.ord == b.ord).peekable();
         while let Some(group) = iter.next() {
@@ -272,10 +286,8 @@ impl HistoricLeader {
             count += group.len();
 
             let next_len = iter.peek().map_or(0, |next| next.len());
-            let RankPlayerCounts {minimum, preferred} = RankPlayerCounts::for_rank(rank);
-            if count >= preferred ||
-                (count >= minimum && count + next_len > preferred)
-            {
+            let RankPlayerCounts { minimum, preferred } = RankPlayerCounts::for_rank(rank);
+            if count >= preferred || (count >= minimum && count + next_len > preferred) {
                 rank = rank.next_lower();
                 count = 0;
             }
@@ -290,8 +302,8 @@ pub trait Rankable {
 
 pub fn assign_ord<'a, I, R: 'a>(iter: &'a mut I)
 where
-    I: Iterator<Item=&'a mut R>,
-    R: Rankable
+    I: Iterator<Item = &'a mut R>,
+    R: Rankable,
 {
     let mut last_score = i32::min_value();
     let mut ord = 1;
@@ -313,12 +325,30 @@ struct RankPlayerCounts {
 impl RankPlayerCounts {
     fn for_rank(rank: Rank) -> Self {
         match rank.name {
-            RankName::Yokozuna  => Self {minimum: 1, preferred: 1},
-            RankName::Ozeki     => Self {minimum: 1, preferred: 2},
-            RankName::Sekiwake  => Self {minimum: 1, preferred: 4},
-            RankName::Komusubi  => Self {minimum: 1, preferred: 4},
-            RankName::Maegashira=> Self {minimum: 3, preferred: 4},
-            RankName::Juryo     => Self {minimum: 4, preferred: 4},
+            RankName::Yokozuna => Self {
+                minimum: 1,
+                preferred: 1,
+            },
+            RankName::Ozeki => Self {
+                minimum: 1,
+                preferred: 2,
+            },
+            RankName::Sekiwake => Self {
+                minimum: 1,
+                preferred: 4,
+            },
+            RankName::Komusubi => Self {
+                minimum: 1,
+                preferred: 4,
+            },
+            RankName::Maegashira => Self {
+                minimum: 3,
+                preferred: 4,
+            },
+            RankName::Juryo => Self {
+                minimum: 4,
+                preferred: 4,
+            },
         }
     }
 }
