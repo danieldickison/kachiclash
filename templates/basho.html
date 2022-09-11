@@ -197,7 +197,10 @@
             </tbody>
         </table>
         {% if basho.has_started() && basho.player_count > leaders.len() - 2 %}
-            <p>Showing top {{leaders.len() - 2}} players out of {{basho.player_count}} total.</p>
+            <p>
+                Showing top {{leaders.len() - 2}} players out of {{basho.player_count}} total.
+                <a href="?all=true">Click here</a> to see all players.
+            </p>
         {% endif %}
     </section>
 {% endblock %}

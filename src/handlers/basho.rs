@@ -38,8 +38,14 @@ impl BashoTemplate {
     }
 }
 
+#[derive(Deserialize)]
+pub struct BashoQuery {
+    all: Option<bool>,
+}
+
 pub async fn basho(
     path: web::Path<BashoId>,
+    query: web::Query<BashoQuery>,
     state: web::Data<AppState>,
     identity: Identity,
 ) -> Result<Either<BashoTemplate, HttpResponse>> {
@@ -62,7 +68,13 @@ pub async fn basho(
         by_id: rikishi_by_id,
         by_rank: rikishi_by_rank,
     } = FetchBashoRikishi::with_db(&db, basho_id, &picks)?;
-    let limit = if state.config.is_dev() { 3 } else { 500 };
+    let limit = if query.all.unwrap_or(false) {
+        1000000
+    } else if state.config.is_dev() {
+        3
+    } else {
+        100
+    };
     Ok(Either::Left(BashoTemplate {
         leaders: BashoPlayerResults::fetch(
             &db,
