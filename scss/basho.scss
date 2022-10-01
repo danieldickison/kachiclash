@@ -216,12 +216,22 @@
                 }
             }
         }
+        
+        .buttons {
+            display: grid;
+            grid-template: "l c r" / 1fr 3fr 1fr;
+            align-items: center;
 
-        .save-picks-button,
-        .change-picks-button {
-            margin: 1rem auto;
+            .save-picks-button,
+            .change-picks-button {
+                grid-area: c;
+            }
+            
+            .toggle-pick-counts {
+                grid-area: r;
+            }
         }
-
+        
         .save-picks-button {
             display: none;
         }
@@ -233,7 +243,6 @@
             table .select-radio {
                 display: inline-block;
             }
-
             .change-picks-button {
                 display: none;
             }
@@ -252,6 +261,10 @@
         // > form {
         //     margin: 0 -100px;
         // }
+        
+        &.hide-pick-counts .pick-count {
+            display: none;
+        }
 
         table {
             border-collapse: separate;

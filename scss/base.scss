@@ -221,10 +221,24 @@ body > main {
     border: solid 2px var(--color-border);
     border-radius: 5px;
     display: block;
-    margin: 1rem 1rem 1rem 0;
+    margin: 1rem;
 
     &:active {
         background: var(--color-mauve);
+    }
+}
+
+.g-small-button {
+    font-size: 0.875rem;
+    background: var(--color-gray-bg);
+    color: var(--color-dark-fg);
+    border: solid 1px var(--color-border);
+    border-radius: 3px;
+    display: block;
+    margin: 0.5rem;
+
+    &:active {
+        background: var(--color-navy-highlight);
     }
 }
 

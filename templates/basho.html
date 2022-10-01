@@ -29,6 +29,7 @@
 
     <section id="banzuke"
         class="
+            hide-pick-counts
             {% if basho.has_started() %} has-started {% endif %}
             {% if initially_selectable %} selectable {% endif %}
         "
@@ -55,10 +56,12 @@
         
         <form id="banzuke-select-rikishi-form" action="{{basho.id.url_path()}}/picks">
 
-            {% if !basho.has_started() && base.player.is_some() -%}
-                <button class="g-big-button save-picks-button">Save Picks</button>
-                <button class="g-big-button change-picks-button">Change Picks</button>
-            {%- endif -%}
+            <div class="buttons">
+                {% if !basho.has_started() && base.player.is_some() -%}
+                    <button class="g-big-button save-picks-button">Save Picks</button>
+                    <button class="g-big-button change-picks-button">Change Picks</button>
+                {%- endif -%}
+            </div>
 
             {%- if base.player.is_none() -%}
                 <p class="g-centered"><a href="/login">Log in or sign up</a> to play!</p>
@@ -91,10 +94,14 @@
                 </tbody>
             </table>
 
-            {% if !basho.has_started() && base.player.is_some() -%}
-                <button class="g-big-button save-picks-button">Save Picks</button>
-                <button class="g-big-button change-picks-button">Change Picks</button>
-            {%- endif -%}
+            <div class="buttons">
+                {% if !basho.has_started() && base.player.is_some() -%}
+                    <button class="g-big-button save-picks-button">Save Picks</button>
+                    <button class="g-big-button change-picks-button">Change Picks</button>
+                {%- endif -%}
+                
+                <button class="toggle-pick-counts g-small-button">toggle pick counts</button>
+            </div>
         </form>
     </section>
 
