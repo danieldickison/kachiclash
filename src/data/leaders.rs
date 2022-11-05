@@ -46,7 +46,7 @@ impl BashoPlayerResults {
         match &self.player {
             ResultPlayer::RankedPlayer(player, _) => (
                 if player.has_emperors_cup() { 0 } else { 1 },
-                player.name.clone(),
+                player.name.to_lowercase(),
             ),
             _ => (0, "".to_string()),
         }
