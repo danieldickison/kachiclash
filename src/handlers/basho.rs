@@ -68,7 +68,7 @@ pub async fn basho(
         by_id: rikishi_by_id,
         by_rank: rikishi_by_rank,
     } = FetchBashoRikishi::with_db(&db, basho_id, &picks)?;
-    let limit = if query.all.unwrap_or(false) {
+    let limit = if !basho.has_started() || query.all.unwrap_or(false) {
         1000000
     } else if state.config.is_dev() {
         3

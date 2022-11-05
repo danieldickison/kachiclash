@@ -104,90 +104,74 @@
             </div>
         </form>
     </section>
-
-    <section id="leaderboard"
-        class="{% if basho.has_started() %} has-started {% endif %}"
-    >
-        <h2>
-            {% if basho.has_started() %}
-                Basho Leaderboard
-            {% else %}
-                {{basho.player_count}} Entries
-            {% endif %}
-        </h2>
-
-        {% match self.self_rank() %}
-        {% when Some with (rank) %}
-        <p class="current-rank">
-            You are currently ranked
-            <a href="#self-leader">#{{rank}}</a>
-        </p>
-        {% when None %}
-        {% endmatch %}
-
-        <table>
-            <thead>
-                {% if basho.has_started() %}
+    
+    {% if basho.has_started() %}
+        <section id="leaderboard">
+            <h2>Basho Leaderboard</h2>
+    
+            {% match self.self_rank() %}
+            {% when Some with (rank) %}
+            <p class="current-rank">
+                You are currently ranked
+                <a href="#self-leader">#{{rank}}</a>
+            </p>
+            {% when None %}
+            {% endmatch %}
+    
+            <table>
+                <thead>
                     <tr>
                         <th colspan="7"></th>
                         <th class="day-heading" colspan="15">Day</th>
                     </tr>
-                {% endif %}
-                <tr>
-                    {% if basho.has_started() %}
+                    <tr>
                         <th class="rank">#</th>
-                    {% endif %}
-                    <th>Player</th>
-                    <th class="pick" colspan="5">Picks</th>
-                    {% if basho.has_started() %}
+                        <th>Player</th>
+                        <th class="pick" colspan="5">Picks</th>
                         {% for day in 1..16 -%}
                             <th class="day">{{day}}</th>
                         {% endfor -%}
                         <th>Total</th>
-                    {% endif %}
-                </tr>
-            </thead>
-            <tbody>
-            {% for leader in leaders -%}
-                <tr class="
-                    {% if leader.is_self %} self {% endif %}
-                    {% match leader.player -%}
-                    {%- when ResultPlayer::Max -%} min-max
-                    {%- when ResultPlayer::Min -%} min-max
-                    {%- when ResultPlayer::RankedPlayer with (_, 1) -%} top-leader
-                    {%- when _ -%}
-                    {%- endmatch %}
-                    "
-                    {% if leader.is_self %}
-                        id="self-leader"
-                    {% endif %}
-                >
-                    {% match leader.player -%}
-                    {%- when ResultPlayer::Max %}
-                        <td class="min-max-name" colspan="2">Best Possible</td>
-                    {%- when ResultPlayer::Min %}
-                        <td class="min-max-name" colspan="2">Worst Possible</td>
-
-                    {%- when ResultPlayer::RankedPlayer with (player, rank) %}
-                        {%- if basho.has_started() -%} 
+                    </tr>
+                </thead>
+                <tbody>
+                {% for leader in leaders -%}
+                    <tr class="
+                        {% if leader.is_self %} self {% endif %}
+                        {% match leader.player -%}
+                        {%- when ResultPlayer::Max -%} min-max
+                        {%- when ResultPlayer::Min -%} min-max
+                        {%- when ResultPlayer::RankedPlayer with (_, 1) -%} top-leader
+                        {%- when _ -%}
+                        {%- endmatch %}
+                        "
+                        {% if leader.is_self %}
+                            id="self-leader"
+                        {% endif %}
+                    >
+                        {% match leader.player -%}
+                        {%- when ResultPlayer::Max %}
+                            <td class="min-max-name" colspan="2">Best Possible</td>
+                        {%- when ResultPlayer::Min %}
+                            <td class="min-max-name" colspan="2">Worst Possible</td>
+    
+                        {%- when ResultPlayer::RankedPlayer with (player, rank) %}
                             <td class="rank">{{rank}}</td>
-                         {%- endif -%}
-                        <td class="name">{{player.render().unwrap()|safe}}</td>
-                    {%- endmatch -%}
-
-                    {% for rikishi in leader.picks() -%}
-                        {%- match rikishi -%}
-                        {%- when Some with (r) -%}
-                            <td class="
-                                pick
-                                {% if r.is_kyujyo %}kyujyo{% endif -%}
-                            ">{{r.name}}</td>
-                        {%- when None -%}
-                            <td class="pick"></td>
+                            <td class="name">{{player.render().unwrap()|safe}}</td>
                         {%- endmatch -%}
-                    {%- endfor %}
-
-                    {% if basho.has_started() %}
+    
+                        {% for rikishi in leader.picks() -%}
+                            {%- match rikishi -%}
+                            {%- when Some with (r) -%}
+                                <td class="
+                                    pick
+                                    {% if r.is_kyujyo %}kyujyo{% endif -%}
+                                ">{{r.name}}</td>
+                            {%- when None -%}
+                                <td class="pick"></td>
+                            {%- endmatch -%}
+                        {%- endfor %}
+    
                         {% for wins in leader.days -%}
                             <td class="score day">
                             {%- match wins -%}
@@ -198,18 +182,31 @@
                         {% endfor -%}
 
                         <td class="score total">{{leader.total}}</td>
-                    {% endif %}
-                </tr>
-            {%- endfor %}
-            </tbody>
-        </table>
-        {% if basho.has_started() && basho.player_count > leaders.len() - 2 %}
-            <p>
-                Showing top {{leaders.len() - 2}} players out of {{basho.player_count}} total.
-                <a href="?all=true">Click here</a> to see all players.
-            </p>
-        {% endif %}
-    </section>
+                    </tr>
+                {%- endfor %}
+                </tbody>
+            </table>
+            {% if basho.player_count > leaders.len() - 2 %}
+                <p>
+                    Showing top {{leaders.len() - 2}} players out of {{basho.player_count}} total.
+                    <a href="?all=true">Click here</a> to see all players.
+                </p>
+            {% endif %}
+        </section>
+    {% else %}
+        <section id="entries">
+            <h2>{{basho.player_count}} Entries</h2>
+            <ul>
+                {% for leader in leaders -%}
+                {% match leader.player -%}
+                {%- when ResultPlayer::RankedPlayer with (player, _) %}
+                    <li>{{player.render().unwrap()|safe}}</li>
+                {%- when _ -%}
+                {%- endmatch -%}
+                {%- endfor %}
+            </ul>
+        </section>
+    {% endif %}
 {% endblock %}
 
 {%- macro rikishi_results(rikishi) -%}
