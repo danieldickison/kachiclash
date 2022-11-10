@@ -12,5 +12,7 @@
       "enabled" : true,
       "path" : "run-dev-server"
     }
-  }
+  },
+  "buildBeforeRunning" : true,
+  "openLogOnRun" : "start"
 }

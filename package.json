@@ -1,0 +1,13 @@
+{
+  "name": "kachiclash",
+  "description": "A Grand Sumo prediction game.",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "cargo test"
+  },
+  "author": "Daniel Dickison",
+  "license": "ISC",
+  "devDependencies": {
+    "standard": "^17.0.0"
+  }
+}
