@@ -27,7 +27,7 @@ const BANZUKE_REGEX = /^ *(\w{1,2}\d{1,3}[ew]) *(\w+)/gm
 function parseBanzuke (str) {
   const rikishi = []
   let match
-  while (match = BANZUKE_REGEX.exec(str)) {
+  while ((match = BANZUKE_REGEX.exec(str))) {
     rikishi.push({
       rank: match[1],
       name: match[2]

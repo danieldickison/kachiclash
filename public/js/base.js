@@ -1,7 +1,7 @@
 // Init basho start count down clock
 document.querySelectorAll('.js-basho-count-down').forEach(timeSpan => {
   const startTimestamp = parseInt(timeSpan.dataset.startDate)
-  const updateTimeRemaining = function() {
+  const updateTimeRemaining = function () {
     const remaining = (startTimestamp - Date.now()) / 1000
     const seconds = Math.floor(remaining % 60)
     const minutes = Math.floor(remaining / 60) % 60
@@ -50,5 +50,5 @@ document.querySelectorAll('.js-local-datetime').forEach(el => {
 
 // Show standard placeholder for broken player avatar images
 document.querySelectorAll('img.js-player-img').forEach(img => {
-  img.addEventListener('error', () => img.src = '/static/img/oicho-silhouette.png')
+  img.addEventListener('error', () => { img.src = '/static/img/oicho-silhouette.png' })
 })
