@@ -39,6 +39,7 @@
                 {%- when Some with (b) -%}
                     {%- for rikishi in b.banzuke -%}
                         {{rikishi.rank}} {{rikishi.name}}
+                        {%- if rikishi.is_kyujyo %} x {%- endif %}
                     {% endfor -%}
                 {%- when None -%}
                 {%- endmatch -%}
@@ -48,7 +49,7 @@
         <input type="submit">
 
         <table class="parsed-banzuke">
-            <thead><th>rank</th><th>name</th></thead>
+            <thead><th>rank</th><th>name</th><th>kyujyo</th></thead>
             <tbody></tbody>
         </table>
     </form>

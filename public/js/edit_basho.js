@@ -18,11 +18,15 @@ function bashoFormInput (event) {
     const name = document.createElement('td')
     name.innerText = rikishi.name
     tr.appendChild(name)
+    
+    const kyujyo = document.createElement('td')
+    kyujyo.innerText = rikishi.is_kyujyo ? '㊡' : ''
+    tr.appendChild(kyujyo)
   })
 }
 
 // Maches rank and name
-const BANZUKE_REGEX = /^ *(\w{1,2}\d{1,3}[ew]) *(\w+)/gm
+const BANZUKE_REGEX = /^ *(\w{1,2}\d{1,3}[ew]) *(\w+).*?( x)?$/gm
 
 function parseBanzuke (str) {
   const rikishi = []
@@ -30,7 +34,8 @@ function parseBanzuke (str) {
   while ((match = BANZUKE_REGEX.exec(str))) {
     rikishi.push({
       rank: match[1],
-      name: match[2]
+      name: match[2],
+      is_kyujyo: !!match[3]
     })
   }
   return rikishi

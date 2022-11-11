@@ -395,7 +395,7 @@ pub fn update_basho(
     basho_id: BashoId,
     venue: &str,
     start_date: &NaiveDateTime,
-    banzuke: &[(String, Rank)],
+    banzuke: &[(String, Rank, bool)],
 ) -> Result<BashoId> {
     let txn = db.transaction()?;
     txn.execute(
@@ -417,12 +417,12 @@ pub fn update_basho(
             FROM rikishi
             WHERE family_name IN ({})
         ",
-        banzuke.iter().map(|(_, _)| "?").join(", ")
+        banzuke.iter().map(|(_, _, _)| "?").join(", ")
     );
     let mut ambiguous_shikona = Vec::<String>::new();
     txn.prepare(query_str.as_str())?
         .query_map(
-            params_from_iter(banzuke.iter().map(|(name, _)| name)),
+            params_from_iter(banzuke.iter().map(|(name, _, _)| name)),
             |row| {
                 let id: i64 = row.get("id")?;
                 let family_name: String = row.get("family_name")?;
@@ -444,7 +444,7 @@ pub fn update_basho(
         });
     }
 
-    for (family_name, rank) in banzuke {
+    for (family_name, rank, is_kyujyo) in banzuke {
         let rikishi_id = match rikishi_ids.get(family_name) {
             Some(id) => id.to_owned(),
             None => {
@@ -464,14 +464,22 @@ pub fn update_basho(
             .to_owned(); // TODO given_name
         txn.execute(
             "
-                INSERT INTO banzuke (rikishi_id, basho_id, family_name, given_name, rank)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO banzuke (rikishi_id, basho_id, family_name, given_name, rank, kyujyo)
+                VALUES (?, ?, ?, ?, ?, ?)
                 ON CONFLICT (rikishi_id, basho_id) DO UPDATE SET
                     family_name = excluded.family_name,
                     given_name = excluded.given_name,
-                    rank = excluded.rank
+                    rank = excluded.rank,
+                    kyujyo = excluded.kyujyo
             ",
-            params![rikishi_id, basho_id, family_name, given_name, rank],
+            params![
+                rikishi_id,
+                basho_id,
+                family_name,
+                given_name,
+                rank,
+                is_kyujyo
+            ],
         )?;
     }
     txn.commit()?;

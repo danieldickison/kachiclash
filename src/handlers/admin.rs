@@ -72,7 +72,7 @@ impl BashoData {
     fn fetch_banzuke(db: &Connection, id: BashoId) -> SqlResult<Vec<BanzukeRikishi>> {
         db.prepare(
             "
-            SELECT family_name, rank
+            SELECT family_name, rank, kyujyo
             FROM banzuke
             WHERE basho_id = ?",
         )?
@@ -81,6 +81,7 @@ impl BashoData {
             Ok(BanzukeRikishi {
                 name: row.get("family_name")?,
                 rank: row.get("rank")?,
+                is_kyujyo: row.get("kyujyo")?,
             })
         })?
         .collect::<SqlResult<Vec<BanzukeRikishi>>>()
@@ -102,6 +103,7 @@ where
 struct BanzukeRikishi {
     name: String,
     rank: Rank,
+    is_kyujyo: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -125,7 +127,7 @@ pub async fn edit_basho_post(
         &basho
             .banzuke
             .iter()
-            .map(|b| (b.name.to_owned(), b.rank.to_owned()))
+            .map(|b| (b.name.to_owned(), b.rank.to_owned(), b.is_kyujyo))
             .collect::<Vec<_>>(),
     )?;
     Ok(web::Json(BanzukeResponseData {
