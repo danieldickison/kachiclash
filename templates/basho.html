@@ -66,32 +66,30 @@
                 <p class="g-centered"><a href="/login">Log in or sign up</a> to play!</p>
             {%- endif -%}
 
-            <table>
-                <thead>
-                    <th class="rikishi">East</th>
-                    <th class="pick-count">Picks</th>
+            <div class="banzuke-table">
+                <div class="row header">
+                    <div class="east rikishi">East</div>
+                    <div class="east pick-count">Picks</div>
                     {% if basho.has_started() %}
-                        <th class="hoshi"></th>
-                        <th class="win-loss"></th>
+                        <div class="east hoshi"></div>
+                        <div class="east win-loss"></div>
                     {% endif %}
-                    <th class="rank">Rank</th>
-                    <th class="rikishi">West</th>
-                    <th class="pick-count">Picks</th>
+                    <div class="rank">Rank</div>
+                    <div class="west rikishi">West</div>
+                    <div class="west pick-count">Picks</div>
                     {% if basho.has_started() %}
-                        <th class="hoshi"></th>
-                        <th class="win-loss"></th>
+                        <div class="west hoshi"></div>
+                        <div class="west win-loss"></div>
                     {% endif %}
-                </thead>
-                <tbody>
-                    {% for rr in rikishi_by_rank -%}
-                        <tr class="rank-group-{{rr.rank_group}}">
-                            {%- call rikishi_results(rr.east) -%}
-                            <td class="rank">{{rr.rank}}</td>
-                            {%- call rikishi_results(rr.west) -%}
-                        </tr>
-                    {% endfor -%}
-                </tbody>
-            </table>
+                </div>
+                {% for rr in rikishi_by_rank -%}
+                    <div class="row rank-group-{{rr.rank_group}}">
+                        {%- call rikishi_results(rr.east, "east") -%}
+                        <div class="rank">{{rr.rank}}</div>
+                        {%- call rikishi_results(rr.west, "west") -%}
+                    </div>
+                {% endfor -%}
+            </div>
 
             <div class="buttons">
                 {% if !basho.has_started() && base.player.is_some() -%}
@@ -206,33 +204,40 @@
     {% endif %}
 {% endblock %}
 
-{%- macro rikishi_results(rikishi) -%}
+{%- macro rikishi_results(rikishi, side) -%}
     {%- match rikishi -%}
     {%- when Some with (rikishi) -%}
-        <td class="
-                rikishi
-                {%- if rikishi.is_player_pick %} is-player-pick {% endif -%}
+        <label
+            class="
+                {{side}} click-target
+                {%- if rikishi.is_player_pick %} is-player-pick {% endif -%}"
+            for="banzuke-rikishi-{{rikishi.id}}"> </label>
+        {% if !basho.has_started() %}
+            <input type="radio"
+                id="banzuke-rikishi-{{rikishi.id}}"
+                class="{{side}} select-radio"
+                name="rank-group-{{rikishi.rank.group()}}"
+                value="{{rikishi.id}}"
+               required
+                {% if rikishi.is_player_pick -%} checked {%- endif %}
+                {% if !initially_selectable -%} disabled {%- endif %}
+            >
+        {% endif %}
+        <div class="
+                {{side}} rikishi
                 {%- if rikishi.is_kyujyo %} is-kyujyo {% endif -%}
             "
             data-rikishi-id="{{rikishi.id}}"
         >
-            <label>
-                <input type="radio" class="select-radio"
-                    name="rank-group-{{rikishi.rank.group()}}"
-                    value="{{rikishi.id}}"
-                   required
-                    {% if rikishi.is_player_pick -%} checked {%- endif %}
-                    {% if !initially_selectable -%} disabled {%- endif %}
-                >
-                {{- rikishi.name }}
-                <a class="info-link" target="_blank" href="http://sumodb.sumogames.de/Rikishi.aspx?shikona={{rikishi.name}}&b={{basho.id.id()}}"></a>
-            </label>
-        </td>
-        <td class="pick-count">
+            {%- if side == "east" -%} {{- rikishi.name }} {%- endif %}
+            <a class="info-link" target="_blank" href="http://sumodb.sumogames.de/Rikishi.aspx?shikona={{rikishi.name}}&b={{basho.id.id()}}"></a>
+            {%- if side == "west" -%} {{ rikishi.name -}} {%- endif -%}
+        </div>
+        <div class="{{side}} pick-count">
             {{rikishi.picks}}
-        </td>
+        </div>
         {% if basho.has_started() %}
-            <td class="hoshi">
+            <div class="{{side}} hoshi">
             {%- for chunk in rikishi.result_chunks() %}
                 <span class="chunk">
                     {%- for day in chunk -%}
@@ -246,15 +251,9 @@
                     {%- endfor -%}
                 </span>
             {% endfor -%}
-            </td>
-            <td class="win-loss">{{rikishi.wins}}-{{rikishi.losses}}</td>
+            </div>
+            <div class="{{side}} win-loss">{{rikishi.wins}}-{{rikishi.losses}}</div>
         {% endif %}
     {%- when None -%}
-        <td class="rikishi"></td>
-        <td class="pick-count"></td>
-        {% if basho.has_started() %}
-            <td class="hoshi"></td>
-            <td class="win-loss"></td>
-        {% endif %}
     {%- endmatch -%}
 {%- endmacro -%}

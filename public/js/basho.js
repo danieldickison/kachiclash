@@ -1,14 +1,15 @@
 const banzukeSection = document.getElementById('banzuke')
 const pickForm = document.getElementById('banzuke-select-rikishi-form')
 
-document.querySelectorAll('.select-radio').forEach(radio => {
+for (const radio of document.querySelectorAll('.select-radio')) {
   radio.addEventListener('change', _event => {
-    document.getElementsByName(radio.name).forEach(otherRadio => {
-      otherRadio.closest('td').classList.toggle('is-player-pick', otherRadio === radio)
-    })
+    for (const otherRadio of document.getElementsByName(radio.name)) {
+      const label = pickForm.querySelector(`label[for="${otherRadio.id}"]`)
+      label.classList.toggle('is-player-pick', otherRadio === radio)
+    }
     // savePicks();
   })
-})
+}
 
 pickForm.addEventListener('submit', async (event) => {
   event.preventDefault()
@@ -22,18 +23,18 @@ pickForm.addEventListener('submit', async (event) => {
     setSelectable(true)
   }
 })
-document.querySelectorAll('.change-picks-button').forEach(button => {
+for (const button of document.querySelectorAll('.change-picks-button')) {
   button.addEventListener('click', event => {
     event.preventDefault()
     setSelectable(true)
   })
-})
+}
 
 function setSelectable (selectable) {
   banzukeSection.classList.toggle('selectable', selectable)
-  document.querySelectorAll('.select-radio').forEach(button => {
+  for (const button of document.querySelectorAll('.select-radio')) {
     button.disabled = !selectable
-  })
+  }
 }
 
 async function savePicks (formData, url) {

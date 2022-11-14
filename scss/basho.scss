@@ -241,8 +241,8 @@
         }
 
         &.selectable {
-            table .select-radio {
-                display: inline-block;
+            .banzuke-table .row .select-radio {
+                visibility: visible;
             }
             .change-picks-button {
                 display: none;
@@ -258,134 +258,213 @@
                 display: none;
             }
         }
-
-        // > form {
-        //     margin: 0 -100px;
-        // }
         
         &.hide-pick-counts .pick-count {
             display: none;
         }
 
-        table {
-            border-collapse: separate;
-            border-spacing: 0;
+        .banzuke-table {
+            display: grid;
+            grid-template-columns:
+                [east-radio]    max-content
+                [east-name]     max-content
+                [east-picks]    max-content
+                [east-hoshi]    1fr
+                [east-wins]     max-content
+                [rank]          max-content
+                [west-wins]     max-content
+                [west-hoshi]    1fr
+                [west-picks]    max-content
+                [west-name]     max-content
+                [west-radio]    max-content
+                [end];
+            grid-auto-flow: row;
+            grid-auto-rows: auto;
             line-height: 2;
             width: 100%;
             border-radius: 1rem;
             overflow: hidden;
             --group-boundary-color: transparent;
             --group-boundary-thickness: 10px;
+            
+            @media (max-width: media.$narrow) {
+                grid-template-columns:
+                    [east-radio]    max-content
+                    [east-name]     minmax(max-content, 1fr)
+                    [east-wins]     max-content
+                    [rank]          max-content
+                    [west-wins]     max-content
+                    [west-name]     minmax(max-content, 1fr)
+                    [west-radio]    max-content
+                    [end];
+            }
+            
+            > .header {
+                font-weight: bold;
+            }
 
-            tr {
-                background-clip: padding-box;
+            > .row {
+                // background-clip: padding-box;
+                grid-column: 1 / -1;
+                display: grid;
+                grid-template-columns: subgrid;
+                grid-template-rows: max-content;
+                align-items: center;
+                > * {
+                    grid-row: 1;
+                    // outline: dashed 1px blue;
+                }
             }
 
             .rank {
+                grid-column: rank;
                 text-align: center;
+            }
+            
+            .click-target {
+                width: 100%;
+                height: 100%;
+            }
+            
+            .east {
+                justify-self: right;
+                &.select-radio {
+                    grid-column: east-radio;
+                    margin-left: 0.5rem;
+                }
+                &.rikishi {
+                    justify-self: left;
+                    grid-column: east-name;
+                }
+                &.pick-count {
+                    grid-column: east-picks;
+                }
+                &.hoshi {
+                    grid-column: east-hoshi;
+                }
+                &.win-loss {
+                    grid-column: east-wins;
+                }
+                &.click-target {
+                    grid-column: east-radio / rank;
+                }
+            }
+            .west {
+                justify-self: left;
+                &.select-radio {
+                    grid-column: west-radio;
+                    margin-right: 0.5rem;
+                }
+                &.rikishi {
+                    justify-self: right;
+                    grid-column: west-name;
+                }
+                &.pick-count {
+                    grid-column: west-picks;
+                }
+                &.hoshi {
+                    grid-column: west-hoshi;
+                }
+                &.win-loss {
+                    grid-column: west-wins;
+                }
+                &.click-target {
+                    grid-column: west-wins / end;
+                }
             }
 
             .win-loss {
-                padding: 0 0.5rem;
-                text-align: right;
                 white-space: nowrap;
+                padding: 0 0.25rem;
             }
 
-            td {
-                &.rikishi {
-                    font-weight: bold;
+            .rikishi {
+                font-weight: bold;
+                white-space: nowrap;
+                padding: 0 0.25rem;
+                @media (min-width: media.$wide) {
+                    font-size: 1.25rem;
+                }
+            }
+
+            .hoshi {
+                line-height: 0.6rem;
+                display: flex;
+                flex-flow: row wrap;
+                column-gap: 0.25rem;
+
+                > .chunk {
                     white-space: nowrap;
-                    @media (min-width: media.$wide) {
-                        font-size: 1.25rem;
-                    }
-                }
 
-                &.pick-count {
-                    text-align: right;
-                    padding-right: 0.5rem;
-                }
-
-                &.hoshi {
-                    line-height: 0.6rem;
-                    text-align: left;
-
-                    > .chunk {
-                        white-space: nowrap;
-
-                        > span {
-                            display: inline-block;
-                            width: 0.6rem;
-                            height: 0.6rem;
-                            background-size: 100% 100%;
-                        }
-                        > .win {
-                            background-image: url(/static/img/hoshi-white.png);
-                        }
-                        > .loss {
-                            background-image: url(/static/img/hoshi-black.png);
-                        }
-                        > .blank {
-                            background-image: url(/static/img/hoshi-dash.png);
-                        }
-                    }
-                }
-
-                label {
-                    display: inline-block;
-                    padding: 0 0.25rem;
-                }
-                &.is-kyujyo label {
-                    text-decoration: line-through;
-                    color: var(--color-gray-fg);
-                    &::before {
+                    > span {
                         display: inline-block;
-                        content: "㊡";
-                        text-decoration: none;
-                        color: var(--color-orange);
-                        text-shadow: 0 1px 3px #0004;
+                        width: 0.6rem;
+                        height: 0.6rem;
+                        background-size: 100% 100%;
                     }
-                }
-
-                .info-link {
-                    font-size: 0.75rem;
-                    vertical-align: middle;
-                    &::before {
-                        content: "ℹ️";
+                    > .win {
+                        background-image: url(/static/img/hoshi-white.png);
                     }
-                    @media (hover: hover) {
-                        opacity: 0;
-                        transition: opacity 100ms ease-out;
+                    > .loss {
+                        background-image: url(/static/img/hoshi-black.png);
                     }
-                    @media (max-width: media.$narrow) {
-                        display: none;
-                    }
-
-                }
-                &:hover .info-link {
-                    opacity: 1;
-                }
-
-                &.is-player-pick {
-                    position: relative;
-                    background: var(--color-table-highlight-bg);
-                    background-clip: padding-box;
-
-                    // put outline around the content area only:
-                    &::before {
-                        content: " ";
-                        display: block;
-                        position: absolute;
-                        top: 0;
-                        left: 0;
-                        bottom: 0;
-                        right: 0;
-                        z-index: 1;
-                        pointer-events: none;
-                        box-shadow: var(--table-highlight-shadow);
+                    > .blank {
+                        background-image: url(/static/img/hoshi-dash.png);
                     }
                 }
             }
+            .rikishi.is-kyujyo {
+                text-decoration: line-through;
+                color: var(--color-gray-fg);
+            }
+            .east.rikishi.is-kyujyo::before,
+            .west.rikishi.is-kyujyo::after {
+                display: inline-block;
+                content: "㊡";
+                text-decoration: none;
+                color: var(--color-orange);
+                text-shadow: 0 1px 3px #0004;
+            }
+            .east.rikishi.is-kyujyo::before {
+                margin-right: 0.25rem;
+            }
+            .west.rikishi.is-kyujyo::after {
+                margin-left: 0.25rem;
+            }
 
+            .info-link {
+                font-size: 0.75rem;
+                vertical-align: middle;
+                &::before {
+                    display: inline-block;
+                    content: "ℹ️";
+                    margin: 0 0.25rem;
+                    text-decoration: none;
+                }
+                @media (hover: hover) {
+                    opacity: 0;
+                    transition: opacity 100ms ease-out;
+                }
+                @media (max-width: media.$narrow) {
+                    display: none;
+                }
+            }
+            .click-target:hover ~ .rikishi > .info-link,
+            .rikishi:hover > .info-link {
+                opacity: 1;
+            }
+
+            .is-player-pick {
+                background: var(--color-table-highlight-bg);
+                background-clip: padding-box;
+                box-shadow: var(--table-highlight-shadow);
+            }
+
+            .select-radio {
+                vertical-align: middle;
+                visibility: hidden;
+            }
+            
             @media (max-width: media.$narrow) {
                 .hoshi,
                 .pick-count {
@@ -393,38 +472,28 @@
                 }
             }
 
-            .select-radio {
-                vertical-align: middle;
-                margin-right: 0.25rem;
-                display: none;
-            }
-
             .rank-group-1 {
                 background-color: hsla(26, 79%, 62%, 0.5);
-                
-                + .rank-group-2 > td {
-                    border-top: solid var(--group-boundary-thickness) var(--group-boundary-color);
+                + .rank-group-2 {
+                    margin-top: var(--group-boundary-thickness);
                 }
             }
             .rank-group-2 {
                 background-color: hsla(32, 88%, 68%, 0.5);
-
-                + .rank-group-3 > td {
-                    border-top: solid var(--group-boundary-thickness) var(--group-boundary-color);
+                + .rank-group-3 {
+                    margin-top: var(--group-boundary-thickness);
                 }
             }
             .rank-group-3 {
                 background-color: hsla(39, 85%, 72%, 0.5);
-
-                + .rank-group-4 > td {
-                    border-top: solid var(--group-boundary-thickness) var(--group-boundary-color);
+                + .rank-group-4 {
+                    margin-top: var(--group-boundary-thickness);
                 }
             }
             .rank-group-4 {
                 background-color: hsla(43, 78.5%, 80%, 0.5);
-
-                + .rank-group-5 > td {
-                    border-top: solid var(--group-boundary-thickness) var(--group-boundary-color);
+                + .rank-group-5 {
+                    margin-top: var(--group-boundary-thickness);
                 }
             }
             .rank-group-5 {
