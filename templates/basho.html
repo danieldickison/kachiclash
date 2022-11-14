@@ -29,8 +29,7 @@
 
     <section id="banzuke"
         class="
-            hide-pick-counts
-            {% if basho.has_started() %} has-started {% endif %}
+            {% if basho.has_started() %} has-started {% else %} hide-pick-counts {% endif %}
             {% if initially_selectable %} selectable {% endif %}
         "
     >
@@ -99,8 +98,6 @@
                     <button class="g-big-button save-picks-button">Save Picks</button>
                     <button class="g-big-button change-picks-button">Change Picks</button>
                 {%- endif -%}
-                
-                <button class="toggle-pick-counts g-small-button">toggle pick counts</button>
             </div>
         </form>
     </section>

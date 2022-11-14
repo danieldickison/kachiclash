@@ -1,13 +1,6 @@
 const banzukeSection = document.getElementById('banzuke')
 const pickForm = document.getElementById('banzuke-select-rikishi-form')
 
-for (const button of banzukeSection.querySelectorAll('.toggle-pick-counts')) {
-  button.addEventListener('click', event => {
-    event.preventDefault()
-    banzukeSection.classList.toggle('hide-pick-counts')
-  })
-}
-
 document.querySelectorAll('.select-radio').forEach(radio => {
   radio.addEventListener('change', _event => {
     document.getElementsByName(radio.name).forEach(otherRadio => {
