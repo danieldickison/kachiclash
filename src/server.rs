@@ -52,7 +52,11 @@ pub async fn run(config: Config) -> std::io::Result<()> {
             .wrap(
                 middleware::DefaultHeaders::new().add(("Content-Type", "text/html; charset=utf-8")),
             )
-            .service(Files::new("/static", &config.static_path).prefer_utf8(true))
+            .service(
+                web::scope("/static")
+                    .wrap(middleware::DefaultHeaders::new().add(("Cache-Control", "max-age=86400")))
+                    .service(Files::new("/", &config.static_path).prefer_utf8(true)),
+            )
             .service(web::resource("/").to(handlers::index::index))
             .service(web::resource("/logout").to(handlers::login::logout))
             .service(
