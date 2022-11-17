@@ -42,6 +42,7 @@ pub async fn run(config: Config) -> std::io::Result<()> {
         let mut app = App::new()
             .app_data(web::Data::clone(&app_data))
             .wrap(middleware::Logger::default())
+            .wrap(middleware::Compress::default())
             .wrap(IdentityService::new(
                 CookieIdentityPolicy::new(&session_secret)
                     .secure(!config.is_dev())
@@ -54,7 +55,7 @@ pub async fn run(config: Config) -> std::io::Result<()> {
             )
             .service(
                 web::scope("/static")
-                    .wrap(middleware::DefaultHeaders::new().add(("Cache-Control", "max-age=86400")))
+                    .wrap(middleware::DefaultHeaders::new().add(("Cache-Control", "max-age=3600")))
                     .service(Files::new("/", &config.static_path).prefer_utf8(true)),
             )
             .service(web::resource("/").to(handlers::index::index))
