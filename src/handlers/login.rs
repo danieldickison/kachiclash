@@ -5,6 +5,7 @@ use oauth2::{AuthorizationCode, TokenResponse};
 
 use actix_identity::Identity;
 use actix_session::Session;
+use actix_web::cookie::{time::Duration, Cookie};
 use actix_web::{http, web};
 use actix_web::{HttpResponse, Responder};
 
@@ -150,9 +151,22 @@ async fn oauth_redirect(
     }
 }
 
-pub async fn logout(id: Identity) -> impl Responder {
+pub async fn logout(id: Identity, state: web::Data<AppState>) -> impl Responder {
     id.forget();
+
+    // Also clear any older versions of identity and session cookies that didn't specify domain
+    let clear_old_identity = Cookie::build("actix-identity", "")
+        .secure(!state.config.is_dev())
+        .max_age(Duration::ZERO)
+        .finish();
+    let clear_old_session = Cookie::build("actix-session", "")
+        .secure(!state.config.is_dev())
+        .max_age(Duration::ZERO)
+        .finish();
+
     HttpResponse::SeeOther()
         .insert_header((http::header::LOCATION, "/"))
+        .append_header((http::header::SET_COOKIE, clear_old_identity.to_string()))
+        .append_header((http::header::SET_COOKIE, clear_old_session.to_string()))
         .finish()
 }

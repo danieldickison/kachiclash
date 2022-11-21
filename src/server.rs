@@ -45,11 +45,17 @@ pub async fn run(config: Config) -> std::io::Result<()> {
             .wrap(middleware::Compress::default())
             .wrap(IdentityService::new(
                 CookieIdentityPolicy::new(&session_secret)
+                    .domain(&config.host)
                     .secure(!config.is_dev())
                     .same_site(SameSite::Lax)
                     .max_age_secs(10 * 365 * 24 * 60 * 60),
             ))
-            .wrap(CookieSession::signed(&session_secret).secure(config.env != "dev"))
+            .wrap(
+                CookieSession::signed(&session_secret)
+                    .domain(&config.host)
+                    .secure(config.env != "dev")
+                    .same_site(SameSite::Lax),
+            )
             .wrap(
                 middleware::DefaultHeaders::new().add(("Content-Type", "text/html; charset=utf-8")),
             )
