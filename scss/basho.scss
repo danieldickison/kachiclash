@@ -27,7 +27,6 @@
     #leaderboard {
         background: var(--color-light-yellow-bg);
         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-        overflow: scroll;
 
         @media (hover: none) {
             background: var(--color-light-yellow-bg-opaque);
@@ -38,8 +37,8 @@
             grid-template-columns:
                 [rank]      max-content
                 [name]      max-content
-                [picks]     repeat(5, minmax(3rem, 1fr))
-                [days]      repeat(15, minmax(1rem, max-content))
+                [picks]     repeat(5, minmax(3rem, 5fr))
+                [days]      repeat(15, minmax(1rem, 1fr))
                 [total]     max-content
                 [end];
             grid-auto-flow: row;
@@ -50,11 +49,15 @@
             width: fit-content;
             margin: 0 auto;
             
+            @media (max-width: media.$medium-width) {
+                font-size: 0.75rem;
+            }
+            
             @media (max-width: media.$narrow) {
                 grid-template-columns:
                     [rank]      max-content
                     [name]      max-content
-                    [days]      repeat(15, minmax(1rem, max-content))
+                    [days]      repeat(15, minmax(0.75rem, 1fr))
                     [total]     max-content
                     [end];
             }
@@ -110,7 +113,7 @@
                 > .rank {
                     grid-column: rank;
                     text-align: right;
-                    padding-right: 0.25rem;
+                    padding: 0 0.125rem;
                 }
                 
                 > .name {
@@ -136,10 +139,7 @@
                 > .score {
                     // column positioned using auto flow
                     text-align: right;
-                    padding-left: 0.25rem;
-                    @media (max-width: media.$narrow) {
-                        font-size: 0.75rem;
-                    }
+                    padding: 0 0.125rem;
                 }
                 
                 > .total {
@@ -160,9 +160,6 @@
         border-radius: 2rem;
         @media (max-width: media.$narrow) {
             border-radius: 0;
-        }
-        @media (max-width: media.$medium-width) {
-            overflow: hidden;
         }
 
         text-shadow: var(--emboss-text-shadow);
