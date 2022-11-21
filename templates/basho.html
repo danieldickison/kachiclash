@@ -113,25 +113,23 @@
             {% when None %}
             {% endmatch %}
     
-            <table>
-                <thead>
-                    <tr>
-                        <th colspan="7"></th>
-                        <th class="day-heading" colspan="15">Day</th>
-                    </tr>
-                    <tr>
-                        <th class="rank">#</th>
-                        <th>Player</th>
-                        <th class="pick" colspan="5">Picks</th>
-                        {% for day in 1..16 -%}
-                            <th class="day">{{day}}</th>
-                        {% endfor -%}
-                        <th>Total</th>
-                    </tr>
-                </thead>
-                <tbody>
+            <div class="leaderboard-table">
+                <div class="row header">
+                    <div class="day">Day</div>
+                </div>
+                <div class="row header">
+                    <div class="rank">#</div>
+                    <div class="name">Player</div>
+                    <div class="pick">Picks</div>
+                    {% for day in 1..16 -%}
+                        <div class="score">{{day}}</div>
+                    {% endfor -%}
+                    <div class="score total">Total</div>
+                </div>
+                
                 {% for leader in leaders -%}
-                    <tr class="
+                    <div class="
+                        row
                         {% if leader.is_self %} self {% endif %}
                         {% match leader.player -%}
                         {%- when ResultPlayer::Max -%} min-max
@@ -146,41 +144,41 @@
                     >
                         {% match leader.player -%}
                         {%- when ResultPlayer::Max %}
-                            <td class="min-max-name" colspan="2">Best Possible</td>
+                            <div class="rank"></div>
+                            <div class="name">Best Possible</div>
                         {%- when ResultPlayer::Min %}
-                            <td class="min-max-name" colspan="2">Worst Possible</td>
-    
+                            <div class="rank"></div>
+                            <div class="name">Worst Possible</div>
                         {%- when ResultPlayer::RankedPlayer with (player, rank) %}
-                            <td class="rank">{{rank}}</td>
-                            <td class="name">{{player.render().unwrap()|safe}}</td>
+                            <div class="rank">{{rank}}</div>
+                            <div class="name">{{player.render().unwrap()|safe}}</div>
                         {%- endmatch -%}
     
                         {% for rikishi in leader.picks() -%}
                             {%- match rikishi -%}
                             {%- when Some with (r) -%}
-                                <td class="
+                                <div class="
                                     pick
                                     {% if r.is_kyujyo %}kyujyo{% endif -%}
-                                ">{{r.name}}</td>
+                                ">{{r.name}}</div>
                             {%- when None -%}
-                                <td class="pick"></td>
+                                <div class="pick"></div>
                             {%- endmatch -%}
                         {%- endfor %}
     
                         {% for wins in leader.days -%}
-                            <td class="score day">
+                            <div class="score">
                             {%- match wins -%}
                             {%- when Some with (num) %}{{num}}
                             {%- when None %}-
                             {%- endmatch -%}
-                            </td>
+                            </div>
                         {% endfor -%}
 
-                        <td class="score total">{{leader.total}}</td>
-                    </tr>
+                        <div class="score total">{{leader.total}}</div>
+                    </div>
                 {%- endfor %}
-                </tbody>
-            </table>
+            </div>
             {% if basho.player_count > leaders.len() - 2 %}
                 <p>
                     Showing top {{leaders.len() - 2}} players out of {{basho.player_count}} total.

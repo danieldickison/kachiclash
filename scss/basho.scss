@@ -32,83 +32,123 @@
         @media (hover: none) {
             background: var(--color-light-yellow-bg-opaque);
         }
-
-        table {
-            border-collapse: collapse;
-            margin: 0 auto;
+        
+        .leaderboard-table {
+            display: grid;
+            grid-template-columns:
+                [rank]      max-content
+                [name]      max-content
+                [picks]     repeat(5, minmax(3rem, 1fr))
+                [days]      repeat(15, minmax(1rem, max-content))
+                [total]     max-content
+                [end];
+            grid-auto-flow: row;
+            grid-auto-rows: auto;
             font-size: 0.875rem;
-
-            tr.min-max {
-                color: var(--color-gray-fg);
-                font-weight: 300;
+            line-height: 1.25;
+            max-width: 100%;
+            width: fit-content;
+            margin: 0 auto;
+            
+            @media (max-width: media.$narrow) {
+                grid-template-columns:
+                    [rank]      max-content
+                    [name]      max-content
+                    [days]      repeat(15, minmax(1rem, max-content))
+                    [total]     max-content
+                    [end];
             }
             
-            tr.top-leader {
-                font-weight: 500;
-                a {
-                    font-weight: 500;
+            > .row {
+                display: grid;
+                grid-column: 1 / -1;
+                grid-template-columns: subgrid;
+                grid-template-rows: max-content;
+                grid-auto-flow: column;
+                align-items: center;
+                > * {
+                    grid-row: 1;
+                    // outline: dashed 1px blue;
                 }
-            }
-
-            th {
-                font-weight: bold;
-                color: var(--color-gray-fg);
-                text-align: center;
-            }
-
-            th, td {
-                min-width: 1rem;
-                @media (max-width: media.$narrow) {
-                    min-width: 0.75rem;
-                }
-            }
-
-            td.rank, th.rank {
-                text-align: right;
-                padding-right: 0.25rem;
-            }
-
-            td.name {
-                padding-top: 3px; /* adjust baseline alignment of name cell with others */
-            }
-            tr.self > td.name {
-                background: var(--color-table-highlight-bg);
-                box-shadow: var(--table-highlight-shadow);
-            }
-
-            td.min-max-name {
-                font-style: italic;
-                padding: 0.75rem 0;
-            }
-
-            td.pick {
-                padding: 0 0.125rem;
-                max-width: 5rem;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                &.kyujyo {
-                    text-decoration: line-through;
+                
+                &.header {
+                    font-weight: bold;
                     color: var(--color-gray-fg);
+                    text-align: center;
+                    
+                    > .day {
+                        grid-column: days / total;
+                    }
+                    
+                    > .pick {
+                        grid-column: picks / days;
+                    }
                 }
-                @media (max-width: media.$narrow) {
-                    display: none;
+                
+                &.min-max {
+                    color: var(--color-gray-fg);
+                    font-weight: 300;
+                    font-style: italic;
+                    
+                    > .name {
+                        padding: 0.75rem 0;
+                    }
                 }
-            }
-
-            td.score,
-            th.day {
-                text-align: right;
-            }
-
-            td.total {
-                font-weight: bold;
-            }
-
-            @media (max-width: media.$narrow) {
-                .day {
-                    font-size: 0.75rem;
+                
+                &.self {
+                    background: var(--color-table-highlight-bg);
+                    box-shadow: var(--table-highlight-shadow);
                 }
+                
+                &.top-leader {
+                    font-weight: 500;
+                    a {
+                        font-weight: 500;
+                    }
+                }
+                
+                > .rank {
+                    grid-column: rank;
+                    text-align: right;
+                    padding-right: 0.25rem;
+                }
+                
+                > .name {
+                    grid-column: name;
+                    padding-top: 3px; /* adjust baseline alignment of name cell with others */
+                }
+                
+                > .pick {
+                    // column positioned using auto flow
+                    padding: 0 0.125rem;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    &.kyujyo {
+                        text-decoration: line-through;
+                        color: var(--color-gray-fg);
+                    }
+                    @media (max-width: media.$narrow) {
+                        display: none;
+                    }
+                    
+                }
+                
+                > .score {
+                    // column positioned using auto flow
+                    text-align: right;
+                    padding-left: 0.25rem;
+                    @media (max-width: media.$narrow) {
+                        font-size: 0.75rem;
+                    }
+                }
+                
+                > .total {
+                    grid-column: total;
+                    font-weight: bold;
+                }
+                
             }
+            
         }
     }
 
