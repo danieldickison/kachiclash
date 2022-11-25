@@ -68,7 +68,7 @@
                 grid-template-columns: subgrid;
                 grid-template-rows: max-content;
                 grid-auto-flow: column;
-                align-items: center;
+                align-items: baseline;
                 > * {
                     grid-row: 1;
                     // outline: dashed 1px blue;
@@ -113,12 +113,12 @@
                 > .rank {
                     grid-column: rank;
                     text-align: right;
-                    padding: 0 0.125rem;
+                    padding: 0 0.25rem 0 0.125rem;
+                    font-weight: 300;
                 }
                 
                 > .name {
                     grid-column: name;
-                    padding-top: 3px; /* adjust baseline alignment of name cell with others */
                 }
                 
                 > .pick {
@@ -160,6 +160,7 @@
         border-radius: 2rem;
         @media (max-width: media.$narrow) {
             border-radius: 0;
+            overflow: hidden;
         }
 
         text-shadow: var(--emboss-text-shadow);

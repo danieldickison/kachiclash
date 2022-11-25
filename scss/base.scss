@@ -137,6 +137,7 @@ section {
         line-height: var(--header-height);
         display: flex;
         flex-flow: row nowrap;
+        align-items: baseline;
 
         > * {
             margin: 0 0.5rem;
@@ -258,8 +259,8 @@ body > main {
 .g-player-listing {
     display: inline-flex;
     flex-flow: row nowrap;
-    align-items: center;
-    vertical-align: middle;
+    align-items: baseline;
+    vertical-align: baseline;
 
     .name {
         flex: 0 1 auto;
