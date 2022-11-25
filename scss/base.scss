@@ -42,7 +42,7 @@ html {
 }
 
 body {
-    font-family: "Helvetica Neue", sans-serif;
+    font-family: "exo 2", "Helvetica Neue", sans-serif;
     -webkit-text-size-adjust: none;
     text-size-adjust: none;
     color: #333;
@@ -61,6 +61,10 @@ body {
         background-attachment: initial;
         background-repeat: repeat-y;
     }
+}
+
+input, button, textarea, select, optgroup {
+    font-family: inherit;
 }
 
 a {
