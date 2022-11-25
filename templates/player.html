@@ -12,7 +12,7 @@
 {% block main %}
 
     <section id="profile">
-        <span class="img-wrapper"><img class="js-player-img" src="{{player.medium_thumb()}}"></span>
+        <span class="img-wrapper"><img alt="avatar" class="js-player-img" src="{{player.medium_thumb()}}"></span>
 
         {% if self.is_self() %}
             <button class="edit hide-while-editing">edit ✏️</button>
