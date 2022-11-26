@@ -5,7 +5,7 @@
         border: solid 1px var(--color-border);
         padding: var(--section-padding);
         margin: 2rem 0;
-        background: var(--color-light-bg);
+        background: var(--color-bg);
     }
 
     #profile {
@@ -63,12 +63,12 @@
             }
 
             .hint {
-                color: var(--color-gray-fg);
+                color: var(--color-fg-sub);
             }
 
             .cancel {
-                background: var(--color-gray-bg);
-                color: var(--color-dark-fg);
+                background: var(--color-bg-sub);
+                color: var(--color-fg);
             }
             .buttons {
                 display: flex;

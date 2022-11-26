@@ -5,7 +5,6 @@
     h1 {
         margin: var(--section-padding);
         text-align: center;
-        color: black;
         font-size: 2.5rem;
         text-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
     }
@@ -76,7 +75,7 @@
                 
                 &.header {
                     font-weight: bold;
-                    color: var(--color-gray-fg);
+                    color: var(--color-fg-sub);
                     text-align: center;
                     
                     > .day {
@@ -89,7 +88,7 @@
                 }
                 
                 &.min-max {
-                    color: var(--color-gray-fg);
+                    color: var(--color-fg-sub);
                     font-weight: 300;
                     font-style: italic;
                     
@@ -128,7 +127,7 @@
                     text-overflow: ellipsis;
                     &.kyujyo {
                         text-decoration: line-through;
-                        color: var(--color-gray-fg);
+                        color: var(--color-fg-sub);
                     }
                     @media (max-width: media.$narrow) {
                         display: none;
@@ -161,6 +160,9 @@
         @media (max-width: media.$narrow) {
             border-radius: 0;
             overflow: hidden;
+        }
+        @media (prefers-color-scheme: dark) {
+            background-image: url(/static/img2/banzuke/Wood-BG-dark.webp);
         }
 
         text-shadow: var(--emboss-text-shadow);
@@ -199,6 +201,9 @@
             width: calc(100% + 8 * var(--section-padding));
             height: auto;
             pointer-events: none;
+            @media (prefers-color-scheme: dark) {
+                filter: brightness(0.75);
+            }
         }
 
         .rules {
@@ -454,7 +459,7 @@
             }
             .rikishi.is-kyujyo {
                 text-decoration: line-through;
-                color: var(--color-gray-fg);
+                color: var(--color-fg-sub);
             }
             .east.rikishi.is-kyujyo::before,
             .west.rikishi.is-kyujyo::after {
@@ -513,30 +518,45 @@
 
             .rank-group-1 {
                 background-color: hsla(26, 79%, 62%, 0.5);
+                @media (prefers-color-scheme: dark) {
+                    background-color: hsla(26, 79%, 22%, 0.5);
+                }
                 + .rank-group-2 {
                     margin-top: var(--group-boundary-thickness);
                 }
             }
             .rank-group-2 {
                 background-color: hsla(32, 88%, 68%, 0.5);
+                @media (prefers-color-scheme: dark) {
+                    background-color: hsla(32, 88%, 28%, 0.5);
+                }
                 + .rank-group-3 {
                     margin-top: var(--group-boundary-thickness);
                 }
             }
             .rank-group-3 {
                 background-color: hsla(39, 85%, 72%, 0.5);
+                @media (prefers-color-scheme: dark) {
+                    background-color: hsla(39, 85%, 32%, 0.5);
+                }
                 + .rank-group-4 {
                     margin-top: var(--group-boundary-thickness);
                 }
             }
             .rank-group-4 {
                 background-color: hsla(43, 78.5%, 80%, 0.5);
+                @media (prefers-color-scheme: dark) {
+                    background-color: hsla(43, 78.5%, 30%, 0.5);
+                }
                 + .rank-group-5 {
                     margin-top: var(--group-boundary-thickness);
                 }
             }
             .rank-group-5 {
                 background-color: hsla(50, 73%, 88%, 0.5);
+                @media (prefers-color-scheme: dark) {
+                    background-color: hsla(50, 73%, 38%, 0.5);
+                }
             }
         }
     }

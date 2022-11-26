@@ -74,15 +74,12 @@
 
         // engraved wood appearance
         text-shadow: var(--emboss-text-shadow);
-
-        > .background > img {
-            position: absolute;
-            z-index: -1;
-            pointer-events: none;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+        
+        background-image: url(/static/img2/2021-Player-Rankings3.webp);
+        background-size: contain;
+        background-repeat: no-repeat;
+        @media (prefers-color-scheme: dark) {
+            background-image: url(/static/img2/2021-Player-Rankings3-dark.webp);
         }
 
         &::before {
@@ -97,6 +94,9 @@
             background-image: url(/static/img2/2021-Player-Rankings3-mask.png);
             background-size: contain;
             background-repeat: no-repeat;
+            @media (prefers-color-scheme: dark) {
+                background-image: url(/static/img2/2021-Player-Rankings3-mask-dark.webp);
+            }
         }
 
         .scroll-container {
