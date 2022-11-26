@@ -9,145 +9,139 @@
         text-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
     }
     
-    #entries {
+    #entries, #leaderboard {
         background: var(--color-light-yellow-bg);
         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
         
-        > ul {
-            list-style: none;
-            display: flex;
-            flex-flow: row wrap;
-            column-gap: 1rem;
-            justify-content: center;
-            padding: 0;
-        }
-    }
-
-    #leaderboard {
-        background: var(--color-light-yellow-bg);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-
         @media (hover: none) {
             background: var(--color-light-yellow-bg-opaque);
         }
         
-        .leaderboard-table {
-            display: grid;
+    }
+    
+    #entries > ul {
+        list-style: none;
+        display: flex;
+        flex-flow: row wrap;
+        column-gap: 1rem;
+        justify-content: center;
+        padding: 0;
+    }
+
+    #leaderboard .leaderboard-table {
+        display: grid;
+        grid-template-columns:
+            [rank]      max-content
+            [name]      max-content
+            [picks]     repeat(5, minmax(3rem, 5fr))
+            [days]      repeat(15, minmax(1rem, 1fr))
+            [total]     max-content
+            [end];
+        grid-auto-flow: row;
+        grid-auto-rows: auto;
+        font-size: 0.875rem;
+        line-height: 1.25;
+        max-width: 100%;
+        width: fit-content;
+        margin: 0 auto;
+        
+        @media (max-width: media.$medium-width) {
+            font-size: 0.75rem;
+        }
+        
+        @media (max-width: media.$narrow) {
             grid-template-columns:
                 [rank]      max-content
                 [name]      max-content
-                [picks]     repeat(5, minmax(3rem, 5fr))
-                [days]      repeat(15, minmax(1rem, 1fr))
+                [days]      repeat(15, minmax(0.75rem, 1fr))
                 [total]     max-content
                 [end];
-            grid-auto-flow: row;
-            grid-auto-rows: auto;
-            font-size: 0.875rem;
-            line-height: 1.25;
-            max-width: 100%;
-            width: fit-content;
-            margin: 0 auto;
-            
-            @media (max-width: media.$medium-width) {
-                font-size: 0.75rem;
+        }
+        
+        > .row {
+            display: grid;
+            grid-column: 1 / -1;
+            grid-template-columns: subgrid;
+            grid-template-rows: max-content;
+            grid-auto-flow: column;
+            align-items: baseline;
+            > * {
+                grid-row: 1;
+                // outline: dashed 1px blue;
             }
             
-            @media (max-width: media.$narrow) {
-                grid-template-columns:
-                    [rank]      max-content
-                    [name]      max-content
-                    [days]      repeat(15, minmax(0.75rem, 1fr))
-                    [total]     max-content
-                    [end];
-            }
-            
-            > .row {
-                display: grid;
-                grid-column: 1 / -1;
-                grid-template-columns: subgrid;
-                grid-template-rows: max-content;
-                grid-auto-flow: column;
-                align-items: baseline;
-                > * {
-                    grid-row: 1;
-                    // outline: dashed 1px blue;
-                }
+            &.header {
+                font-weight: bold;
+                color: var(--color-fg-sub);
+                text-align: center;
                 
-                &.header {
-                    font-weight: bold;
-                    color: var(--color-fg-sub);
-                    text-align: center;
-                    
-                    > .day {
-                        grid-column: days / total;
-                    }
-                    
-                    > .pick {
-                        grid-column: picks / days;
-                    }
-                }
-                
-                &.min-max {
-                    color: var(--color-fg-sub);
-                    font-weight: 300;
-                    font-style: italic;
-                    
-                    > .name {
-                        padding: 0.75rem 0;
-                    }
-                }
-                
-                &.self {
-                    background: var(--color-table-highlight-bg);
-                    box-shadow: var(--table-highlight-shadow);
-                }
-                
-                &.top-leader {
-                    font-weight: 500;
-                    a {
-                        font-weight: 500;
-                    }
-                }
-                
-                > .rank {
-                    grid-column: rank;
-                    text-align: right;
-                    padding: 0 0.25rem 0 0.125rem;
-                    font-weight: 300;
-                }
-                
-                > .name {
-                    grid-column: name;
+                > .day {
+                    grid-column: days / total;
                 }
                 
                 > .pick {
-                    // column positioned using auto flow
-                    padding: 0 0.125rem;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    &.kyujyo {
-                        text-decoration: line-through;
-                        color: var(--color-fg-sub);
-                    }
-                    @media (max-width: media.$narrow) {
-                        display: none;
-                    }
-                    
+                    grid-column: picks / days;
                 }
+            }
+            
+            &.min-max {
+                color: var(--color-fg-sub);
+                font-weight: 300;
+                font-style: italic;
                 
-                > .score {
-                    // column positioned using auto flow
-                    text-align: right;
-                    padding: 0 0.125rem;
+                > .name {
+                    padding: 0.75rem 0;
                 }
-                
-                > .total {
-                    grid-column: total;
-                    font-weight: bold;
+            }
+            
+            &.self {
+                background: var(--color-table-highlight-bg);
+                box-shadow: var(--table-highlight-shadow);
+            }
+            
+            &.top-leader {
+                font-weight: 500;
+                a {
+                    font-weight: 500;
+                }
+            }
+            
+            > .rank {
+                grid-column: rank;
+                text-align: right;
+                padding: 0 0.25rem 0 0.125rem;
+                font-weight: 300;
+            }
+            
+            > .name {
+                grid-column: name;
+            }
+            
+            > .pick {
+                // column positioned using auto flow
+                padding: 0 0.125rem;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                &.kyujyo {
+                    text-decoration: line-through;
+                    color: var(--color-fg-sub);
+                }
+                @media (max-width: media.$narrow) {
+                    display: none;
                 }
                 
             }
             
+            > .score {
+                // column positioned using auto flow
+                text-align: right;
+                padding: 0 0.125rem;
+            }
+            
+            > .total {
+                grid-column: total;
+                font-weight: bold;
+            }
         }
     }
 
