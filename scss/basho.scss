@@ -415,12 +415,14 @@
             .win-loss {
                 white-space: nowrap;
                 padding: 0 0.25rem;
+                pointer-events: none;
             }
 
             .rikishi {
                 font-weight: bold;
                 white-space: nowrap;
                 padding: 0 0.25rem;
+                pointer-events: none;
                 @media (min-width: media.$wide) {
                     font-size: 1.25rem;
                 }
@@ -431,6 +433,7 @@
                 display: flex;
                 flex-flow: row wrap;
                 column-gap: 0.25rem;
+                pointer-events: none;
 
                 > .chunk {
                     white-space: nowrap;
