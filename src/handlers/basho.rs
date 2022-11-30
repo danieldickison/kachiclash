@@ -7,7 +7,7 @@ use super::{BaseTemplate, HandlerError, IdentityExt, Result};
 use crate::data::leaders::{BashoPlayerResults, ResultPlayer};
 use crate::data::{
     self, BashoId, BashoInfo, BashoRikishiByRank, DataError, FetchBashoRikishi, PlayerId,
-    RankGroup, RikishiId,
+    RankGroup, RankSide, RikishiId,
 };
 use crate::AppState;
 

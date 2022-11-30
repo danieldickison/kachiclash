@@ -324,8 +324,8 @@
                 [west-name]     max-content
                 [west-radio]    max-content
                 [end];
-            grid-auto-flow: row;
-            grid-auto-rows: auto;
+            justify-items: stretch;
+            align-items: baseline;
             line-height: 2;
             width: 100%;
             border-radius: 1rem;
@@ -347,40 +347,27 @@
             
             > .header {
                 font-weight: bold;
+                grid-row: 1;
             }
 
-            > .row {
-                // background-clip: padding-box;
-                grid-column: 1 / -1;
-                display: grid;
-                grid-template-columns: subgrid;
-                grid-template-rows: max-content;
-                align-items: center;
-                > * {
-                    grid-row: 1;
-                    // outline: dashed 1px blue;
-                }
-            }
-
-            .rank {
+            > .rank {
                 grid-column: rank;
                 text-align: center;
                 font-weight: bold;
             }
             
-            .click-target {
-                width: 100%;
-                height: 100%;
+            > .click-target {
+                align-self: stretch;
             }
             
-            .east {
-                justify-self: right;
+            > .east {
+                text-align: left;
+                
                 &.select-radio {
                     grid-column: east-radio;
                     margin-left: 0.5rem;
                 }
                 &.rikishi {
-                    justify-self: left;
                     grid-column: east-name;
                 }
                 &.pick-count {
@@ -397,13 +384,12 @@
                 }
             }
             .west {
-                justify-self: left;
+                text-align: right;
                 &.select-radio {
                     grid-column: west-radio;
                     margin-right: 0.5rem;
                 }
                 &.rikishi {
-                    justify-self: right;
                     grid-column: west-name;
                 }
                 &.pick-count {
@@ -420,13 +406,13 @@
                 }
             }
 
-            .win-loss {
+            > .win-loss {
                 white-space: nowrap;
                 padding: 0 0.25rem;
                 pointer-events: none;
             }
 
-            .rikishi {
+            > .rikishi {
                 font-weight: bold;
                 white-space: nowrap;
                 padding: 0 0.25rem;
@@ -436,7 +422,7 @@
                 }
             }
 
-            .hoshi {
+            > .hoshi {
                 line-height: 0.6rem;
                 display: flex;
                 flex-flow: row wrap;
@@ -463,22 +449,22 @@
                     }
                 }
             }
-            .rikishi.is-kyujyo {
+            > .rikishi.is-kyujyo {
                 text-decoration: line-through;
                 color: var(--color-fg-sub);
             }
-            .east.rikishi.is-kyujyo::before,
-            .west.rikishi.is-kyujyo::after {
+            > .east.rikishi.is-kyujyo::before,
+            > .west.rikishi.is-kyujyo::after {
                 display: inline-block;
                 content: "㊡";
                 text-decoration: none;
                 color: var(--color-orange);
                 text-shadow: 0 1px 3px #0004;
             }
-            .east.rikishi.is-kyujyo::before {
+            > .east.rikishi.is-kyujyo::before {
                 margin-right: 0.25rem;
             }
-            .west.rikishi.is-kyujyo::after {
+            > .west.rikishi.is-kyujyo::after {
                 margin-left: 0.25rem;
             }
 
@@ -499,8 +485,8 @@
                     display: none;
                 }
             }
-            .click-target:hover ~ .rikishi > .info-link,
-            .rikishi:hover > .info-link {
+            > .click-target:hover ~ .rikishi > .info-link,
+            > .rikishi:hover > .info-link {
                 opacity: 1;
             }
 
@@ -516,13 +502,22 @@
             }
             
             @media (max-width: media.$narrow) {
-                .hoshi,
-                .pick-count {
+                > .hoshi,
+                > .pick-count {
                     display: none;
                 }
             }
+            
+            > .bg {
+                grid-column: 1 / -1;
+                align-self: stretch;
+                &::before {
+                    content: ' ';
+                    white-space: pre;
+                }
+            }
 
-            .rank-group-1 {
+            > .rank-group-1.bg {
                 background-color: hsla(26, 79%, 62%, 0.5);
                 @media (prefers-color-scheme: dark) {
                     background-color: hsla(26, 79%, 22%, 0.5);
@@ -531,7 +526,7 @@
                     margin-top: var(--group-boundary-thickness);
                 }
             }
-            .rank-group-2 {
+            > .rank-group-2.bg {
                 background-color: hsla(32, 88%, 68%, 0.5);
                 @media (prefers-color-scheme: dark) {
                     background-color: hsla(32, 88%, 28%, 0.5);
@@ -540,7 +535,7 @@
                     margin-top: var(--group-boundary-thickness);
                 }
             }
-            .rank-group-3 {
+            > .rank-group-3.bg {
                 background-color: hsla(39, 85%, 72%, 0.5);
                 @media (prefers-color-scheme: dark) {
                     background-color: hsla(39, 85%, 32%, 0.5);
@@ -549,7 +544,7 @@
                     margin-top: var(--group-boundary-thickness);
                 }
             }
-            .rank-group-4 {
+            > .rank-group-4.bg {
                 background-color: hsla(43, 78.5%, 80%, 0.5);
                 @media (prefers-color-scheme: dark) {
                     background-color: hsla(43, 78.5%, 30%, 0.5);
@@ -558,7 +553,7 @@
                     margin-top: var(--group-boundary-thickness);
                 }
             }
-            .rank-group-5 {
+            > .rank-group-5.bg {
                 background-color: hsla(50, 73%, 88%, 0.5);
                 @media (prefers-color-scheme: dark) {
                     background-color: hsla(50, 73%, 38%, 0.5);
