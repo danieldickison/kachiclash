@@ -20,6 +20,7 @@ pub struct BashoTemplate {
     base: BaseTemplate,
     basho: BashoInfo,
     leaders: Vec<BashoPlayerResults>,
+    self_leader_index: Option<usize>,
     rikishi_by_rank: Vec<BashoRikishiByRank>,
     next_day: u8,
     initially_selectable: bool,
@@ -75,15 +76,18 @@ pub async fn basho(
     } else {
         100
     };
+    let leaders = BashoPlayerResults::fetch(
+        &db,
+        basho_id,
+        player_id,
+        rikishi_by_id,
+        basho.has_started(),
+        limit,
+    )?;
+    let self_leader_index = leaders.iter().position(|l| l.is_self);
     Ok(Either::Left(BashoTemplate {
-        leaders: BashoPlayerResults::fetch(
-            &db,
-            basho_id,
-            player_id,
-            rikishi_by_id,
-            basho.has_started(),
-            limit,
-        )?,
+        leaders,
+        self_leader_index,
         next_day: rikishi_by_rank
             .iter()
             .map(|rr| rr.next_day())

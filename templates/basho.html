@@ -114,70 +114,73 @@
             {% endmatch %}
     
             <div class="leaderboard-table">
-                <div class="row header">
-                    <div class="day">Day</div>
-                </div>
-                <div class="row header">
-                    <div class="rank">#</div>
-                    <div class="name">Player</div>
-                    <div class="pick">Picks</div>
-                    {% for day in 1..16 -%}
-                        <div class="score">{{day}}</div>
-                    {% endfor -%}
-                    <div class="score total">Total</div>
-                </div>
+                <div class="header day">Day</div>
+                <div class="header rank">#</div>
+                <div class="header name">Player</div>
+                <div class="header pick">Picks</div>
+                {% for day in 1..16 -%}
+                    <div class="header score">{{day}}</div>
+                {% endfor -%}
+                <div class="header score total">Total</div>
                 
                 {% for leader in leaders -%}
-                    <div class="
-                        row
-                        {% if leader.is_self %} self {% endif %}
-                        {% match leader.player -%}
-                        {%- when ResultPlayer::Max -%} min-max
-                        {%- when ResultPlayer::Min -%} min-max
-                        {%- when ResultPlayer::RankedPlayer with (_, 1) -%} top-leader
-                        {%- when _ -%}
-                        {%- endmatch %}
-                        "
-                        {% if leader.is_self %}
-                            id="self-leader"
-                        {% endif %}
-                    >
-                        {% match leader.player -%}
-                        {%- when ResultPlayer::Max %}
-                            <div class="rank"></div>
-                            <div class="name">Best Possible</div>
-                        {%- when ResultPlayer::Min %}
-                            <div class="rank"></div>
-                            <div class="name">Worst Possible</div>
-                        {%- when ResultPlayer::RankedPlayer with (player, rank) %}
-                            <div class="rank">{{rank}}</div>
-                            <div class="name">{{player.render().unwrap()|safe}}</div>
-                        {%- endmatch -%}
-    
-                        {% for rikishi in leader.picks() -%}
-                            {%- match rikishi -%}
-                            {%- when Some with (r) -%}
-                                <div class="
-                                    pick
-                                    {% if r.is_kyujyo %}kyujyo{% endif -%}
-                                ">{{r.name}}</div>
-                            {%- when None -%}
-                                <div class="pick"></div>
-                            {%- endmatch -%}
-                        {%- endfor %}
-    
-                        {% for wins in leader.days -%}
-                            <div class="score">
-                            {%- match wins -%}
-                            {%- when Some with (num) %}{{num}}
-                            {%- when None %}-
-                            {%- endmatch -%}
-                            </div>
-                        {% endfor -%}
+                    {# inside of `let` we access the loop context as `_loop_item` and its index is 0-based #}
+                    {% let row_style = format!("grid-row: {}", _loop_item.index + 3) %}
+                    {% let row_classes %}
+                    {% match leader.player -%}
+                    {%- when ResultPlayer::Max -%}
+                        {% let row_classes = "min-max" %}
+                    {%- when ResultPlayer::Min -%}
+                        {% let row_classes = "min-max" %}
+                    {%- when ResultPlayer::RankedPlayer with (_, 1) -%}
+                        {% let row_classes = "top-leader" %}
+                    {%- when _ -%}
+                        {% let row_classes = "" %}
+                    {%- endmatch %}
+                    
+                    {% match leader.player -%}
+                    {%- when ResultPlayer::Max %}
+                        <div style="{{row_style}}" class="{{row_classes}} name">Best Possible</div>
+                    {%- when ResultPlayer::Min %}
+                        <div style="{{row_style}}" class="{{row_classes}} name">Worst Possible</div>
+                    {%- when ResultPlayer::RankedPlayer with (player, rank) %}
+                        <div style="{{row_style}}" class="{{row_classes}} rank">{{rank}}</div>
+                        <div style="{{row_style}}" class="{{row_classes}} name">{{player.render().unwrap()|safe}}</div>
+                    {%- endmatch -%}
 
-                        <div class="score total">{{leader.total}}</div>
-                    </div>
+                    {% for rikishi in leader.picks() -%}
+                        {%- match rikishi -%}
+                        {%- when Some with (r) -%}
+                            <div style="{{row_style}}" class="
+                                {{row_classes}}
+                                pick
+                                pick-{{loop.index}}
+                                {% if r.is_kyujyo %}kyujyo{% endif -%}
+                            ">{{r.name}}</div>
+                        {%- when None -%}
+                        {%- endmatch -%}
+                    {%- endfor %}
+
+                    {% for wins in leader.days -%}
+                        <div style="{{row_style}}" class="{{row_classes}} score score-{{loop.index}}">
+                        {%- match wins -%}
+                        {%- when Some with (num) %}{{num}}
+                        {%- when None %}-
+                        {%- endmatch -%}
+                        </div>
+                    {% endfor -%}
+
+                    <div style="{{row_style}}" class="{{row_classes}} score total">{{leader.total}}</div>
                 {%- endfor %}
+                
+                {% match self_leader_index %}
+                {% when Some with (idx) %}
+                    <div id="self-leader"
+                        {# account for 2 header rows and make it 1-based #}
+                        style="grid-row: {{idx + 3}};"
+                    ></div>
+                {% when None %}
+                {% endmatch %}
             </div>
             {% if basho.player_count > leaders.len() - 2 %}
                 <p>

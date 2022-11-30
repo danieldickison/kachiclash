@@ -39,6 +39,7 @@
             [end];
         grid-auto-flow: row;
         grid-auto-rows: auto;
+        align-items: baseline;
         font-size: 0.875rem;
         line-height: 1.25;
         max-width: 100%;
@@ -58,90 +59,97 @@
                 [end];
         }
         
-        > .row {
-            display: grid;
-            grid-column: 1 / -1;
-            grid-template-columns: subgrid;
-            grid-template-rows: max-content;
-            grid-auto-flow: column;
-            align-items: baseline;
-            > * {
-                grid-row: 1;
-                // outline: dashed 1px blue;
+        > * {
+            z-index: 2;
+        }
+        
+        > .header {
+            font-weight: bold;
+            color: var(--color-fg-sub);
+            text-align: center;
+            
+            &.day {
+                grid-column: days / total;
             }
             
-            &.header {
-                font-weight: bold;
-                color: var(--color-fg-sub);
-                text-align: center;
-                
-                > .day {
-                    grid-column: days / total;
-                }
-                
-                > .pick {
-                    grid-column: picks / days;
-                }
+            &.pick {
+                grid-column: picks / days;
             }
+        }
             
-            &.min-max {
-                color: var(--color-fg-sub);
-                font-weight: 300;
-                font-style: italic;
-                
-                > .name {
-                    padding: 0.75rem 0;
-                }
-            }
-            
-            &.self {
-                background: var(--color-table-highlight-bg);
-                box-shadow: var(--table-highlight-shadow);
-            }
-            
-            &.top-leader {
-                font-weight: 500;
-                a {
-                    font-weight: 500;
-                }
-            }
-            
-            > .rank {
-                grid-column: rank;
-                text-align: right;
-                padding: 0 0.25rem 0 0.125rem;
-                font-weight: 300;
-            }
+        > .min-max {
+            color: var(--color-fg-sub);
+            font-weight: 300;
+            font-style: italic;
             
             > .name {
-                grid-column: name;
+                padding: 0.75rem 0;
             }
-            
-            > .pick {
-                // column positioned using auto flow
-                padding: 0 0.125rem;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                &.kyujyo {
-                    text-decoration: line-through;
-                    color: var(--color-fg-sub);
-                }
+        }
+        
+        #self-leader {
+            grid-column: 1 / -1;
+            z-index: 1;
+            background: var(--color-table-highlight-bg);
+            box-shadow: var(--table-highlight-shadow);
+            &::before {
+                content: ' ';
+                white-space: pre;
+            }
+        }
+        
+        > .top-leader {
+            font-weight: 500;
+            a {
+                font-weight: 500;
+            }
+        }
+        
+        > .rank {
+            grid-column: rank;
+            text-align: right;
+            padding: 0 0.25rem 0 0.125rem;
+            font-weight: 300;
+        }
+        
+        > .name {
+            grid-column: name;
+        }
+        
+        > .pick {
+            padding: 0 0.125rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            &.kyujyo {
+                text-decoration: line-through;
+                color: var(--color-fg-sub);
+            }
+            @media (max-width: media.$narrow) {
+                display: none;
+            }
+        }
+        @for $i from 1 through 5 {
+            > .pick-#{$i} {
+                grid-column: calc($i + 2);
+            }
+        }
+        
+        > .score {
+            text-align: right;
+            padding: 0 0.125rem;
+        }
+        @for $i from 1 through 15 {
+            > .score-#{$i} {
+                grid-column: calc($i + 7);
                 @media (max-width: media.$narrow) {
-                    display: none;
+                    grid-column: calc($i + 2);
                 }
-                
             }
-            
-            > .score {
-                // column positioned using auto flow
-                text-align: right;
-                padding: 0 0.125rem;
-            }
-            
-            > .total {
-                grid-column: total;
-                font-weight: bold;
-            }
+        }
+        
+        > .total {
+            grid-column: total;
+            font-weight: bold;
         }
     }
 
