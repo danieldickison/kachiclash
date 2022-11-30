@@ -625,6 +625,15 @@ pub struct BashoRikishiByRank {
 }
 
 impl BashoRikishiByRank {
+    pub fn make_boundary() -> Self {
+        Self {
+            rank: "boundary".to_string(),
+            rank_group: RankGroup(u8::MAX),
+            east: None,
+            west: None,
+        }
+    }
+
     pub fn next_day(&self) -> u8 {
         max(
             self.east.as_ref().map_or(1, |r| r.next_day()),
@@ -650,7 +659,7 @@ impl FetchBashoRikishi {
             Option<bool>,
             u16,
         );
-        let vec: Vec<BashoRikishiByRank> = db
+        let mut vec: Vec<BashoRikishiByRank> = db
             .prepare(
                 "
             SELECT
@@ -732,6 +741,20 @@ impl FetchBashoRikishi {
                 out
             })
             .collect();
+        let mut boundaries: Vec<_> = vec
+            .iter()
+            .tuple_windows()
+            .map(|(x, y)| x.rank_group != y.rank_group)
+            .collect();
+        boundaries.reverse();
+        let orig_vec_len = vec.len();
+        for (i, is_boundary) in boundaries.into_iter().enumerate() {
+            if is_boundary {
+                let insert_idx = orig_vec_len - i - 1;
+                vec.insert(insert_idx, BashoRikishiByRank::make_boundary());
+            }
+        }
+
         let mut map = HashMap::with_capacity(2 * vec.len());
         for brr in &vec {
             if let Some(r) = &brr.east {

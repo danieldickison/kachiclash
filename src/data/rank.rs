@@ -138,7 +138,7 @@ impl ToSql for RankSide {
 }
 
 #[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Copy, Clone, Hash)]
-pub struct RankGroup(u8);
+pub struct RankGroup(pub(crate) u8);
 
 impl RankGroup {
     pub fn for_rank(name: RankName, number: u16) -> Self {
