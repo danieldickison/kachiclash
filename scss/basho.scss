@@ -349,6 +349,11 @@
                 font-weight: bold;
                 grid-row: 1;
             }
+            
+            > .boundary {
+                grid-column: 1 / -1;
+                height: 0.75rem;
+            }
 
             > .rank {
                 grid-column: rank;
@@ -383,7 +388,7 @@
                     grid-column: east-radio / rank;
                 }
             }
-            .west {
+            > .west {
                 text-align: right;
                 &.select-radio {
                     grid-column: west-radio;

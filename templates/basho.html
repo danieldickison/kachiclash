@@ -75,12 +75,16 @@
                 
                 {% for rr in rikishi_by_rank -%}
                     {% let row_style = format!("grid-row: {}", _loop_item.index + 2) %}
-                    <div style="{{row_style}}" class="rank-group-{{rr.rank_group}} bg"></div>
-                    {%- call rikishi_results(rr.east) -%}
-                    <div style="{{row_style}}" class="rank">
-                        {{rr.rank}}
-                    </div>
-                    {%- call rikishi_results(rr.west) -%}
+                    {% if rr.rank == "boundary" %}
+                        <div style="{{row_style}}" class="boundary"></div>
+                    {% else %}
+                        <div style="{{row_style}}" class="rank-group-{{rr.rank_group}} bg"></div>
+                        {%- call rikishi_results(rr.east) -%}
+                        <div style="{{row_style}}" class="rank">
+                            {{rr.rank}}
+                        </div>
+                        {%- call rikishi_results(rr.west) -%}
+                    {% endif %}
                 {% endfor -%}
             </div>
 
