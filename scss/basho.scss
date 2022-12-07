@@ -92,6 +92,7 @@
             z-index: 1;
             background: var(--color-table-highlight-bg);
             box-shadow: var(--table-highlight-shadow);
+            padding: 0.25rem 0;
             &::before {
                 content: ' ';
                 white-space: pre;
@@ -287,7 +288,7 @@
         }
 
         &.selectable {
-            .banzuke-table .row .select-radio {
+            .banzuke-table > .select-radio {
                 visibility: visible;
             }
             .change-picks-button {
@@ -421,9 +422,29 @@
                 font-weight: bold;
                 white-space: nowrap;
                 padding: 0 0.25rem;
-                pointer-events: none;
                 @media (min-width: media.$wide) {
                     font-size: 1.25rem;
+                }
+                
+                > .info-link {
+                    font-size: 0.75rem;
+                    vertical-align: middle;
+                    &::before {
+                        display: inline-block;
+                        content: "ℹ️";
+                        margin: 0 0.25rem;
+                        text-decoration: none;
+                    }
+                    @media (hover: hover) {
+                        opacity: 0;
+                        transition: opacity 100ms ease-out;
+                    }
+                    @media (max-width: media.$narrow) {
+                        display: none;
+                    }
+                }
+                &:hover > .info-link {
+                    opacity: 1;
                 }
             }
 
@@ -471,28 +492,6 @@
             }
             > .west.rikishi.is-kyujyo::after {
                 margin-left: 0.25rem;
-            }
-
-            .info-link {
-                font-size: 0.75rem;
-                vertical-align: middle;
-                &::before {
-                    display: inline-block;
-                    content: "ℹ️";
-                    margin: 0 0.25rem;
-                    text-decoration: none;
-                }
-                @media (hover: hover) {
-                    opacity: 0;
-                    transition: opacity 100ms ease-out;
-                }
-                @media (max-width: media.$narrow) {
-                    display: none;
-                }
-            }
-            > .click-target:hover ~ .rikishi > .info-link,
-            > .rikishi:hover > .info-link {
-                opacity: 1;
             }
 
             .is-player-pick {

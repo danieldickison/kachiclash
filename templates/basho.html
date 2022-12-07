@@ -216,26 +216,29 @@
         {% if !basho.has_started() %}
             <input type="radio"
                 id="banzuke-rikishi-{{rikishi.id}}"
-                class="{{rikishi.rank.side}} select-radio"
+                style="{{row_style}}"
+                class="{{side}} select-radio"
                 name="rank-group-{{rikishi.rank.group()}}"
                 value="{{rikishi.id}}"
-               required
+                required
                 {% if rikishi.is_player_pick -%} checked {%- endif %}
                 {% if !initially_selectable -%} disabled {%- endif %}
             >
         {% endif %}
-        <div style="{{row_style}}"
+        <label
+            style="{{row_style}}"
             class="
                 {{side}}
                 rikishi
                 {%- if rikishi.is_kyujyo %} is-kyujyo {% endif -%}
             "
+            for="banzuke-rikishi-{{rikishi.id}}"
             data-rikishi-id="{{rikishi.id}}"
         >
             {%- if rikishi.rank.side == RankSide::East -%} {{- rikishi.name }} {%- endif %}
             <a class="info-link" target="_blank" href="http://sumodb.sumogames.de/Rikishi.aspx?shikona={{rikishi.name}}&b={{basho.id.id()}}"></a>
             {%- if rikishi.rank.side == RankSide::West -%} {{ rikishi.name -}} {%- endif -%}
-        </div>
+        </label>
         <div style="{{row_style}}" class="{{side}} pick-count">
             {{rikishi.picks}}
         </div>

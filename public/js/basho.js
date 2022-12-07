@@ -4,7 +4,7 @@ const pickForm = document.getElementById('banzuke-select-rikishi-form')
 for (const radio of document.querySelectorAll('.select-radio')) {
   radio.addEventListener('change', _event => {
     for (const otherRadio of document.getElementsByName(radio.name)) {
-      const label = pickForm.querySelector(`label[for="${otherRadio.id}"]`)
+      const label = pickForm.querySelector(`label.click-target[for="${otherRadio.id}"]`)
       label.classList.toggle('is-player-pick', otherRadio === radio)
     }
     // savePicks();
