@@ -1,5 +1,5 @@
 // Init basho start count down clock
-document.querySelectorAll('.js-basho-count-down').forEach(timeSpan => {
+for (const timeSpan of document.querySelectorAll('.js-basho-count-down') as NodeListOf<HTMLElement>) {
   const startTimestamp = parseInt(timeSpan.dataset.startDate)
   const updateTimeRemaining = function () {
     const remaining = (startTimestamp - Date.now()) / 1000
@@ -29,7 +29,7 @@ document.querySelectorAll('.js-basho-count-down').forEach(timeSpan => {
 
   updateTimeRemaining()
   setInterval(updateTimeRemaining, 1000)
-})
+}
 
 // Show local time of basho start times
 const DATETIME_FORMAT = new Intl.DateTimeFormat(undefined, {
@@ -40,15 +40,15 @@ const DATETIME_FORMAT = new Intl.DateTimeFormat(undefined, {
   minute: 'numeric',
   timeZoneName: 'short'
 })
-document.querySelectorAll('.js-local-datetime').forEach(el => {
+for (const el of document.querySelectorAll('.js-local-datetime') as NodeListOf<HTMLElement>) {
   const timestamp = parseInt(el.dataset.timestamp)
   if (timestamp && !isNaN(timestamp)) {
     const date = new Date(timestamp)
     el.innerText = DATETIME_FORMAT.format(date)
   }
-})
+}
 
 // Show standard placeholder for broken player avatar images
-document.querySelectorAll('img.js-player-img').forEach(img => {
+for (const img of document.querySelectorAll('img.js-player-img') as NodeListOf<HTMLImageElement>) {
   img.addEventListener('error', () => { img.src = '/static/img/oicho-silhouette.png' })
-})
+}

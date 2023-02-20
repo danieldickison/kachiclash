@@ -1,4 +1,11 @@
-const bashoForm = document.getElementById('make-basho-form')
+const bashoForm = document.getElementById('make-basho-form') as HTMLFormElement
+
+interface HTMLFormControlsCollection extends HTMLCollectionBase {
+  // [item: string]: HTMLElement | RadioNodeList
+  banzuke: HTMLInputElement
+  venue: HTMLInputElement
+  start_date: HTMLInputElement
+}
 
 let parsedBanzuke
 bashoForm.elements.banzuke.addEventListener('input', bashoFormInput)
@@ -71,4 +78,4 @@ bashoForm.addEventListener('submit', event => {
     .catch(err => alert('error saving basho: ' + err))
 })
 
-bashoFormInput()
+bashoFormInput(null)

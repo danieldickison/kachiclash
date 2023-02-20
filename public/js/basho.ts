@@ -1,7 +1,7 @@
 const banzukeSection = document.getElementById('banzuke')
-const pickForm = document.getElementById('banzuke-select-rikishi-form')
+const pickForm = document.getElementById('banzuke-select-rikishi-form') as HTMLFormElement
 
-for (const radio of document.querySelectorAll('.select-radio')) {
+for (const radio of document.querySelectorAll('.select-radio') as NodeListOf<HTMLInputElement>) {
   radio.addEventListener('change', _event => {
     for (const otherRadio of document.getElementsByName(radio.name)) {
       const label = pickForm.querySelector(`label.click-target[for="${otherRadio.id}"]`)
@@ -32,7 +32,7 @@ for (const button of document.querySelectorAll('.change-picks-button')) {
 
 function setSelectable (selectable) {
   banzukeSection.classList.toggle('selectable', selectable)
-  for (const button of document.querySelectorAll('.select-radio')) {
+  for (const button of document.querySelectorAll('.select-radio') as NodeListOf<HTMLInputElement>) {
     button.disabled = !selectable
   }
 }

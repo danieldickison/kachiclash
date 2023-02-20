@@ -1,0 +1,7 @@
+{
+  "compilerOptions": {
+    "target": "es6"
+  },
+  "include": ["public/**/*.ts"],
+  "exclude": ["node_modules", "**/*.spec.ts"]
+}

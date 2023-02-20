@@ -1,4 +1,9 @@
-const torikumiForm = document.getElementById('torikumi-form')
+const torikumiForm = document.getElementById('torikumi-form') as HTMLFormElement
+
+interface HTMLFormControlsCollection extends HTMLCollectionBase {
+  // [item: string]: HTMLElement | RadioNodeList
+  torikumi: HTMLInputElement
+}
 
 let parsedTorikumi
 torikumiForm.elements.torikumi.addEventListener('input', torikumiFormInput)
@@ -54,7 +59,7 @@ torikumiForm.addEventListener('submit', event => {
   })
     .then(response => {
       if (response.ok) {
-        window.location = bashoURL
+        window.location.href = bashoURL
       } else {
         return response.text().then(msg => { throw msg })
       }
