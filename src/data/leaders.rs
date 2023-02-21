@@ -111,7 +111,9 @@ impl BashoPlayerResults {
                     pick_rikishi[group] = Some(r);
                 }
                 let (days, total_validation) = picks_to_days(&pick_rikishi);
-                assert_eq!(total, total_validation);
+                if total != total_validation {
+                    warn!("total wins for player {player} mismatch betwen basho_result {total} and live data {total_validation}")
+                }
                 BashoPlayerResults {
                     is_self: player_id.map_or(false, |id| player.id == id),
                     player: ResultPlayer::RankedPlayer(player, rank as usize),
