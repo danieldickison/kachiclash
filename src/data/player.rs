@@ -162,11 +162,11 @@ impl Player {
         }
     }
 
-    pub async fn update_image(&self, _db: &mut Connection) -> Result<()> {
-        let _auth = self.login_service_provider()?;
-
-        Ok(())
-    }
+    //     pub async fn update_image(&self, _db: &mut Connection) -> Result<()> {
+    //         let _auth = self.login_service_provider()?;
+    //
+    //         Ok(())
+    //     }
 }
 
 pub fn player_id_with_external_user(
