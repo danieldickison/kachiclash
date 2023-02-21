@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
-    "target": "es6",
+    "lib": ["DOM", "DOM.Iterable", "ES2021", "WebWorker"],
+    "target": "ES2021",
     "sourceMap": true
   },
   "include": ["public/**/*.ts"],
