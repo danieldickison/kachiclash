@@ -27,10 +27,13 @@ pub async fn run(config: Config) -> std::io::Result<()> {
         .expect("session key should be 32 utf8 bytes");
     let db_mutex = data::make_conn(&config.db_path);
     let workers;
+    let static_ttl;
     if is_dev {
-        workers = 2
+        workers = 2;
+        static_ttl = 60;
     } else {
-        workers = max(num_cpus::get(), 4)
+        workers = max(num_cpus::get(), 4);
+        static_ttl = 3600;
     }
     let app_data = web::Data::new(AppState {
         config: config.clone(),
@@ -61,7 +64,11 @@ pub async fn run(config: Config) -> std::io::Result<()> {
             )
             .service(
                 web::scope("/static")
-                    .wrap(middleware::DefaultHeaders::new().add(("Cache-Control", "max-age=3600")))
+                    .wrap(
+                        middleware::DefaultHeaders::new()
+                            .add(("Cache-Control", format!("max-age={static_ttl}")))
+                            .add(("Service-Worker-Allowed", "/")),
+                    )
                     .service(Files::new("/", &config.static_path).prefer_utf8(true)),
             )
             .service(web::resource("/").to(handlers::index::index))
