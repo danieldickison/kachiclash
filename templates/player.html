@@ -15,7 +15,10 @@
         <span class="img-wrapper"><img alt="avatar" class="js-player-img" src="{{player.medium_thumb()}}"></span>
 
         {% if self.is_self() %}
-            <button class="edit hide-while-editing">edit ✏️</button>
+            <div class="buttons hide-while-editing">
+                <button class="g-small-button edit">✏️ edit</button>
+                <button class="g-small-button toggle-push" disabled>notifications…</button>
+            </div>
             <form method="POST" action="/settings">
                 <label>
                     Display Name:

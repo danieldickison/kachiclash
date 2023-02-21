@@ -30,6 +30,8 @@
             <p>Admin: <a href="{{next_basho_id.url_path()}}/edit">enter banzuke for {{next_basho_id}}</a></p>
         {% endif %}
     {% endmatch %}
+    
+    <p><button id="notify-button">Notify Me</button></p>
 
     {% match prev_basho %}
     {% when Some with (basho) %}

@@ -48,10 +48,13 @@
             margin-top: 2.5rem;
         }
 
-        > .edit {
+        > .buttons {
             position: absolute;
             top: 1rem;
+            left: 10rem;
             right: 1rem;
+            display: flex;
+            flex-flow: row wrap;
         }
 
         > form {

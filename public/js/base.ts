@@ -1,3 +1,10 @@
+import { subscribeToPushNotifications } from "./service-client.js"
+
+document.getElementById('notify-button')?.addEventListener('click', e => {
+  e.preventDefault()
+  subscribeToPushNotifications()
+})
+
 // Init basho start count down clock
 for (const timeSpan of document.querySelectorAll('.js-basho-count-down') as NodeListOf<HTMLElement>) {
   const startTimestamp = parseInt(timeSpan.dataset.startDate)

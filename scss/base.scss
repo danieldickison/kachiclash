@@ -275,6 +275,12 @@ body > main {
     }
 }
 
+.g-big-button, .g-small-button {
+    &:disabled {
+        opacity: 0.5;
+    }
+}
+
 .g-centered {
     text-align: center;
 }

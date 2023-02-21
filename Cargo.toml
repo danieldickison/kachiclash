@@ -28,6 +28,7 @@ rand = "0.8"
 oauth2 = "4.1"
 anyhow = "1.0"
 num_cpus = "1.13"
+web-push = "0.9.3"
 
 [dependencies.tokio]
 version = "1"
