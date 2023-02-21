@@ -9,3 +9,4 @@
 /node_modules/
 /public/js/*.js
 /public/js/*.map
+*.pem
