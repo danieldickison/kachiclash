@@ -50,6 +50,9 @@ pub struct Config {
     #[envconfig(from = "SESSION_SECRET", default = "abcdefghijklmnopqrstuvwxyz012345")]
     pub session_secret: String,
 
+    #[envconfig(from = "PUSH_KEY_FILE", default = "var/dev.pem")]
+    pub push_key_file: String,
+
     #[envconfig(from = "DISCORD_CLIENT_ID")]
     pub discord_client_id: String,
 
@@ -86,14 +89,17 @@ impl Config {
     }
 }
 
-#[derive(Debug)]
+// #[derive(Debug)]
 pub struct AppState {
     config: Config,
     db: data::DbConn,
+    push: data::push::PushBuilder,
 }
 
-pub async fn run_server() -> std::io::Result<()> {
-    std::env::set_var("RUST_LOG", "info,kachiclash=debug");
+pub async fn run_server() -> anyhow::Result<()> {
+    if std::env::var_os("RUST_LOG").is_none() {
+        std::env::set_var("RUST_LOG", "info,kachiclash=debug");
+    }
     //std::env::set_var("RUST_LOG", "debug");
     env_logger::init();
 

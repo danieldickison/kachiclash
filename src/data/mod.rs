@@ -19,6 +19,8 @@ use std::fmt;
 
 pub mod leaders;
 
+pub mod push;
+
 pub type RikishiId = u32;
 pub type Day = u8;
 
@@ -44,12 +46,26 @@ pub enum DataError {
     RikishiNotFound { family_name: String },
     AmbiguousShikona { family_names: Vec<String> },
     DatabaseError(rusqlite::Error),
+    WebPushError(web_push::WebPushError),
+    JsonError(serde_json::Error),
     UnknownLoginProvider,
 }
 
 impl From<rusqlite::Error> for DataError {
     fn from(e: rusqlite::Error) -> Self {
         DataError::DatabaseError(e)
+    }
+}
+
+impl From<web_push::WebPushError> for DataError {
+    fn from(e: web_push::WebPushError) -> Self {
+        DataError::WebPushError(e)
+    }
+}
+
+impl From<serde_json::Error> for DataError {
+    fn from(e: serde_json::Error) -> Self {
+        DataError::JsonError(e)
     }
 }
 
@@ -68,6 +84,8 @@ impl fmt::Display for DataError {
             }
             DataError::DatabaseError(e) => write!(f, "Database error: {}", e),
             DataError::UnknownLoginProvider => write!(f, "Unknown login provider"),
+            DataError::WebPushError(e) => write!(f, "Web Push error: {}", e),
+            DataError::JsonError(e) => write!(f, "JSON error: {}", e),
         }?;
         Ok(())
     }

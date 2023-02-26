@@ -1,6 +1,6 @@
 extern crate kachiclash;
 
 #[tokio::main]
-async fn main() -> std::io::Result<()> {
+async fn main() -> anyhow::Result<()> {
     kachiclash::run_server().await
 }

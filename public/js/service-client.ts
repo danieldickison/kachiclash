@@ -3,30 +3,59 @@ const appKey = 'BJjhuoxyYxOSuhas5a4963ghNYYlJzAneDwWpPGhrQehZNUMS8qbYhOyvxmOL0gD
 
 const registrationPromise = navigator.serviceWorker.register('/static/js/service-worker.js', {
   scope: '/',
-  type: 'module'
+  // this is not supported in FireFox yet, as of v111
+  // type: 'module'
 })
 
+function base64ToUint8Array (base64) {
+  const bin = atob(base64)
+  const arr = new Uint8Array(bin.length)
+  for (let i = 0; i < arr.length; i++) {
+    arr[i] = bin.charCodeAt(i)
+  }
+  return arr
+}
+
 export async function subscribeToPushNotifications () {
+  const permission = await Notification.requestPermission()
+  if (permission === 'denied') {
+    alert('Please check system settings to allow browser-based notifications.')
+    return
+  }
+  
   const registration = await registrationPromise
   let subscription: PushSubscription
   try {
     subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: appKey
+      applicationServerKey: base64ToUint8Array(appKey)
     })
   } catch (e) {
     alert('Could not enable push notifications. Please check your browser settings.')
     return false
   }
   console.log('subscribed to push', subscription)
-  await fetch('/push_register', {
-    method: 'POST',
-    body: JSON.stringify(subscription.toJSON()),
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    credentials: 'same-origin'
-  })
+  
+  try {
+    const resp = await fetch('/push/register', {
+      method: 'POST',
+      body: JSON.stringify(subscription.toJSON()),
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      credentials: 'same-origin'
+    })
+    if (!resp.ok) {
+      const body = await resp.text()
+      throw new Error(body)
+    }
+  } catch (e) {
+    await subscription.unsubscribe()
+    alert('Failed to register for push notifications. Please try again later.\n\n' + e.toString())
+    return false
+  }
+  
+  return true
 }
 
 export async function unsubscribeFromPushNotifications () {
@@ -47,4 +76,11 @@ export async function isSubscribedForPush () {
   const registration = await registrationPromise
   const subscription = await registration.pushManager.getSubscription()
   return !!subscription
+}
+
+export async function sendTestPushNotification () {
+  await fetch('/push/test', {
+    method: 'POST',
+    credentials: 'same-origin'
+  })
 }

@@ -1,3 +1,4 @@
+use crate::data::push::PushBuilder;
 use crate::data::DbConn;
 
 use super::{data, handlers};
@@ -17,7 +18,7 @@ use std::cmp::max;
 use std::time::Duration;
 use tokio::task::spawn;
 
-pub async fn run(config: Config) -> std::io::Result<()> {
+pub async fn run(config: Config) -> anyhow::Result<()> {
     let is_dev = config.is_dev();
     let port = config.port;
     let session_secret: [u8; 32] = config
@@ -38,6 +39,7 @@ pub async fn run(config: Config) -> std::io::Result<()> {
     let app_data = web::Data::new(AppState {
         config: config.clone(),
         db: db_mutex.clone(),
+        push: PushBuilder::with_pem(&config.push_key_file)?,
     });
 
     info!("starting server at {}:{}", config.host, config.port);
@@ -91,6 +93,11 @@ pub async fn run(config: Config) -> std::io::Result<()> {
                 web::resource("/settings")
                     .route(web::get().to(handlers::settings::settings_page))
                     .route(web::post().to(handlers::settings::settings_post)),
+            )
+            .service(
+                web::scope("/push")
+                    .route("/register", web::post().to(handlers::push::register))
+                    .route("/test", web::post().to(handlers::push::test)),
             )
             .service(web::resource("/stats").route(web::get().to(handlers::stats::stats_page)))
             .service(
@@ -154,7 +161,7 @@ pub async fn run(config: Config) -> std::io::Result<()> {
             .expect("run sass");
     }
 
-    server.await
+    server.await.map_err(|e| e.into())
 }
 
 async fn default_not_found() -> Result<HttpResponse, handlers::HandlerError> {

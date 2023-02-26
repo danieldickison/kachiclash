@@ -1,12 +1,11 @@
 import {
   isSubscribedForPush,
-  pushPermissionState,
-  subscribeToPushNotifications,
+  pushPermissionState, sendTestPushNotification, subscribeToPushNotifications,
   unsubscribeFromPushNotifications
 } from "./service-client.js"
 
 const profileSection = document.getElementById('profile')
-const toggleEditMode = (event) => {
+const toggleEditMode = (event: Event) => {
   event.preventDefault()
   profileSection.classList.toggle('editing')
 }
@@ -19,14 +18,18 @@ for (const cancel of profileSection.querySelectorAll(':scope > form .cancel')) {
 
 async function initPushButtons () {
   const togglePushButtons = profileSection.querySelectorAll('.toggle-push') as NodeListOf<HTMLButtonElement>
+  const testPushButtons = profileSection.querySelectorAll('.test-push') as NodeListOf<HTMLButtonElement>
   const permission = await pushPermissionState()
   let subscribed = await isSubscribedForPush()
   
-  const updateState = (disabled: boolean) => {
-    const label = subscribed ? 'disable notifications' : 'enable notifications'
+  const updateState = (busy: boolean) => {
+    const label = busy ? 'notifications…' : subscribed ? 'disable notifications' : 'enable notifications'
     for (const toggle of togglePushButtons) {
-      toggle.disabled = disabled
+      toggle.disabled = busy
       toggle.innerText = label
+    }
+    for (const test of testPushButtons) {
+      test.disabled = busy || !subscribed
     }
   }
   
@@ -43,6 +46,13 @@ async function initPushButtons () {
         subscribed = await subscribeToPushNotifications()
       }
       updateState(false)
+    })
+  }
+  
+  for (const button of testPushButtons) {
+    button.addEventListener('click', async event => {
+      event.preventDefault()
+      await sendTestPushNotification()
     })
   }
 }

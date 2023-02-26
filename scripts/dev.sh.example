@@ -1,3 +1,5 @@
+export RUST_BACKTRACE=1
+export RUST_LOG=info,kachiclash=trace
 export KACHI_HOST=localhost
 export KACHI_PORT=8000
 export DISCORD_CLIENT_ID=

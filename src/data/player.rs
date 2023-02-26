@@ -231,7 +231,7 @@ pub fn name_is_valid(name: &str) -> bool {
     NAME_LENGTH.contains(&name.len()) && RE.is_match(name)
 }
 
-#[derive(Debug)]
+#[derive(Debug, serde::Serialize)]
 pub struct BashoScore {
     pub basho_id: BashoId,
     pub rikishi: [Option<PlayerBashoRikishi>; 5],
@@ -328,7 +328,7 @@ impl BashoScore {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, serde::Serialize)]
 pub struct PlayerBashoRikishi {
     pub name: String,
     pub wins: u8,
