@@ -2,7 +2,7 @@
   "actions" : {
     "build" : {
       "enabled" : true,
-      "script" : "cargo build"
+      "script" : "#!\/bin\/sh\ncargo build\ncargo doc"
     },
     "clean" : {
       "enabled" : true,
@@ -13,6 +13,5 @@
       "path" : "run-dev-server"
     }
   },
-  "buildBeforeRunning" : true,
   "openLogOnRun" : "start"
 }
