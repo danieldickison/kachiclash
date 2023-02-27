@@ -2,8 +2,8 @@
 extern crate log;
 extern crate actix_identity;
 extern crate actix_web;
-extern crate env_logger;
 extern crate envconfig;
+extern crate pretty_env_logger;
 extern crate reqwest;
 #[macro_use]
 extern crate serde_derive;
@@ -101,7 +101,7 @@ pub async fn run_server() -> anyhow::Result<()> {
         std::env::set_var("RUST_LOG", "info,kachiclash=debug");
     }
     //std::env::set_var("RUST_LOG", "debug");
-    env_logger::init();
+    pretty_env_logger::init();
 
     let config = Config::init_from_env().expect("Could not read config from environment");
     if config.env != "dev" && config.session_secret == "abcdefghijklmnopqrstuvwxyz012345" {
