@@ -1,5 +1,5 @@
 addEventListener('push', e => {
-  const event = e as PushEvent
+  //const event = e as PushEvent
   
 })
 
