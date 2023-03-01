@@ -7,7 +7,7 @@ Wants=network-online.target
 [Service]
 Type=simple
 User=kachiclash
-Group=kachiclash
+Group=nogroup
 Environment=KACHI_ENV=prod
 Environment=KACHI_DB_PATH=/home/kachiclash/var/kachiclash.sqlite
 Environment=KACHI_STATIC_PATH=/home/kachiclash/public-beta
