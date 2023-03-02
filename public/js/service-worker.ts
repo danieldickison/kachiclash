@@ -13,19 +13,15 @@ self.addEventListener("install", (e: any) => {
 })
 
 self.addEventListener('push', (e: any) => {
-  const { msg, data } = e.data.json() as PushPayload
+  const { title, body, data } = e.data.json() as PushPayload
   e.waitUntil(
-    self.registration.showNotification(
-      "Kachi Clash (title)",
-      {
-        body: msg
-      }
-    )
+    self.registration.showNotification(title, { body })
   )
 })
 
 interface PushPayload {
-  msg: String,
+  title: String,
+  body: String,
   data: EntriesOpen | BashoStartCountdown | DayResult
 }
 

@@ -1,11 +1,16 @@
 use super::{BashoId, BashoInfo, DataError, Day, PlayerId, Result};
 use chrono::{Duration, Utc};
 use rusqlite::Connection;
-use std::fs::File;
 use web_push::{
     ContentEncoding, PartialVapidSignatureBuilder, SubscriptionInfo, VapidSignatureBuilder,
-    WebPushClient, WebPushMessageBuilder,
+    WebPushClient, WebPushMessageBuilder, URL_SAFE_NO_PAD,
 };
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+struct Subscription {
+    id: usize,
+    info: SubscriptionInfo,
+}
 
 pub fn add_player_subscription(
     db: &Connection,
@@ -32,13 +37,26 @@ pub fn add_player_subscription(
     Ok(())
 }
 
-pub fn subscriptions_for_player(
-    db: &Connection,
-    player_id: PlayerId,
-) -> Result<Vec<SubscriptionInfo>> {
+pub fn delete_subscriptions(db: &Connection, sub_ids: &[usize]) -> Result<()> {
+    let mut stmt = db.prepare(
+        "
+        DELETE FROM player_push_subscriptions
+        WHERE id = ?
+    ",
+    )?;
+    for id in sub_ids {
+        println!("Removing push subscription {}", id);
+        if let Err(e) = stmt.execute(params![id]) {
+            warn!("Failed to delete subscription {}: {}", id, e);
+        }
+    }
+    Ok(())
+}
+
+pub fn subscriptions_for_player(db: &Connection, player_id: PlayerId) -> Result<Vec<Subscription>> {
     db.prepare(
         "
-            SELECT info_json
+            SELECT id, info_json
             FROM player_push_subscriptions AS sub
             WHERE player_id = ?
         ",
@@ -51,7 +69,7 @@ pub fn subscriptions_for_player(
         )
     })
     // convert Vec<Result<..>> to Result<Vec<..>>
-    .collect::<Vec<Result<SubscriptionInfo>>>()
+    .collect::<Vec<Result<Subscription>>>()
     .into_iter()
     .collect()
 }
@@ -63,11 +81,9 @@ pub struct PushBuilder {
 }
 
 impl PushBuilder {
-    pub fn with_pem(path: &str) -> Result<Self> {
+    pub fn with_base64_private_key(base64: &str) -> Result<Self> {
         Ok(Self {
-            vapid: VapidSignatureBuilder::from_pem_no_sub(
-                File::open(path).expect("push key pem file"),
-            )?,
+            vapid: VapidSignatureBuilder::from_base64_no_sub(base64, URL_SAFE_NO_PAD)?,
             client: WebPushClient::new()?,
         })
     }
@@ -76,23 +92,30 @@ impl PushBuilder {
         self,
         payload: Payload,
         ttl: Duration,
-        subscriptions: Vec<SubscriptionInfo>,
+        subscriptions: Vec<Subscription>,
+        db: &Connection,
     ) -> Result<()> {
         let mut invalid_subscriptions = vec![];
         for sub in &subscriptions {
-            let mut msg = WebPushMessageBuilder::new(&sub)?;
+            let mut msg = WebPushMessageBuilder::new(&sub.info)?;
             msg.set_ttl(ttl.num_seconds() as u32);
+
             let payload_json = serde_json::to_vec(&payload)?;
             msg.set_payload(ContentEncoding::Aes128Gcm, &payload_json);
-            let sig = self.vapid.clone().add_sub_info(&sub).build()?;
-            msg.set_vapid_signature(sig);
+
+            let mut sig = self.vapid.clone().add_sub_info(&sub.info);
+            // sub appears to be necessary for Firefox and Safari
+            sig.add_claim("sub", "https://kachiclash.com");
+            msg.set_vapid_signature(sig.build()?);
+
             match self.client.send(msg.build()?).await {
                 Ok(_) => (),
                 Err(
                     web_push::WebPushError::EndpointNotValid
                     | web_push::WebPushError::EndpointNotFound,
-                ) => invalid_subscriptions.push(sub),
-                Err(e) => warn!("push error {}", e),
+                ) => invalid_subscriptions.push(sub.id),
+                Err(e) => warn!("push error {:?}", e),
+                // TODO: remove subscriptions after n consecutive errors?
             }
         }
 
@@ -102,7 +125,7 @@ impl PushBuilder {
                 invalid_subscriptions.len(),
                 subscriptions.len()
             );
-            todo!("remove push subscriptions");
+            delete_subscriptions(&db, &invalid_subscriptions)?;
         }
 
         Ok(())
@@ -130,10 +153,11 @@ impl PushType {
         }
     }
 
-    pub fn build_payload(&self, db: &Connection) -> Result<Payload> {
+    pub fn build_payload(&self, _db: &Connection) -> Result<Payload> {
         let payload = match self {
             PushType::EntriesOpen(basho) => Payload {
-                msg: format!("Entries for {} are now open!", basho.id),
+                title: "New Basho!".to_string(),
+                body: format!("Entries for {} are now open", basho.id),
                 data: PayloadData::EntriesOpen {
                     basho_id: basho.id,
                     start_date: basho.start_date.timestamp(),
@@ -152,7 +176,8 @@ impl PushType {
 
 #[derive(Debug, Serialize)]
 pub struct Payload {
-    msg: String,
+    title: String,
+    body: String,
     #[serde(flatten)]
     data: PayloadData,
 }
