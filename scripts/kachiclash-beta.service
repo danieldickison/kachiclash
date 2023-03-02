@@ -7,15 +7,15 @@ Wants=network-online.target
 [Service]
 Type=simple
 User=kachiclash
-Group=kachiclash
+Group=nogroup
 Environment=KACHI_ENV=prod
-Environment=KACHI_DB_PATH=/storage/kachiclash.com/var/kachiclash.sqlite
-Environment=KACHI_STATIC_PATH=/storage/kachiclash.com/public-beta
+Environment=KACHI_DB_PATH=/home/kachiclash/var/kachiclash.sqlite
+Environment=KACHI_STATIC_PATH=/home/kachiclash/public-beta
 Environment=KACHI_HERO=/static/img2/2021-Kachi-Clash-Banner-2.png
 Environment=KACHI_PORT=8004
 Environment=RUST_BACKTRACE=1
-EnvironmentFile=/storage/kachiclash.com/prod_secrets
-ExecStart=/storage/kachiclash.com/server-beta
+EnvironmentFile=/home/kachiclash/prod_secrets
+ExecStart=/home/kachiclash/server-beta
 Restart=always
 
 [Install]
