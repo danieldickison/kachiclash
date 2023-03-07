@@ -155,6 +155,7 @@ impl PushBuilder {
 
 #[derive(Debug)]
 pub enum PushType {
+    Test,
     EntriesOpen(BashoInfo),
     BashoStartCountdown(BashoInfo),
     DayResult(BashoInfo, PlayerId, Day),
@@ -164,6 +165,7 @@ pub enum PushType {
 impl PushType {
     pub fn ttl(&self) -> Duration {
         match self {
+            PushType::Test => Duration::minutes(10),
             PushType::EntriesOpen(_) => Duration::days(1),
             PushType::BashoStartCountdown(basho) => Duration::max(
                 Duration::hours(1),
@@ -176,8 +178,15 @@ impl PushType {
 
     pub fn build_payload(&self, _db: &Connection) -> Result<Payload> {
         let payload = match self {
+            PushType::Test => Payload {
+                title: "Test".to_owned(),
+                body: "It works!".to_owned(),
+                data: PayloadData::Test {
+                    foo: "this is a test".to_owned(),
+                },
+            },
             PushType::EntriesOpen(basho) => Payload {
-                title: "New Basho!".to_string(),
+                title: "New Basho!".to_owned(),
                 body: format!("Entries for {} are now open", basho.id),
                 data: PayloadData::EntriesOpen {
                     basho_id: basho.id,
@@ -206,6 +215,10 @@ pub struct Payload {
 #[derive(Debug, Serialize)]
 #[serde(tag = "type")]
 enum PayloadData {
+    Test {
+        foo: String,
+    },
+
     EntriesOpen {
         basho_id: BashoId,
         start_date: i64,

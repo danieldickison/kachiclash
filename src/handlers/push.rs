@@ -22,21 +22,18 @@ pub async fn register(
 
 pub async fn test(state: web::Data<AppState>, identity: Identity) -> Result<HttpResponse> {
     let player_id = identity.require_player_id()?;
-    let push_type;
+    let push_type = PushType::Test;
     let payload;
     let subs;
     {
         let db = state.db.lock().unwrap();
         subs = push::subscriptions_for_player(&db, player_id)?;
-        let (current, _prev) = BashoInfo::current_and_previous(&db)?;
-        if let Some(basho) = current {
-            push_type = PushType::EntriesOpen(basho);
-            payload = push_type.build_payload(&db)?;
-        } else {
+        if subs.is_empty() {
             return Err(super::HandlerError::NotFound(
-                "push subscription".to_string(),
+                "push subscription".to_owned(),
             ));
         }
+        payload = push_type.build_payload(&db)?;
     }
 
     state
