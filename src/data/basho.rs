@@ -237,7 +237,8 @@ impl BashoId {
     }
 
     fn month_name(self) -> String {
-        let date = NaiveDate::from_ymd(self.year, self.month.into(), 1);
+        let date = NaiveDate::from_ymd_opt(self.year, self.month.into(), 1)
+            .expect("invalid basho month date");
         format!("{}", date.format("%B"))
     }
 

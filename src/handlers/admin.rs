@@ -32,7 +32,7 @@ pub async fn edit_basho_page(
 ) -> Result<EditBashoTemplate> {
     let db = state.db.lock().unwrap();
     Ok(EditBashoTemplate {
-        base: admin_base(&db, &identity)?,
+        base: admin_base(&db, &identity, &state)?,
         basho: BashoData::with_id(&db, *path)?,
     })
 }
@@ -118,7 +118,7 @@ pub async fn edit_basho_post(
     identity: Identity,
 ) -> Result<web::Json<BanzukeResponseData>> {
     let mut db = state.db.lock().unwrap();
-    admin_base(&db, &identity)?;
+    admin_base(&db, &identity, &state)?;
     let basho_id = data::basho::update_basho(
         &mut db,
         *path,
@@ -135,8 +135,12 @@ pub async fn edit_basho_post(
     }))
 }
 
-fn admin_base(db: &Connection, identity: &Identity) -> Result<BaseTemplate> {
-    let base = BaseTemplate::new(db, identity)?;
+fn admin_base(
+    db: &Connection,
+    identity: &Identity,
+    state: &web::Data<AppState>,
+) -> Result<BaseTemplate> {
+    let base = BaseTemplate::new(db, identity, state)?;
     if base.player.as_ref().map_or(false, |p| p.is_admin()) {
         Ok(base)
     } else {
@@ -164,7 +168,7 @@ pub async fn torikumi_page(
     let day = path.1;
     let base = {
         let db = state.db.lock().unwrap();
-        admin_base(&db, &identity)?
+        admin_base(&db, &identity, &state)?
     };
     let sumo_db_text = fetch_sumo_db_torikumi(basho_id, day)
         .map_ok(Some)
@@ -223,7 +227,7 @@ pub async fn torikumi_post(
     identity: Identity,
 ) -> Result<impl Responder> {
     let mut db = state.db.lock().unwrap();
-    admin_base(&db, &identity)?;
+    admin_base(&db, &identity, &state)?;
     let res = data::basho::update_torikumi(&mut db, path.0, path.1, &torikumi.torikumi);
     map_empty_response(res)
 }
@@ -240,7 +244,7 @@ pub async fn bestow_emperors_cup(
     identity: Identity,
 ) -> Result<impl Responder> {
     let mut db = state.db.lock().unwrap();
-    admin_base(&db, &identity)?;
+    admin_base(&db, &identity, &state)?;
     let res = Award::EmperorsCup.bestow(&mut db, *path, award.player_id);
     map_empty_response(res)
 }
@@ -252,7 +256,7 @@ pub async fn revoke_emperors_cup(
     identity: Identity,
 ) -> Result<impl Responder> {
     let mut db = state.db.lock().unwrap();
-    admin_base(&db, &identity)?;
+    admin_base(&db, &identity, &state)?;
     let res = Award::EmperorsCup.revoke(&mut db, *path, award.player_id);
     map_empty_response(res)
 }
@@ -270,7 +274,7 @@ pub async fn finalize_basho(
     identity: Identity,
 ) -> Result<impl Responder> {
     let mut db = state.db.lock().unwrap();
-    admin_base(&db, &identity)?;
+    admin_base(&db, &identity, &state)?;
     basho::finalize_basho(&mut db, *path)?;
     Ok(HttpResponse::SeeOther()
         .insert_header((http::header::LOCATION, &*path.url_path()))
@@ -289,7 +293,7 @@ pub async fn list_players(
     identity: Identity,
 ) -> Result<ListPlayersTemplate> {
     let db = state.db.lock().unwrap();
-    let base = admin_base(&db, &identity)?;
+    let base = admin_base(&db, &identity, &state)?;
     Ok(ListPlayersTemplate {
         base,
         players: Player::list_all(&db)?,

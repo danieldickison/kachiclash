@@ -56,7 +56,7 @@ pub async fn stats_page(
         None => None,
     };
     Ok(StatsTemplate {
-        base: BaseTemplate::new(&db, &identity)?,
+        base: BaseTemplate::new(&db, &identity, &state)?,
         basho_list,
         leader_basho_count,
         leader_basho_count_options: LEADER_BASHO_COUNT_OPTIONS

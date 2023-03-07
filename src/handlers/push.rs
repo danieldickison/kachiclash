@@ -42,7 +42,7 @@ pub async fn test(state: web::Data<AppState>, identity: Identity) -> Result<Http
     state
         .push
         .clone()
-        .send(payload, push_type.ttl(), subs)
+        .send(payload, push_type.ttl(), subs, &state.db)
         .await?;
 
     Ok(HttpResponse::Ok().finish())

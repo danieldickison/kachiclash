@@ -26,7 +26,7 @@ pub async fn settings_page(
     identity: Identity,
 ) -> Result<SettingsTemplate> {
     let db = state.db.lock().unwrap();
-    let base = BaseTemplate::new(&db, &identity)?;
+    let base = BaseTemplate::new(&db, &identity, &state)?;
     if base.player.is_some() {
         Ok(SettingsTemplate {
             base,
@@ -48,7 +48,7 @@ pub async fn settings_post(
 
     if !player::name_is_valid(&form.name) {
         return Ok(Either::Left(SettingsTemplate {
-            base: BaseTemplate::new(&db, &identity)?,
+            base: BaseTemplate::new(&db, &identity, &state)?,
             message: None,
             error: Some(format!("Invalid name: {}", form.name)),
         }));
@@ -64,7 +64,7 @@ pub async fn settings_post(
                 .finish(),
         )),
         Err(e) => Ok(Either::Left(SettingsTemplate {
-            base: BaseTemplate::new(&db, &identity)?,
+            base: BaseTemplate::new(&db, &identity, &state)?,
             message: None,
             error: Some(format!("Error: {}", e)),
         })),

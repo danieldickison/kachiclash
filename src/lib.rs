@@ -50,8 +50,11 @@ pub struct Config {
     #[envconfig(from = "SESSION_SECRET", default = "abcdefghijklmnopqrstuvwxyz012345")]
     pub session_secret: String,
 
-    #[envconfig(from = "PUSH_KEY_FILE", default = "var/dev.pem")]
-    pub push_key_file: String,
+    #[envconfig(from = "VAPID_PUBLIC_KEY")]
+    pub vapid_public_key: String,
+
+    #[envconfig(from = "VAPID_PRIVATE_KEY")]
+    pub vapid_private_key: String,
 
     #[envconfig(from = "DISCORD_CLIENT_ID")]
     pub discord_client_id: String,

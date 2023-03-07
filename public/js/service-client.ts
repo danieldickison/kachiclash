@@ -1,5 +1,4 @@
-// TODO: fetch this from server, or look it up in a <meta> tag
-const appKey = 'BJjhuoxyYxOSuhas5a4963ghNYYlJzAneDwWpPGhrQehZNUMS8qbYhOyvxmOL0gDzyVoPTmw8o59wT87aPyXUnQ='
+const appKey = (document.head.querySelector('meta[name="vapid-public-key"]') as HTMLMetaElement).content
 
 const registrationPromise = navigator.serviceWorker.register('/static/js/service-worker.js', {
   scope: '/',
@@ -8,7 +7,7 @@ const registrationPromise = navigator.serviceWorker.register('/static/js/service
 })
 
 function base64ToUint8Array (base64) {
-  const bin = atob(base64)
+  const bin = atob(base64.replaceAll('-', '+').replaceAll('_', '/'))
   const arr = new Uint8Array(bin.length)
   for (let i = 0; i < arr.length; i++) {
     arr[i] = bin.charCodeAt(i)
@@ -17,13 +16,18 @@ function base64ToUint8Array (base64) {
 }
 
 export async function subscribeToPushNotifications () {
+  const registration = await registrationPromise
+  if (!registration.pushManager) {
+    alert('Push notifications are not supported in this browser.')
+    return false
+  }
+  
   const permission = await Notification.requestPermission()
   if (permission === 'denied') {
     alert('Please check system settings to allow browser-based notifications.')
-    return
+    return false
   }
   
-  const registration = await registrationPromise
   let subscription: PushSubscription
   try {
     subscription = await registration.pushManager.subscribe({
@@ -34,7 +38,7 @@ export async function subscribeToPushNotifications () {
     alert('Could not enable push notifications. Please check your browser settings.')
     return false
   }
-  console.log('subscribed to push', subscription)
+  // console.log('subscribed to push', subscription)
   
   try {
     const resp = await fetch('/push/register', {

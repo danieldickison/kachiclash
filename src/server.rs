@@ -39,7 +39,7 @@ pub async fn run(config: Config) -> anyhow::Result<()> {
     let app_data = web::Data::new(AppState {
         config: config.clone(),
         db: db_mutex.clone(),
-        push: PushBuilder::with_pem(&config.push_key_file)?,
+        push: PushBuilder::with_base64_private_key(&config.vapid_private_key)?,
     });
 
     info!("starting server at {}:{}", config.host, config.port);

@@ -1,4 +1,4 @@
-use super::{BashoId, BashoInfo, DataError, Day, PlayerId, Result};
+use super::{BashoId, BashoInfo, DataError, Day, DbConn, PlayerId, Result};
 use chrono::{Duration, Utc};
 use rusqlite::Connection;
 use web_push::{
@@ -7,7 +7,7 @@ use web_push::{
 };
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
-struct Subscription {
+pub struct Subscription {
     id: usize,
     info: SubscriptionInfo,
 }
@@ -61,11 +61,20 @@ pub fn subscriptions_for_player(db: &Connection, player_id: PlayerId) -> Result<
             WHERE player_id = ?
         ",
     )?
-    .query_map(params![player_id], |row| row.get::<_, String>(0))?
+    .query_map(params![player_id], |row| {
+        let id = row.get::<_, usize>(0)?;
+        let json = row.get::<_, String>(1)?;
+        Ok((id, json))
+    })?
     .map(|row| {
         row.map_or_else(
             |err| Err(DataError::DatabaseError(err)),
-            |json| serde_json::from_str(&json).map_err(DataError::from),
+            |(id, json)| {
+                Ok(Subscription {
+                    id,
+                    info: serde_json::from_str(&json)?,
+                })
+            },
         )
     })
     // convert Vec<Result<..>> to Result<Vec<..>>
@@ -93,10 +102,22 @@ impl PushBuilder {
         payload: Payload,
         ttl: Duration,
         subscriptions: Vec<Subscription>,
-        db: &Connection,
+        db: &DbConn,
     ) -> Result<()> {
         let mut invalid_subscriptions = vec![];
         for sub in &subscriptions {
+            {
+                let endpoint_url = url::Url::parse(&sub.info.endpoint);
+                match endpoint_url {
+                    Ok(url) => trace!(
+                        "Sending push titled {} to {}",
+                        payload.title,
+                        url.host_str().unwrap_or("<invalid host>")
+                    ),
+                    Err(e) => warn!("endpoint url parse error {}", e),
+                };
+            }
+
             let mut msg = WebPushMessageBuilder::new(&sub.info)?;
             msg.set_ttl(ttl.num_seconds() as u32);
 
@@ -125,7 +146,7 @@ impl PushBuilder {
                 invalid_subscriptions.len(),
                 subscriptions.len()
             );
-            delete_subscriptions(&db, &invalid_subscriptions)?;
+            delete_subscriptions(&db.lock().unwrap(), &invalid_subscriptions)?;
         }
 
         Ok(())

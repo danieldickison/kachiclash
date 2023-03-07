@@ -9,4 +9,8 @@ export REDDIT_CLIENT_SECRET=
 export GOOGLE_CLIENT_ID=
 export GOOGLE_CLIENT_SECRET=
 
+# Generate VAPID keys with `npx web-push generate-vapid-keys`
+export VAPID_PUBLIC_KEY=
+export VAPID_PRIVATE_KEY=
+
 cargo run --verbose --bin server

@@ -1,9 +1,10 @@
 extern crate askama;
 
 use crate::data::{DataError, Player, PlayerId};
+use crate::AppState;
 
 use actix_identity::Identity;
-use actix_web::{error, HttpResponse};
+use actix_web::{error, web, HttpResponse};
 use rusqlite::Connection;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
@@ -96,10 +97,11 @@ impl From<actix_web::Error> for HandlerError {
 
 struct BaseTemplate {
     player: Option<Player>,
+    vapid_public_key: String,
 }
 
 impl BaseTemplate {
-    fn new(db: &Connection, identity: &Identity) -> Result<Self> {
+    fn new(db: &Connection, identity: &Identity, state: &web::Data<AppState>) -> Result<Self> {
         let player = match identity.player_id() {
             Some(id) => {
                 let player = Player::with_id(db, id)?;
@@ -114,7 +116,11 @@ impl BaseTemplate {
             }
             None => None,
         };
-        Ok(Self { player })
+        let vapid_public_key = state.config.vapid_public_key.clone();
+        Ok(Self {
+            player,
+            vapid_public_key,
+        })
     }
 
     fn is_admin(&self) -> bool {
