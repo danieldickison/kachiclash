@@ -96,8 +96,9 @@ pub async fn run(config: Config) -> anyhow::Result<()> {
             )
             .service(
                 web::scope("/push")
-                    .route("/register", web::post().to(handlers::push::register))
-                    .route("/test", web::post().to(handlers::push::test)),
+                    .service(handlers::push::register)
+                    .service(handlers::push::check)
+                    .service(handlers::push::test),
             )
             .service(web::resource("/stats").route(web::get().to(handlers::stats::stats_page)))
             .service(

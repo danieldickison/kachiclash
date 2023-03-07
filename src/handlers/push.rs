@@ -1,13 +1,13 @@
 use crate::data::push::{self, PushType};
-use crate::data::BashoInfo;
 use crate::AppState;
 use actix_identity::Identity;
-use actix_web::{web, HttpResponse};
+use actix_web::{post, web, HttpResponse};
 // use serde::{Deserialize, Deserializer};
 use web_push::SubscriptionInfo;
 
 use super::{IdentityExt, Result, UserAgent};
 
+#[post("/register")]
 pub async fn register(
     subscription: web::Json<SubscriptionInfo>,
     user_agent: web::Header<UserAgent>,
@@ -20,6 +20,24 @@ pub async fn register(
     Ok(HttpResponse::Ok().finish())
 }
 
+#[post("/check")]
+pub async fn check(
+    subscription: web::Json<SubscriptionInfo>,
+    state: web::Data<AppState>,
+    identity: Identity,
+) -> Result<HttpResponse> {
+    let player_id = identity.require_player_id()?;
+    let db = state.db.lock().unwrap();
+    for sub in push::subscriptions_for_player(&db, player_id)? {
+        if sub.info == subscription.0 {
+            debug!("Matched player {} subscription {}", player_id, sub.id);
+            return Ok(HttpResponse::Ok().finish());
+        }
+    }
+    Ok(HttpResponse::NotFound().finish())
+}
+
+#[post("/test")]
 pub async fn test(state: web::Data<AppState>, identity: Identity) -> Result<HttpResponse> {
     let player_id = identity.require_player_id()?;
     let push_type = PushType::Test;

@@ -8,8 +8,8 @@ use web_push::{
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Subscription {
-    id: usize,
-    info: SubscriptionInfo,
+    pub id: usize,
+    pub info: SubscriptionInfo,
 }
 
 pub fn add_player_subscription(
@@ -110,7 +110,7 @@ impl PushBuilder {
                 let endpoint_url = url::Url::parse(&sub.info.endpoint);
                 match endpoint_url {
                     Ok(url) => trace!(
-                        "Sending push titled {} to {}",
+                        "Sending push {:?} to {}",
                         payload.title,
                         url.host_str().unwrap_or("<invalid host>")
                     ),

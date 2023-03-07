@@ -6,7 +6,7 @@ const registrationPromise = navigator.serviceWorker.register('/static/js/service
   // type: 'module'
 })
 
-function base64ToUint8Array (base64) {
+function base64ToUint8Array (base64: string) {
   const bin = atob(base64.replaceAll('-', '+').replaceAll('_', '/'))
   const arr = new Uint8Array(bin.length)
   for (let i = 0; i < arr.length; i++) {
@@ -24,7 +24,7 @@ export async function subscribeToPushNotifications () {
   
   const permission = await Notification.requestPermission()
   if (permission === 'denied') {
-    alert('Please check system settings to allow browser-based notifications.')
+    alert('Please check browser settings to allow notifications from this site.')
     return false
   }
   
@@ -35,7 +35,7 @@ export async function subscribeToPushNotifications () {
       applicationServerKey: base64ToUint8Array(appKey)
     })
   } catch (e) {
-    alert('Could not enable push notifications. Please check your browser settings.')
+    alert('Could not enable push notifications. Please check your browser settings.\n\n' + e.toString())
     return false
   }
   // console.log('subscribed to push', subscription)
@@ -79,7 +79,28 @@ export async function pushPermissionState () {
 export async function isSubscribedForPush () {
   const registration = await registrationPromise
   const subscription = await registration.pushManager.getSubscription()
-  return !!subscription
+  if (!subscription) {
+    return false
+  }
+
+  const resp = await fetch('/push/check', {
+    method: 'POST',
+    body: JSON.stringify(subscription.toJSON()),
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    credentials: 'same-origin'
+  })
+  if (resp.ok) {
+    return true
+  } else if (resp.status === 404) {
+    await subscription.unsubscribe()
+    alert('Push notification registration has been lost. Please re-subscribe.')
+    return false
+  } else {
+    const body = await resp.text()
+    throw new Error(body)
+  }
 }
 
 export async function sendTestPushNotification () {
