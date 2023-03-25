@@ -15,17 +15,15 @@ function base64ToUint8Array (base64: string) {
   return arr
 }
 
-export async function subscribeToPushNotifications () {
+export async function subscribeToPushNotifications (optIn: string[]): Promise<SubscriptionState> {
   const registration = await registrationPromise
   if (!registration.pushManager) {
-    alert('Push notifications are not supported in this browser.')
-    return false
+    throw new Error('Push notifications are not supported in this browser.')
   }
   
   const permission = await Notification.requestPermission()
   if (permission === 'denied') {
-    alert('Please check browser settings to allow notifications from this site.')
-    return false
+    throw new Error('Please check browser settings to allow notifications from this site.')
   }
   
   let subscription: PushSubscription
@@ -35,31 +33,32 @@ export async function subscribeToPushNotifications () {
       applicationServerKey: base64ToUint8Array(appKey)
     })
   } catch (e) {
-    alert('Could not enable push notifications. Please check your browser settings.\n\n' + e.toString())
-    return false
+    throw new Error('Could not enable push notifications. Please check your browser settings.\n\n' + e.toString())
   }
   // console.log('subscribed to push', subscription)
-  
+  const body = {
+    subscription: subscription.toJSON(),
+    opt_in: optIn
+  }  
   try {
     const resp = await fetch('/push/register', {
       method: 'POST',
-      body: JSON.stringify(subscription.toJSON()),
+      body: JSON.stringify(body),
       headers: {
         'Content-Type': 'application/json'
       },
       credentials: 'same-origin'
     })
-    if (!resp.ok) {
+    if (resp.ok) {
+      return await resp.json() as SubscriptionState
+    } else {
       const body = await resp.text()
       throw new Error(body)
     }
   } catch (e) {
     await subscription.unsubscribe()
-    alert('Failed to register for push notifications. Please try again later.\n\n' + e.toString())
-    return false
+    throw new Error('Failed to register for push notifications. Please try again later.\n\n' + e.toString())
   }
-  
-  return true
 }
 
 export async function unsubscribeFromPushNotifications () {
@@ -76,11 +75,15 @@ export async function pushPermissionState () {
   })
 }
 
-export async function isSubscribedForPush () {
+export interface SubscriptionState {
+  opt_in: string[]
+}
+
+export async function pushSubscriptionState (): Promise<null | SubscriptionState> {
   const registration = await registrationPromise
   const subscription = await registration.pushManager.getSubscription()
   if (!subscription) {
-    return false
+    return null
   }
 
   const resp = await fetch('/push/check', {
@@ -91,12 +94,15 @@ export async function isSubscribedForPush () {
     },
     credentials: 'same-origin'
   })
+  
   if (resp.ok) {
-    return true
+    return await resp.json() as SubscriptionState
+    
   } else if (resp.status === 404) {
     alert('Push notification registration has been lost. Please re-subscribe.')
     await subscription.unsubscribe()
-    return false
+    return null
+    
   } else {
     const body = await resp.text()
     throw new Error(body)

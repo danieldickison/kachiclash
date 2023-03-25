@@ -1,8 +1,8 @@
-import { subscribeToPushNotifications } from "./service-client.js"
+import { showNotificationSettings } from './notification-settings.js'
 
 document.getElementById('notify-button')?.addEventListener('click', e => {
   e.preventDefault()
-  subscribeToPushNotifications()
+  showNotificationSettings()
 })
 
 // Init basho start count down clock

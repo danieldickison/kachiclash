@@ -8,6 +8,15 @@ use web_push::{
     WebPushClient, WebPushMessageBuilder, URL_SAFE_NO_PAD,
 };
 
+#[derive(Debug, PartialEq, Eq, Hash, Deserialize, Serialize)]
+pub enum PushTypeKey {
+    Test,
+    EntriesOpen,
+    BashoStartCountdown,
+    DayResult,
+    BashoResult,
+}
+
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Subscription {
     pub id: usize,
@@ -168,15 +177,6 @@ pub enum PushType {
     BashoStartCountdown(BashoInfo),
     DayResult(BashoInfo, PlayerId, Day),
     BashoResult(BashoInfo, PlayerId),
-}
-
-#[derive(Debug, PartialEq, Eq, Hash, Deserialize, Serialize)]
-pub enum PushTypeKey {
-    Test,
-    EntriesOpen,
-    BashoStartCountdown,
-    DayResult,
-    BashoResult,
 }
 
 impl PushType {
