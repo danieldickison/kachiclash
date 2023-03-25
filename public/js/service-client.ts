@@ -94,8 +94,8 @@ export async function isSubscribedForPush () {
   if (resp.ok) {
     return true
   } else if (resp.status === 404) {
-    await subscription.unsubscribe()
     alert('Push notification registration has been lost. Please re-subscribe.')
+    await subscription.unsubscribe()
     return false
   } else {
     const body = await resp.text()

@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use super::{BashoId, BashoInfo, DataError, Day, DbConn, PlayerId, Result};
 use chrono::{Duration, Utc};
 use rusqlite::Connection;
@@ -16,23 +18,29 @@ pub fn add_player_subscription(
     db: &Connection,
     player_id: PlayerId,
     subscription: SubscriptionInfo,
+    opt_in: HashSet<PushTypeKey>,
     user_agent: &str,
 ) -> Result<()> {
-    println!(
-        "Registering push subscription for player {}, user agent: {}",
-        player_id, user_agent
+    info!(
+        "Registering push subscription for player {}, user agent: {}, opt-in: {:?}",
+        player_id, user_agent, opt_in
     );
     db.prepare(
         "
             INSERT INTO player_push_subscriptions
-            (player_id, info_json, user_agent)
-            VALUES (?, ?, ?)
+                (player_id, info_json, user_agent, opt_in_json)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT (info_json) DO UPDATE
+                player_id = excluded.player_id,
+                user_agent = excluded.user_agent,
+                opt_in_json = excluded.opt_in_json
         ",
     )?
     .execute(params![
         player_id,
         serde_json::to_string(&subscription)?,
-        user_agent
+        user_agent,
+        serde_json::to_string(&opt_in)?,
     ])?;
     Ok(())
 }
@@ -162,7 +170,26 @@ pub enum PushType {
     BashoResult(BashoInfo, PlayerId),
 }
 
+#[derive(Debug, PartialEq, Eq, Hash, Deserialize, Serialize)]
+pub enum PushTypeKey {
+    Test,
+    EntriesOpen,
+    BashoStartCountdown,
+    DayResult,
+    BashoResult,
+}
+
 impl PushType {
+    pub fn key(&self) -> PushTypeKey {
+        match self {
+            PushType::Test => PushTypeKey::Test,
+            PushType::EntriesOpen(_) => PushTypeKey::EntriesOpen,
+            PushType::BashoStartCountdown(_) => PushTypeKey::BashoStartCountdown,
+            PushType::DayResult(_, _, _) => PushTypeKey::DayResult,
+            PushType::BashoResult(_, _) => PushTypeKey::BashoResult,
+        }
+    }
+
     pub fn ttl(&self) -> Duration {
         match self {
             PushType::Test => Duration::minutes(10),

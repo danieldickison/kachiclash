@@ -14,6 +14,7 @@ extern crate rusqlite;
 #[macro_use]
 extern crate lazy_static;
 
+use crate::data::push::PushBuilder;
 use envconfig::Envconfig;
 use std::path::PathBuf;
 use url::Url;
@@ -21,6 +22,7 @@ use url::Url;
 mod data;
 mod external;
 mod handlers;
+mod poll;
 mod server;
 mod util;
 
@@ -92,14 +94,14 @@ impl Config {
     }
 }
 
-// #[derive(Debug)]
+#[derive(Clone)]
 pub struct AppState {
     config: Config,
     db: data::DbConn,
     push: data::push::PushBuilder,
 }
 
-pub async fn run_server() -> anyhow::Result<()> {
+pub fn init_env() -> anyhow::Result<AppState> {
     if std::env::var_os("RUST_LOG").is_none() {
         std::env::set_var("RUST_LOG", "info,kachiclash=debug");
     }
@@ -111,5 +113,16 @@ pub async fn run_server() -> anyhow::Result<()> {
         panic!("default session_secret specified for non-dev deployment");
     }
 
-    server::run(config).await
+    let db = data::make_conn(&config.db_path);
+    let push = PushBuilder::with_base64_private_key(&config.vapid_private_key)?;
+
+    Ok(AppState { config, db, push })
+}
+
+pub async fn run_server(app_state: AppState) -> anyhow::Result<()> {
+    server::run(app_state).await
+}
+
+pub fn start_poll(app_state: AppState) -> anyhow::Result<()> {
+    poll::start(app_state)
 }

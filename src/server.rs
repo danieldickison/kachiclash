@@ -1,8 +1,6 @@
-use crate::data::push::PushBuilder;
+use super::handlers;
+use super::AppState;
 use crate::data::DbConn;
-
-use super::{data, handlers};
-use super::{AppState, Config};
 
 use std::convert::TryInto;
 use std::process::Command;
@@ -18,7 +16,8 @@ use std::cmp::max;
 use std::time::Duration;
 use tokio::task::spawn;
 
-pub async fn run(config: Config) -> anyhow::Result<()> {
+pub async fn run(app_state: AppState) -> anyhow::Result<()> {
+    let config = app_state.config.clone();
     let is_dev = config.is_dev();
     let port = config.port;
     let session_secret: [u8; 32] = config
@@ -26,7 +25,7 @@ pub async fn run(config: Config) -> anyhow::Result<()> {
         .as_bytes()
         .try_into()
         .expect("session key should be 32 utf8 bytes");
-    let db_mutex = data::make_conn(&config.db_path);
+    let db_mutex = app_state.db.clone();
     let workers;
     let static_ttl;
     if is_dev {
@@ -36,11 +35,7 @@ pub async fn run(config: Config) -> anyhow::Result<()> {
         workers = max(num_cpus::get(), 4);
         static_ttl = 3600;
     }
-    let app_data = web::Data::new(AppState {
-        config: config.clone(),
-        db: db_mutex.clone(),
-        push: PushBuilder::with_base64_private_key(&config.vapid_private_key)?,
-    });
+    let app_data = web::Data::new(app_state);
 
     info!("starting server at {}:{}", config.host, config.port);
     let server = HttpServer::new(move || {
