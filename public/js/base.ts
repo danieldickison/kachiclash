@@ -1,10 +1,3 @@
-import { showNotificationSettings } from './notification-settings.js'
-
-document.getElementById('notify-button')?.addEventListener('click', e => {
-  e.preventDefault()
-  showNotificationSettings()
-})
-
 // Init basho start count down clock
 for (const timeSpan of document.querySelectorAll('.js-basho-count-down') as NodeListOf<HTMLElement>) {
   const startTimestamp = parseInt(timeSpan.dataset.startDate)

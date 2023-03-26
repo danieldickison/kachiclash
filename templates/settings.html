@@ -10,15 +10,15 @@
 
 {% block main %}
     <form id="settings-form" class="busy">
-        <div class="messages"></div>
-        
         <section>
             <h2>Settings</h2>
             
+            <div class="messages"></div>
+            
             <fieldset name="profile">
-                <caption>Profile</caption>
+                <legend>Profile</legend>
                 <label>
-                    Display Name:
+                    Display name:
                     <input name="name" type="text"
                         required
                         minlength="{{player::NAME_LENGTH.start()}}"
@@ -28,10 +28,14 @@
                     >
                     <span class="hint">(letters and numbers only)</span>
                 </label>
+                <p>
+                    Your profile picture is synced with your external account when you log in. To update your Kachi Clash avatar, first update your profile pic in your external service account (Discord, Reddit, Google, etc), then log out and log back into Kachi Clash using the same account.
+                </p>
             </fieldset>
             
             <fieldset name="notifications" disabled>
-                <caption>Enable notifications for:</caption>
+                <legend>Notifications</legend>
+                Enable push notifications for:
                 <ul>
                     <li><label>
                         <input type="checkbox" value="EntriesOpen" />
@@ -50,7 +54,7 @@
                         Final basho results
                     </label></li>
                 </ul>
-                <button name="test-notification" class="g-small-button">
+                <button name="test-notification" class="g-small-button" type="button">
                     Send test notification
                 </button>
             </fieldset>

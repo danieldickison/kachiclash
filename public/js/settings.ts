@@ -3,7 +3,7 @@ import {
 } from "./service-client.js"
 
 const form = document.getElementById('settings-form') as HTMLFormElement
-const messages = form.querySelector(':scope > .messages') as HTMLElement
+const messages = form.querySelector('.messages') as HTMLElement
 const saveButton = form.querySelector('.save-button') as HTMLButtonElement
 const nameField = form.elements['name'] as HTMLInputElement
 const testNotificationButton = form.elements['test-notification'] as HTMLButtonElement
@@ -24,10 +24,11 @@ testNotificationButton.addEventListener('click', async event => {
 
 async function refreshState () {
   updateUi(true)
+  showMessage(false, '')
   const permission = await pushPermissionState()
   subscriptionState = permission === 'granted' ? await pushSubscriptionState() : null
   for (const checkbox of typeCheckboxes) {
-   checkbox.checked = subscriptionState && subscriptionState.opt_in.includes(checkbox.name)
+   checkbox.checked = subscriptionState && subscriptionState.opt_in.includes(checkbox.value)
   }
   updateUi(false)
 }
