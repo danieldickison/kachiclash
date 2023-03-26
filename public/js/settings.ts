@@ -87,7 +87,7 @@ function getOptInTypes () {
   const types: string[] = []
   for (const checkbox of typeCheckboxes) {
     if (checkbox.checked) {
-      types.push(checkbox.name)
+      types.push(checkbox.value)
     }
   }
   return types

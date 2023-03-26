@@ -42,12 +42,11 @@ pub async fn settings_page(
 
 #[post("/settings")]
 pub async fn settings_post(
-    form: web::Form<FormData>,
+    form: web::Json<FormData>,
     state: web::Data<AppState>,
     user_agent: web::Header<UserAgent>,
     identity: Identity,
 ) -> Result<impl Responder> {
-    trace!("in settings_post with form {:?}", form.0);
     let player_id = identity.require_player_id()?;
     let mut db = state.db.lock().unwrap();
     match settings_post_inner(&mut db, player_id, form.0, user_agent.0).await {
@@ -69,20 +68,22 @@ async fn settings_post_inner(
         return Err(anyhow!("Invalid name: {}", form.name));
     }
 
-    let txn = db.transaction()?;
+    {
+        let txn = db.transaction()?;
 
-    if let Some(subscription) = form.push_subscription {
-        push::add_player_subscription(
-            &txn,
-            player_id,
-            &subscription,
-            &form.notification_opt_in,
-            &user_agent.to_string(),
-        )?;
+        Player::set_name(&txn, player_id, &form.name)?;
+
+        if let Some(subscription) = form.push_subscription {
+            push::add_player_subscription(
+                &txn,
+                player_id,
+                &subscription,
+                &HashSet::from_iter(form.notification_opt_in),
+                &user_agent.to_string(),
+            )?;
+        }
+
+        txn.commit()?;
     }
-
-    Player::set_name(&txn, player_id, &form.name)?;
-
-    txn.commit()?;
     Ok(())
 }

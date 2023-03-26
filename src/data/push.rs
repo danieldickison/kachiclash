@@ -40,7 +40,7 @@ pub fn add_player_subscription(
             INSERT INTO player_push_subscriptions
                 (player_id, info_json, user_agent, opt_in_json)
             VALUES (?, ?, ?, ?)
-            ON CONFLICT (info_json) DO UPDATE
+            ON CONFLICT (info_json) DO UPDATE SET
                 player_id = excluded.player_id,
                 user_agent = excluded.user_agent,
                 opt_in_json = excluded.opt_in_json
