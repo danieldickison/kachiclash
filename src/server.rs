@@ -151,6 +151,15 @@ pub async fn run(app_state: AppState) -> anyhow::Result<()> {
             .arg("scss/:public/css/")
             .spawn()
             .expect("run sass");
+
+        info!("starting npx tsc --watch");
+        // Not sure if we need to .wait on the child process or kill it manually. On my mac it seems to be unnecessary.
+        let _sass = Command::new("npx")
+            .arg("tsc")
+            .arg("--watch")
+            .arg("--preserveWatchOutput")
+            .spawn()
+            .expect("run tsc");
     }
 
     server.await.map_err(|e| e.into())
