@@ -39,7 +39,7 @@ pub async fn run(app_state: AppState) -> anyhow::Result<()> {
 
     info!("starting server at {}:{}", config.host, config.port);
     let server = HttpServer::new(move || {
-        let mut app = App::new()
+        App::new()
             .app_data(web::Data::clone(&app_data))
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
@@ -130,12 +130,7 @@ pub async fn run(app_state: AppState) -> anyhow::Result<()> {
                             .route(web::post().to(handlers::admin::update_user_images)),
                     ),
             )
-            .default_service(web::route().to(default_not_found));
-
-        if config.is_dev() {
-            app = app.service(Files::new("/scss", "scss"));
-        }
-        app
+            .default_service(web::route().to(default_not_found))
     })
     .workers(workers)
     .bind(("0.0.0.0", port))?
@@ -148,7 +143,7 @@ pub async fn run(app_state: AppState) -> anyhow::Result<()> {
         // Not sure if we need to .wait on the child process or kill it manually. On my mac it seems to be unnecessary.
         let _sass = Command::new("sass")
             .arg("--watch")
-            .arg("scss/:public/css/")
+            .arg("public/scss/:public/css/")
             .spawn()
             .expect("run sass");
 
