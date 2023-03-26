@@ -24,7 +24,6 @@ testNotificationButton.addEventListener('click', async event => {
 
 async function refreshState () {
   updateUi(true)
-  showMessage(false, '')
   const permission = await pushPermissionState()
   subscriptionState = permission === 'granted' ? await pushSubscriptionState() : null
   for (const checkbox of typeCheckboxes) {
@@ -72,8 +71,8 @@ async function save () {
     }
   } catch (error) {
     showMessage(true, error.toString())
-    throw error
   } finally {
+    await refreshState()
     updateUi(false)
   }
 }
