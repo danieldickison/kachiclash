@@ -170,6 +170,29 @@ section {
         > * {
             margin: 0 0.5rem;
         }
+        
+        > .g-player-listing::after {
+            content: '⌄';
+        }
+        
+        > .player-menu-dropdown {
+            display: none;
+            position: absolute;
+            top: var(--header-height);
+            right: 0;
+            background: var(--color-bg-inv);
+            color: var(--color-fg-inv);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.25);
+            list-style: none;
+            padding: 0.5rem 0;
+            
+            a {
+                padding: 0 2rem;
+            }
+        }
+        &.open > .player-menu-dropdown {
+            display: block;
+        }
     }
 }
 
@@ -179,6 +202,10 @@ body > main {
     flex-grow: 1;
     margin: var(--header-height) auto 0 auto;
     z-index: 0;
+}
+
+hr {
+    border: 2px solid var(--color-border);
 }
 
 #g-hero {
@@ -255,6 +282,7 @@ body > main {
     border-radius: 5px;
     display: block;
     margin: 1rem;
+    padding: 0.25rem 0.5rem;
 
     &:active {
         background: var(--color-mauve);
@@ -269,6 +297,7 @@ body > main {
     border-radius: 3px;
     display: block;
     margin: 0.5rem;
+    padding: 0.125rem 0.25rem;
 
     &:active {
         background: var(--color-navy-highlight);

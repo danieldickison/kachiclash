@@ -52,3 +52,22 @@ for (const el of document.querySelectorAll('.js-local-datetime') as NodeListOf<H
 for (const img of document.querySelectorAll('img.js-player-img') as NodeListOf<HTMLImageElement>) {
   img.addEventListener('error', () => { img.src = '/static/img/oicho-silhouette.png' })
 }
+
+// User menu
+const playerMenu = document.querySelector('#g-header .player-menu') as HTMLElement
+const menuHeader = playerMenu.querySelector('.g-player-listing')
+if (menuHeader instanceof HTMLAnchorElement) {
+  const bodyClickHandler = (event: Event) => {
+    const target = event.target
+    if (target instanceof Element && !target.matches('.player-menu *')) {
+      event.preventDefault()
+      playerMenu.classList.remove('open')
+      document.body.removeEventListener('click', bodyClickHandler, { capture: true })
+    }
+  }
+  menuHeader.addEventListener('click', event => {
+    event.preventDefault()
+    playerMenu.classList.toggle('open')
+    document.body.addEventListener('click', bodyClickHandler, { capture: true })
+  })
+}

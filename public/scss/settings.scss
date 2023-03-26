@@ -22,6 +22,7 @@
 
         .hint {
             color: var(--color-fg-sub);
+            display: inline-block;
         }
         
         fieldset {
@@ -40,6 +41,12 @@
         fieldset[name="notifications"] ul {
             list-style: none;
             padding-inline-start: 1rem;
+        }
+        
+        .save-button {
+            margin-left: auto;
+            padding-left: 2rem;
+            padding-right: 2rem;
         }
     }
 }

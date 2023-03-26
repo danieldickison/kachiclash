@@ -20,12 +20,15 @@
             {% match base.player %}
             {%- when Some with (player) -%}
                 {{player.render().unwrap()|safe}}
-                |
-                <a href="https://discordapp.com/invite/Wg4DsMt" target="_blank">discord</a>
-                |
-                <a class="dbox-donation-button" href="https://donorbox.org/kachi-clash-website-donations" target="_blank">donate</a>
-                |
-                <a href="/logout">log out</a>
+                <ul class="player-menu-dropdown">
+                    <li><a href="/stats">stats</a></li>
+                    <li><a href="https://discordapp.com/invite/Wg4DsMt" target="_blank">discord</a></li>
+                    <li><a class="dbox-donation-button" href="https://donorbox.org/kachi-clash-website-donations" target="_blank">donate</a></li>
+                    <li><hr /></li>
+                    <li><a href="{{player.url_path()}}">profile</a></li>
+                    <li><a href="/settings">settings</a></li>
+                    <li><a href="/logout">log out</a></li>
+                </ul>
 
             {%- when None -%}
                 <a href="https://discordapp.com/invite/Wg4DsMt" target="_blank">discord</a>
