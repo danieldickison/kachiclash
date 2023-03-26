@@ -19,7 +19,6 @@ pub mod settings;
 pub mod stats;
 
 mod user_agent;
-use user_agent::UserAgent;
 
 type Result<T> = std::result::Result<T, HandlerError>;
 
@@ -73,6 +72,12 @@ impl error::ResponseError for HandlerError {
 impl From<DataError> for HandlerError {
     fn from(err: DataError) -> Self {
         Self::DatabaseError(err)
+    }
+}
+
+impl From<rusqlite::Error> for HandlerError {
+    fn from(err: rusqlite::Error) -> Self {
+        Self::DatabaseError(DataError::from(err))
     }
 }
 

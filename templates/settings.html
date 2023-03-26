@@ -1,40 +1,62 @@
 {% extends "base.html" %}
 
+{% block subtitle %}Settings{% endblock %}
 {% block main_id %}p-settings{% endblock %}
 
 {% block head %}
     <link rel="stylesheet" href="/static/css/settings.css">
+    <script type="module" src="/static/js/settings.js"></script>
 {% endblock %}
 
 {% block main %}
-    <div id="messages">
-        {% match message %}
-        {% when Some with (msg) %}
-            <div class="message">{{msg}}</div>
-        {% when None %}
-        {% endmatch %}
-        {% match error %}
-        {% when Some with (err) %}
-            <div class="error">{{err}}</div>
-        {% when None %}
-        {% endmatch %}
-    </div>
-
-    <section id="profile">
-        <h2>Profile</h2>
-        <form method="POST">
-            <label>
-                Display Name:
-                <input name="name" type="text"
-                    required
-                    minlength="{{player::NAME_LENGTH.start()}}"
-                    maxlength="{{player::NAME_LENGTH.end()}}"
-                    pattern="{{player::NAME_REGEX}}"
-                    value="{{base.player.as_ref().unwrap().name}}"
-                >
-                <span class="hint">(letters and numbers only)</span>
-            </label>
-            <button class="g-big-button">Save</button>
-        </form>
-    </section>
+    <form id="settings-form" class="busy">
+        <div class="messages"></div>
+        
+        <section>
+            <h2>Settings</h2>
+            
+            <fieldset name="profile">
+                <caption>Profile</caption>
+                <label>
+                    Display Name:
+                    <input name="name" type="text"
+                        required
+                        minlength="{{player::NAME_LENGTH.start()}}"
+                        maxlength="{{player::NAME_LENGTH.end()}}"
+                        pattern="{{player::NAME_REGEX}}"
+                        value="{{base.player.as_ref().unwrap().name}}"
+                    >
+                    <span class="hint">(letters and numbers only)</span>
+                </label>
+            </fieldset>
+            
+            <fieldset name="notifications" disabled>
+                <caption>Enable notifications for:</caption>
+                <input type="hidden" name="Test" value="1" />
+                <ul>
+                    <li><label>
+                        <input type="checkbox" value="EntriesOpen" checked="" />
+                        Basho entries open
+                    </label></li>
+                    <li><label>
+                        <input type="checkbox" value="BashoStartCountdown" checked="" />
+                        Reminders before basho starts
+                    </label></li>
+                    <li><label>
+                        <input type="checkbox" value="DayResult" checked="" />
+                        Daily bout results
+                    </label></li>
+                    <li><label>
+                        <input type="checkbox" value="BashoResult" checked="" />
+                        Final basho results
+                    </label></li>
+                </ul>
+                <button name="test-notification" class="g-small-button">
+                    Send test notification
+                </button>
+            </fieldset>
+            
+            <button class="save-button g-big-button">Save</button>
+        </section>
+    </form>
 {% endblock %}

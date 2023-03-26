@@ -84,14 +84,10 @@ pub async fn run(app_state: AppState) -> anyhow::Result<()> {
                         web::resource("/reddit_redirect").to(handlers::login::reddit_redirect),
                     ),
             )
-            .service(
-                web::resource("/settings")
-                    .route(web::get().to(handlers::settings::settings_page))
-                    .route(web::post().to(handlers::settings::settings_post)),
-            )
+            .service(handlers::settings::settings_page)
+            .service(handlers::settings::settings_post)
             .service(
                 web::scope("/push")
-                    .service(handlers::push::register)
                     .service(handlers::push::check)
                     .service(handlers::push::test),
             )

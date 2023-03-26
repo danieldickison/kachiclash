@@ -1,54 +1,28 @@
-use std::collections::HashSet;
-
-use crate::data::push::{self, PushType, PushTypeKey};
+use crate::data::push::{self, PushType};
+use crate::handlers::HandlerError;
 use crate::AppState;
 use actix_identity::Identity;
-use actix_web::{post, web, HttpResponse};
+use actix_web::{post, web, HttpResponse, Responder};
 // use serde::{Deserialize, Deserializer};
 use web_push::SubscriptionInfo;
 
-use super::{IdentityExt, Result, UserAgent};
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct RegisterParams {
-    subscription: SubscriptionInfo,
-    opt_in: HashSet<PushTypeKey>,
-}
-
-#[post("/register")]
-pub async fn register(
-    params: web::Json<RegisterParams>,
-    user_agent: web::Header<UserAgent>,
-    state: web::Data<AppState>,
-    identity: Identity,
-) -> Result<HttpResponse> {
-    let player_id = identity.require_player_id()?;
-    let db = state.db.lock().unwrap();
-    push::add_player_subscription(
-        &db,
-        player_id,
-        params.0.subscription,
-        params.0.opt_in,
-        &user_agent.0.to_string(),
-    )?;
-    Ok(HttpResponse::Ok().finish())
-}
+use super::{IdentityExt, Result};
 
 #[post("/check")]
 pub async fn check(
     subscription: web::Json<SubscriptionInfo>,
     state: web::Data<AppState>,
     identity: Identity,
-) -> Result<HttpResponse> {
+) -> Result<impl Responder> {
     let player_id = identity.require_player_id()?;
     let db = state.db.lock().unwrap();
     for sub in push::subscriptions_for_player(&db, player_id)? {
         if sub.info == subscription.0 {
             debug!("Matched player {} subscription {}", player_id, sub.id);
-            return Ok(HttpResponse::Ok().finish());
+            return Ok(web::Json(sub));
         }
     }
-    Ok(HttpResponse::NotFound().finish())
+    Err(HandlerError::NotFound("subscription".to_string()))
 }
 
 #[post("/test")]

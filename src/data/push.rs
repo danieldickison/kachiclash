@@ -17,17 +17,18 @@ pub enum PushTypeKey {
     BashoResult,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Subscription {
     pub id: usize,
     pub info: SubscriptionInfo,
+    pub opt_in: HashSet<PushTypeKey>,
 }
 
 pub fn add_player_subscription(
     db: &Connection,
     player_id: PlayerId,
-    subscription: SubscriptionInfo,
-    opt_in: HashSet<PushTypeKey>,
+    subscription: &SubscriptionInfo,
+    opt_in: &HashSet<PushTypeKey>,
     user_agent: &str,
 ) -> Result<()> {
     info!(
@@ -73,23 +74,25 @@ pub fn delete_subscriptions(db: &Connection, sub_ids: &[usize]) -> Result<()> {
 pub fn subscriptions_for_player(db: &Connection, player_id: PlayerId) -> Result<Vec<Subscription>> {
     db.prepare(
         "
-            SELECT id, info_json
+            SELECT id, info_json, opt_in_json
             FROM player_push_subscriptions AS sub
             WHERE player_id = ?
         ",
     )?
     .query_map(params![player_id], |row| {
         let id = row.get::<_, usize>(0)?;
-        let json = row.get::<_, String>(1)?;
-        Ok((id, json))
+        let info = row.get::<_, String>(1)?;
+        let opt_in = row.get::<_, String>(2)?;
+        Ok((id, info, opt_in))
     })?
     .map(|row| {
         row.map_or_else(
             |err| Err(DataError::DatabaseError(err)),
-            |(id, json)| {
+            |(id, info, opt_in)| {
                 Ok(Subscription {
                     id,
-                    info: serde_json::from_str(&json)?,
+                    info: serde_json::from_str(&info)?,
+                    opt_in: serde_json::from_str(&opt_in)?,
                 })
             },
         )

@@ -15,7 +15,7 @@ function base64ToUint8Array (base64: string) {
   return arr
 }
 
-export async function subscribeToPushNotifications (optIn: string[]): Promise<SubscriptionState> {
+export async function subscribeToPushNotifications (): Promise<PushSubscription> {
   const registration = await registrationPromise
   if (!registration.pushManager) {
     throw new Error('Push notifications are not supported in this browser.')
@@ -26,38 +26,13 @@ export async function subscribeToPushNotifications (optIn: string[]): Promise<Su
     throw new Error('Please check browser settings to allow notifications from this site.')
   }
   
-  let subscription: PushSubscription
   try {
-    subscription = await registration.pushManager.subscribe({
+    return await registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: base64ToUint8Array(appKey)
     })
   } catch (e) {
     throw new Error('Could not enable push notifications. Please check your browser settings.\n\n' + e.toString())
-  }
-  // console.log('subscribed to push', subscription)
-  const body = {
-    subscription: subscription.toJSON(),
-    opt_in: optIn
-  }  
-  try {
-    const resp = await fetch('/push/register', {
-      method: 'POST',
-      body: JSON.stringify(body),
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      credentials: 'same-origin'
-    })
-    if (resp.ok) {
-      return await resp.json() as SubscriptionState
-    } else {
-      const body = await resp.text()
-      throw new Error(body)
-    }
-  } catch (e) {
-    await subscription.unsubscribe()
-    throw new Error('Failed to register for push notifications. Please try again later.\n\n' + e.toString())
   }
 }
 
