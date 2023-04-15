@@ -11,10 +11,16 @@ const notificationTypes = form.elements['notifications'] as HTMLFieldSetElement
 const typeCheckboxes = notificationTypes.querySelectorAll('input[type="checkbox"]') as NodeListOf<HTMLInputElement>
 
 let subscriptionState: SubscriptionState | null = null
+let edited = false
 
 form.addEventListener('submit', async event => {
   event.preventDefault()
   await save()
+})
+form.addEventListener('input', event => {
+  showMessage(false, '')
+  edited = true
+  refreshBusyState(false)
 })
 
 testNotificationButton.addEventListener('click', async event => {
@@ -34,7 +40,7 @@ async function refreshState() {
 
 function refreshBusyState(busy: boolean) {
   form.classList.toggle('busy', busy)
-  saveButton.disabled = busy
+  saveButton.disabled = busy || !edited
   notificationTypes.disabled = busy
   nameField.disabled = busy
   testNotificationButton.disabled = busy || !subscriptionState
@@ -72,6 +78,7 @@ async function save() {
   } catch (error) {
     showMessage(true, error.toString())
   } finally {
+    edited = false
     await refreshState()
     refreshBusyState(false)
   }
@@ -81,6 +88,7 @@ function showMessage(isError: boolean, message: string) {
   messages.style.display = message ? 'block' : 'none'
   messages.classList.toggle('error', isError)
   messages.innerText = message
+  messages.scrollIntoView()
 }
 
 function getOptInTypes() {
