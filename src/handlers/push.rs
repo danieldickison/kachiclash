@@ -28,7 +28,7 @@ pub async fn check(
 #[post("/test")]
 pub async fn test(state: web::Data<AppState>, identity: Identity) -> Result<HttpResponse> {
     let player_id = identity.require_player_id()?;
-    let push_type = PushType::Test;
+    let push_type = PushType::Test("It works!".to_owned());
     let payload;
     let subs;
     {

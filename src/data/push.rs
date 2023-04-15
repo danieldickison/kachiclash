@@ -103,6 +103,45 @@ pub fn subscriptions_for_player(db: &Connection, player_id: PlayerId) -> Result<
     .collect()
 }
 
+pub fn subscriptions_for_type(
+    db: &Connection,
+    push_type: PushTypeKey,
+) -> Result<Vec<Subscription>> {
+    db.prepare(
+        "
+            SELECT id, player_id, info_json
+            FROM player_push_subscriptions AS sub
+        ",
+    )?
+    .query_map(params![], |row| {
+        let id = row.get::<_, usize>(0)?;
+        let info = row.get::<_, String>(1)?;
+        let opt_in = row.get::<_, String>(2)?;
+        Ok((id, info, opt_in))
+    })?
+    .map(|row| {
+        row.map_or_else(
+            |err| Err(DataError::DatabaseError(err)),
+            |(id, info, opt_in)| {
+                Ok(Subscription {
+                    id,
+                    info: serde_json::from_str(&info)?,
+                    opt_in: serde_json::from_str(&opt_in)?,
+                })
+            },
+        )
+    })
+    .filter(|res| {
+        res.as_ref()
+            .map(|sub| sub.opt_in.contains(&push_type))
+            .unwrap_or(false)
+    })
+    // convert Vec<Result<..>> to Result<Vec<..>>
+    .collect::<Vec<Result<Subscription>>>()
+    .into_iter()
+    .collect()
+}
+
 #[derive(Clone)]
 pub struct PushBuilder {
     vapid: PartialVapidSignatureBuilder,
@@ -175,7 +214,7 @@ impl PushBuilder {
 
 #[derive(Debug)]
 pub enum PushType {
-    Test,
+    Test(String),
     EntriesOpen(BashoInfo),
     BashoStartCountdown(BashoInfo),
     DayResult(BashoInfo, PlayerId, Day),
@@ -185,7 +224,7 @@ pub enum PushType {
 impl PushType {
     pub fn key(&self) -> PushTypeKey {
         match self {
-            PushType::Test => PushTypeKey::Test,
+            PushType::Test(_) => PushTypeKey::Test,
             PushType::EntriesOpen(_) => PushTypeKey::EntriesOpen,
             PushType::BashoStartCountdown(_) => PushTypeKey::BashoStartCountdown,
             PushType::DayResult(_, _, _) => PushTypeKey::DayResult,
@@ -195,7 +234,7 @@ impl PushType {
 
     pub fn ttl(&self) -> Duration {
         match self {
-            PushType::Test => Duration::minutes(10),
+            PushType::Test(_) => Duration::minutes(10),
             PushType::EntriesOpen(_) => Duration::days(1),
             PushType::BashoStartCountdown(basho) => Duration::max(
                 Duration::hours(1),
@@ -208,11 +247,11 @@ impl PushType {
 
     pub fn build_payload(&self, _db: &Connection) -> Result<Payload> {
         let payload = match self {
-            PushType::Test => Payload {
+            PushType::Test(msg) => Payload {
                 title: "Test".to_owned(),
-                body: "It works!".to_owned(),
+                body: msg.to_owned(),
                 data: PayloadData::Test {
-                    foo: "this is a test".to_owned(),
+                    msg: msg.to_owned(),
                 },
             },
             PushType::EntriesOpen(basho) => Payload {
@@ -246,7 +285,7 @@ pub struct Payload {
 #[serde(tag = "type")]
 enum PayloadData {
     Test {
-        foo: String,
+        msg: String,
     },
 
     EntriesOpen {
