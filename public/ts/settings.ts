@@ -22,17 +22,17 @@ testNotificationButton.addEventListener('click', async event => {
   await sendTestPushNotification()
 })
 
-async function refreshState () {
-  updateUi(true)
+async function refreshState() {
+  refreshBusyState(true)
   const permission = await pushPermissionState()
   subscriptionState = permission === 'granted' ? await pushSubscriptionState() : null
   for (const checkbox of typeCheckboxes) {
-   checkbox.checked = subscriptionState && subscriptionState.opt_in.includes(checkbox.value)
+    checkbox.checked = subscriptionState && subscriptionState.opt_in.includes(checkbox.value)
   }
-  updateUi(false)
+  refreshBusyState(false)
 }
 
-function updateUi (busy: boolean) {
+function refreshBusyState(busy: boolean) {
   form.classList.toggle('busy', busy)
   saveButton.disabled = busy
   notificationTypes.disabled = busy
@@ -40,8 +40,8 @@ function updateUi (busy: boolean) {
   testNotificationButton.disabled = busy || !subscriptionState
 }
 
-async function save () {
-  updateUi(true)
+async function save() {
+  refreshBusyState(true)
   showMessage(false, '')
   try {
     let pushSubscription = null
@@ -49,7 +49,7 @@ async function save () {
     if (optIn.length > 0) {
       pushSubscription = await subscribeToPushNotifications()
     }
-    
+
     const body = {
       name: nameField.value,
       push_subscription: pushSubscription?.toJSON(),
@@ -73,17 +73,17 @@ async function save () {
     showMessage(true, error.toString())
   } finally {
     await refreshState()
-    updateUi(false)
+    refreshBusyState(false)
   }
 }
 
-function showMessage (isError: boolean, message: string) {
+function showMessage(isError: boolean, message: string) {
   messages.style.display = message ? 'block' : 'none'
   messages.classList.toggle('error', isError)
   messages.innerText = message
 }
 
-function getOptInTypes () {
+function getOptInTypes() {
   const types: string[] = []
   for (const checkbox of typeCheckboxes) {
     if (checkbox.checked) {
