@@ -9,7 +9,7 @@ use rusqlite::Connection;
 use super::user_agent::UserAgent;
 use super::{BaseTemplate, HandlerError, Result};
 use crate::data::player::{self, Player, PlayerId};
-use crate::data::push::{self, PushTypeKey};
+use crate::data::push::{self, PushTypeKey, Subscription};
 use crate::handlers::IdentityExt;
 use crate::AppState;
 
@@ -74,7 +74,7 @@ async fn settings_post_inner(
         Player::set_name(&txn, player_id, &form.name)?;
 
         if let Some(subscription) = form.push_subscription {
-            push::add_player_subscription(
+            Subscription::register(
                 &txn,
                 player_id,
                 &subscription,

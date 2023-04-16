@@ -1,4 +1,5 @@
-use crate::data::push::{self, PushType};
+use crate::data::push::{PushType, Subscription};
+use crate::data::Player;
 use crate::handlers::HandlerError;
 use crate::AppState;
 use actix_identity::Identity;
@@ -16,7 +17,7 @@ pub async fn check(
 ) -> Result<impl Responder> {
     let player_id = identity.require_player_id()?;
     let db = state.db.lock().unwrap();
-    for sub in push::subscriptions_for_player(&db, player_id)? {
+    for sub in Subscription::for_player(&db, player_id)? {
         if sub.info == subscription.0 {
             debug!("Matched player {} subscription {}", player_id, sub.id);
             return Ok(web::Json(sub));
@@ -28,12 +29,12 @@ pub async fn check(
 #[post("/test")]
 pub async fn test(state: web::Data<AppState>, identity: Identity) -> Result<HttpResponse> {
     let player_id = identity.require_player_id()?;
-    let push_type = PushType::Test("It works!".to_owned());
+    let push_type = PushType::Test;
     let payload;
     let subs;
     {
         let db = state.db.lock().unwrap();
-        subs = push::subscriptions_for_player(&db, player_id)?;
+        subs = Subscription::for_player(&db, player_id)?;
         if subs.is_empty() {
             return Err(super::HandlerError::NotFound(
                 "push subscription".to_owned(),
@@ -49,4 +50,34 @@ pub async fn test(state: web::Data<AppState>, identity: Identity) -> Result<Http
         .await?;
 
     Ok(HttpResponse::Ok().finish())
+}
+
+#[post("/trigger")]
+pub async fn trigger(
+    state: web::Data<AppState>,
+    identity: Identity,
+    data: web::Json<PushType>,
+) -> Result<HttpResponse> {
+    let player_id = identity.require_player_id()?;
+    let payload;
+    let subscriptions;
+    let ttl;
+    {
+        let db = state.db.lock().unwrap();
+        let player = Player::with_id(&db, player_id)?;
+        if !player.map_or(false, |p| p.is_admin()) {
+            return Err(HandlerError::MustBeLoggedIn);
+        }
+        payload = data.build_payload(&db)?;
+        subscriptions = Subscription::for_type(&db, data.key())?;
+        ttl = data.ttl();
+    }
+
+    state
+        .push
+        .clone()
+        .send(payload, ttl, subscriptions, &state.db)
+        .await?;
+
+    Ok(HttpResponse::Created().finish())
 }

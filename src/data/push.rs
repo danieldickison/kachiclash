@@ -8,9 +8,11 @@ use web_push::{
     WebPushClient, WebPushMessageBuilder, URL_SAFE_NO_PAD,
 };
 
-#[derive(Debug, PartialEq, Eq, Hash, Deserialize, Serialize)]
+// Keep types in sync with push.ts
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
 pub enum PushTypeKey {
     Test,
+    Announcement,
     EntriesOpen,
     BashoStartCountdown,
     DayResult,
@@ -20,23 +22,25 @@ pub enum PushTypeKey {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Subscription {
     pub id: usize,
+    pub player_id: PlayerId,
     pub info: SubscriptionInfo,
     pub opt_in: HashSet<PushTypeKey>,
 }
 
-pub fn add_player_subscription(
-    db: &Connection,
-    player_id: PlayerId,
-    subscription: &SubscriptionInfo,
-    opt_in: &HashSet<PushTypeKey>,
-    user_agent: &str,
-) -> Result<()> {
-    info!(
-        "Registering push subscription for player {}, user agent: {}, opt-in: {:?}",
-        player_id, user_agent, opt_in
-    );
-    db.prepare(
-        "
+impl Subscription {
+    pub fn register(
+        db: &Connection,
+        player_id: PlayerId,
+        subscription: &SubscriptionInfo,
+        opt_in: &HashSet<PushTypeKey>,
+        user_agent: &str,
+    ) -> Result<()> {
+        info!(
+            "Registering push subscription for player {}, user agent: {}, opt-in: {:?}",
+            player_id, user_agent, opt_in
+        );
+        db.prepare(
+            "
             INSERT INTO player_push_subscriptions
                 (player_id, info_json, user_agent, opt_in_json)
             VALUES (?, ?, ?, ?)
@@ -45,101 +49,102 @@ pub fn add_player_subscription(
                 user_agent = excluded.user_agent,
                 opt_in_json = excluded.opt_in_json
         ",
-    )?
-    .execute(params![
-        player_id,
-        serde_json::to_string(&subscription)?,
-        user_agent,
-        serde_json::to_string(&opt_in)?,
-    ])?;
-    Ok(())
-}
+        )?
+        .execute(params![
+            player_id,
+            serde_json::to_string(&subscription)?,
+            user_agent,
+            serde_json::to_string(&opt_in)?,
+        ])?;
+        Ok(())
+    }
 
-pub fn delete_subscriptions(db: &Connection, sub_ids: &[usize]) -> Result<()> {
-    let mut stmt = db.prepare(
-        "
+    pub fn delete(db: &Connection, sub_ids: &[usize]) -> Result<()> {
+        let mut stmt = db.prepare(
+            "
         DELETE FROM player_push_subscriptions
         WHERE id = ?
     ",
-    )?;
-    for id in sub_ids {
-        println!("Removing push subscription {}", id);
-        if let Err(e) = stmt.execute(params![id]) {
-            warn!("Failed to delete subscription {}: {}", id, e);
+        )?;
+        for id in sub_ids {
+            println!("Removing push subscription {}", id);
+            if let Err(e) = stmt.execute(params![id]) {
+                warn!("Failed to delete subscription {}: {}", id, e);
+            }
         }
+        Ok(())
     }
-    Ok(())
-}
 
-pub fn subscriptions_for_player(db: &Connection, player_id: PlayerId) -> Result<Vec<Subscription>> {
-    db.prepare(
-        "
+    pub fn for_player(db: &Connection, player_id: PlayerId) -> Result<Vec<Subscription>> {
+        db.prepare(
+            "
             SELECT id, info_json, opt_in_json
             FROM player_push_subscriptions AS sub
             WHERE player_id = ?
         ",
-    )?
-    .query_map(params![player_id], |row| {
-        let id = row.get::<_, usize>(0)?;
-        let info = row.get::<_, String>(1)?;
-        let opt_in = row.get::<_, String>(2)?;
-        Ok((id, info, opt_in))
-    })?
-    .map(|row| {
-        row.map_or_else(
-            |err| Err(DataError::DatabaseError(err)),
-            |(id, info, opt_in)| {
-                Ok(Subscription {
-                    id,
-                    info: serde_json::from_str(&info)?,
-                    opt_in: serde_json::from_str(&opt_in)?,
-                })
-            },
-        )
-    })
-    // convert Vec<Result<..>> to Result<Vec<..>>
-    .collect::<Vec<Result<Subscription>>>()
-    .into_iter()
-    .collect()
-}
+        )?
+        .query_map(params![player_id], |row| {
+            let id = row.get::<_, usize>(0)?;
+            let info = row.get::<_, String>(1)?;
+            let opt_in = row.get::<_, String>(2)?;
+            Ok((id, info, opt_in))
+        })?
+        .map(|row| {
+            row.map_or_else(
+                |err| Err(DataError::DatabaseError(err)),
+                |(id, info, opt_in)| {
+                    Ok(Subscription {
+                        id,
+                        player_id,
+                        info: serde_json::from_str(&info)?,
+                        opt_in: serde_json::from_str(&opt_in)?,
+                    })
+                },
+            )
+        })
+        // convert Vec<Result<..>> to Result<Vec<..>>
+        .collect::<Vec<Result<Subscription>>>()
+        .into_iter()
+        .collect()
+    }
 
-pub fn subscriptions_for_type(
-    db: &Connection,
-    push_type: PushTypeKey,
-) -> Result<Vec<Subscription>> {
-    db.prepare(
-        "
-            SELECT id, player_id, info_json
+    pub fn for_type(db: &Connection, push_type: PushTypeKey) -> Result<Vec<Subscription>> {
+        db.prepare(
+            "
+            SELECT id, player_id, info_json, opt_in_json
             FROM player_push_subscriptions AS sub
         ",
-    )?
-    .query_map(params![], |row| {
-        let id = row.get::<_, usize>(0)?;
-        let info = row.get::<_, String>(1)?;
-        let opt_in = row.get::<_, String>(2)?;
-        Ok((id, info, opt_in))
-    })?
-    .map(|row| {
-        row.map_or_else(
-            |err| Err(DataError::DatabaseError(err)),
-            |(id, info, opt_in)| {
-                Ok(Subscription {
-                    id,
-                    info: serde_json::from_str(&info)?,
-                    opt_in: serde_json::from_str(&opt_in)?,
-                })
-            },
-        )
-    })
-    .filter(|res| {
-        res.as_ref()
-            .map(|sub| sub.opt_in.contains(&push_type))
-            .unwrap_or(false)
-    })
-    // convert Vec<Result<..>> to Result<Vec<..>>
-    .collect::<Vec<Result<Subscription>>>()
-    .into_iter()
-    .collect()
+        )?
+        .query_map(params![], |row| {
+            let id = row.get::<_, usize>(0)?;
+            let player_id = row.get::<_, PlayerId>(1)?;
+            let info = row.get::<_, String>(2)?;
+            let opt_in = row.get::<_, String>(3)?;
+            Ok((id, player_id, info, opt_in))
+        })?
+        .map(|row| {
+            row.map_or_else(
+                |err| Err(DataError::DatabaseError(err)),
+                |(id, player_id, info, opt_in)| {
+                    Ok(Subscription {
+                        id,
+                        player_id,
+                        info: serde_json::from_str(&info)?,
+                        opt_in: serde_json::from_str(&opt_in)?,
+                    })
+                },
+            )
+        })
+        .filter(|res| {
+            res.as_ref()
+                .map(|sub| sub.opt_in.contains(&push_type))
+                .unwrap_or(false)
+        })
+        // convert Vec<Result<..>> to Result<Vec<..>>
+        .collect::<Vec<Result<Subscription>>>()
+        .into_iter()
+        .collect()
+    }
 }
 
 #[derive(Clone)]
@@ -163,6 +168,11 @@ impl PushBuilder {
         subscriptions: Vec<Subscription>,
         db: &DbConn,
     ) -> Result<()> {
+        trace!(
+            "sending “{}” to {} subscriptions",
+            payload.title,
+            subscriptions.len()
+        );
         let mut invalid_subscriptions = vec![];
         for sub in &subscriptions {
             {
@@ -205,26 +215,28 @@ impl PushBuilder {
                 invalid_subscriptions.len(),
                 subscriptions.len()
             );
-            delete_subscriptions(&db.lock().unwrap(), &invalid_subscriptions)?;
+            Subscription::delete(&db.lock().unwrap(), &invalid_subscriptions)?;
         }
 
         Ok(())
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum PushType {
-    Test(String),
-    EntriesOpen(BashoInfo),
-    BashoStartCountdown(BashoInfo),
-    DayResult(BashoInfo, PlayerId, Day),
-    BashoResult(BashoInfo, PlayerId),
+    Test,
+    Announcement(String),
+    EntriesOpen(BashoId),
+    BashoStartCountdown(BashoId),
+    DayResult(BashoId, PlayerId, Day),
+    BashoResult(BashoId, PlayerId),
 }
 
 impl PushType {
     pub fn key(&self) -> PushTypeKey {
         match self {
-            PushType::Test(_) => PushTypeKey::Test,
+            PushType::Test => PushTypeKey::Test,
+            PushType::Announcement(_) => PushTypeKey::Announcement,
             PushType::EntriesOpen(_) => PushTypeKey::EntriesOpen,
             PushType::BashoStartCountdown(_) => PushTypeKey::BashoStartCountdown,
             PushType::DayResult(_, _, _) => PushTypeKey::DayResult,
@@ -234,37 +246,71 @@ impl PushType {
 
     pub fn ttl(&self) -> Duration {
         match self {
-            PushType::Test(_) => Duration::minutes(10),
+            PushType::Test => Duration::minutes(10),
+            PushType::Announcement(_) => Duration::days(1),
             PushType::EntriesOpen(_) => Duration::days(1),
-            PushType::BashoStartCountdown(basho) => Duration::max(
-                Duration::hours(1),
-                basho.start_date.signed_duration_since(Utc::now()),
-            ),
+            PushType::BashoStartCountdown(basho) => Duration::hours(12),
             PushType::DayResult(_, _, _) => Duration::days(1),
             PushType::BashoResult(_, _) => Duration::days(7),
         }
     }
 
-    pub fn build_payload(&self, _db: &Connection) -> Result<Payload> {
+    pub fn build_payload(&self, db: &Connection) -> Result<Payload> {
         let payload = match self {
-            PushType::Test(msg) => Payload {
+            PushType::Test => Payload {
                 title: "Test".to_owned(),
+                body: "It worked!".to_owned(),
+                data: PayloadData::Empty,
+            },
+            PushType::Announcement(msg) => Payload {
+                title: "Announcement".to_owned(),
                 body: msg.to_owned(),
-                data: PayloadData::Test {
-                    msg: msg.to_owned(),
-                },
+                data: PayloadData::Empty,
             },
-            PushType::EntriesOpen(basho) => Payload {
-                title: "New Basho!".to_owned(),
-                body: format!("Entries for {} are now open", basho.id),
-                data: PayloadData::EntriesOpen {
-                    basho_id: basho.id,
-                    start_date: basho.start_date.timestamp(),
-                },
-            },
-            PushType::BashoStartCountdown(_) => todo!(),
-            PushType::DayResult(_, _, _) => todo!(),
-            PushType::BashoResult(_, _) => todo!(),
+            PushType::EntriesOpen(basho_id) => {
+                let basho = BashoInfo::with_id(&db, *basho_id)?
+                    .ok_or(rusqlite::Error::QueryReturnedNoRows)?;
+                Payload {
+                    title: "New Basho!".to_owned(),
+                    body: format!("Entries for {} are now open", basho_id),
+                    data: PayloadData::EntriesOpen {
+                        basho_id: *basho_id,
+                        start_date: basho.start_date.timestamp(),
+                    },
+                }
+            }
+            PushType::BashoStartCountdown(basho_id) => {
+                let basho = BashoInfo::with_id(&db, *basho_id)?
+                    .ok_or(rusqlite::Error::QueryReturnedNoRows)?;
+                let duration = basho.start_date.signed_duration_since(Utc::now());
+                let body = if duration > Duration::days(2) {
+                    format!(
+                        "You have {} days to get your picks in!",
+                        duration.num_days()
+                    )
+                } else if duration > Duration::days(1) {
+                    "You have one day to get your picks in!".to_owned()
+                } else {
+                    format!(
+                        "You have {} hours to get your picks in!",
+                        duration.num_hours()
+                    )
+                };
+                Payload {
+                    title: "Basho Reminder".to_owned(),
+                    body,
+                    data: PayloadData::BashoStartCountdown {
+                        basho_id: basho.id,
+                        start_date: basho.start_date.timestamp_millis(),
+                    },
+                }
+            }
+            PushType::DayResult(basho_id, player_id, day) => {
+                todo!()
+            }
+            PushType::BashoResult(basho_id, player_id) => {
+                todo!()
+            }
         };
 
         Ok(payload)
@@ -284,9 +330,7 @@ pub struct Payload {
 #[derive(Debug, Serialize)]
 #[serde(tag = "type")]
 enum PayloadData {
-    Test {
-        msg: String,
-    },
+    Empty,
 
     EntriesOpen {
         basho_id: BashoId,

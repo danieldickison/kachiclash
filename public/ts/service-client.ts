@@ -89,10 +89,3 @@ export async function pushSubscriptionState(): Promise<null | SubscriptionState>
     throw new Error(body)
   }
 }
-
-export async function sendTestPushNotification() {
-  await fetch('/push/test', {
-    method: 'POST',
-    credentials: 'same-origin'
-  })
-}

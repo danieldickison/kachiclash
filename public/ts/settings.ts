@@ -1,5 +1,6 @@
+import { sendTestNotification } from "./push.js"
 import {
-  pushPermissionState, pushSubscriptionState, sendTestPushNotification, subscribeToPushNotifications, SubscriptionState
+  pushPermissionState, pushSubscriptionState, subscribeToPushNotifications, SubscriptionState
 } from "./service-client.js"
 
 const form = document.getElementById('settings-form') as HTMLFormElement
@@ -25,7 +26,7 @@ form.addEventListener('input', event => {
 
 testNotificationButton.addEventListener('click', async event => {
   event.preventDefault()
-  await sendTestPushNotification()
+  await sendTestNotification()
 })
 
 async function refreshState() {

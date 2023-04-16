@@ -30,14 +30,14 @@ for (const button of document.querySelectorAll('.change-picks-button')) {
   })
 }
 
-function setSelectable (selectable) {
+function setSelectable(selectable) {
   banzukeSection.classList.toggle('selectable', selectable)
   for (const button of document.querySelectorAll('.select-radio') as NodeListOf<HTMLInputElement>) {
     button.disabled = !selectable
   }
 }
 
-async function savePicks (formData, url) {
+async function savePicks(formData, url) {
   const data = new URLSearchParams(formData)
   const response = await fetch(url, {
     method: 'POST',
@@ -54,29 +54,4 @@ async function savePicks (formData, url) {
   }
 }
 
-document.querySelectorAll('.bestow-emperors-cup-button').forEach(button => {
-  button.addEventListener('click', () => postCup(button, true))
-})
-document.querySelectorAll('.revoke-emperors-cup-button').forEach(button => {
-  button.addEventListener('click', () => postCup(button, false))
-})
-
-async function postCup (button, bestow) {
-  const data = {
-    player_id: parseInt(button.dataset.playerId)
-  }
-  const url = location.href + '/' + (bestow ? 'bestow' : 'revoke') + '_emperors_cup'
-  const response = await fetch(url, {
-    method: 'POST',
-    body: JSON.stringify(data),
-    headers: new Headers({
-        'Content-Type': 'application/json'
-    }),
-    credentials: 'same-origin'
-  })
-  if (response.ok) {
-      alert("Emperor's Cup has been " + (bestow ? 'bestowed' : 'revoked'))
-  } else {
-      response.text().then(text => alert('error: ' + text))
-  }
-}
+export default {}

@@ -89,7 +89,8 @@ pub async fn run(app_state: AppState) -> anyhow::Result<()> {
             .service(
                 web::scope("/push")
                     .service(handlers::push::check)
-                    .service(handlers::push::test),
+                    .service(handlers::push::test)
+                    .service(handlers::push::trigger),
             )
             .service(web::resource("/stats").route(web::get().to(handlers::stats::stats_page)))
             .service(

@@ -3,7 +3,7 @@ use actix_web::web;
 use askama::Template;
 
 use super::{BaseTemplate, HandlerError, Result};
-use crate::data::{player, player::BashoScore, Player};
+use crate::data::{player::BashoScore, Player};
 use crate::AppState;
 
 #[derive(Template)]
