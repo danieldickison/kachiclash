@@ -4,12 +4,13 @@ use actix_identity::Identity;
 use actix_web::{get, post, web, HttpResponse, Responder};
 use anyhow::anyhow;
 use askama::Template;
-use rusqlite::Connection;
+
 
 use super::user_agent::UserAgent;
 use super::{BaseTemplate, HandlerError, Result};
 use crate::data::player::{self, Player, PlayerId};
 use crate::data::push::{PushTypeKey, Subscription};
+use crate::data::DbConn;
 use crate::handlers::IdentityExt;
 use crate::AppState;
 
@@ -48,8 +49,7 @@ pub async fn settings_post(
     identity: Identity,
 ) -> Result<impl Responder> {
     let player_id = identity.require_player_id()?;
-    let mut db = state.db.lock().unwrap();
-    match settings_post_inner(&mut db, player_id, form.0, user_agent.0).await {
+    match settings_post_inner(state.db.clone(), player_id, form.0, user_agent.0).await {
         Ok(_) => Ok(HttpResponse::Accepted().finish()),
         Err(e) => {
             warn!("settings_post fail: {:?}", e);
@@ -59,7 +59,7 @@ pub async fn settings_post(
 }
 
 async fn settings_post_inner(
-    db: &mut Connection,
+    db_conn: DbConn,
     player_id: PlayerId,
     form: FormData,
     user_agent: UserAgent,
@@ -69,6 +69,7 @@ async fn settings_post_inner(
     }
 
     {
+        let mut db = db_conn.lock().unwrap();
         let txn = db.transaction()?;
 
         Player::set_name(&txn, player_id, &form.name)?;
