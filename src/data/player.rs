@@ -198,7 +198,7 @@ pub fn player_id_with_external_user(
             let name_suggestion = match user_info.name_suggestion() {
                 None => user_info.anon_name_suggestion(),
                 Some(name) => {
-                    let mut name = name.replace(' ', "").replace('_', "");
+                    let mut name = name.replace([' ', '_'], "");
                     name.truncate(*NAME_LENGTH.end());
                     if Player::name_is_valid(&name) {
                         name

@@ -249,7 +249,7 @@ impl PushType {
             PushType::Test => Duration::minutes(10),
             PushType::Announcement(_) => Duration::days(1),
             PushType::EntriesOpen(_) => Duration::days(1),
-            PushType::BashoStartCountdown(basho) => Duration::hours(12),
+            PushType::BashoStartCountdown(_basho) => Duration::hours(12),
             PushType::DayResult(_, _, _) => Duration::days(1),
             PushType::BashoResult(_, _) => Duration::days(7),
         }
@@ -268,7 +268,7 @@ impl PushType {
                 data: PayloadData::Empty,
             },
             PushType::EntriesOpen(basho_id) => {
-                let basho = BashoInfo::with_id(&db, *basho_id)?
+                let basho = BashoInfo::with_id(db, *basho_id)?
                     .ok_or(rusqlite::Error::QueryReturnedNoRows)?;
                 Payload {
                     title: "New Basho!".to_owned(),
@@ -280,7 +280,7 @@ impl PushType {
                 }
             }
             PushType::BashoStartCountdown(basho_id) => {
-                let basho = BashoInfo::with_id(&db, *basho_id)?
+                let basho = BashoInfo::with_id(db, *basho_id)?
                     .ok_or(rusqlite::Error::QueryReturnedNoRows)?;
                 let duration = basho.start_date.signed_duration_since(Utc::now());
                 let body = if duration > Duration::days(2) {
@@ -305,10 +305,10 @@ impl PushType {
                     },
                 }
             }
-            PushType::DayResult(basho_id, player_id, day) => {
+            PushType::DayResult(_basho_id, _player_id, _day) => {
                 todo!()
             }
-            PushType::BashoResult(basho_id, player_id) => {
+            PushType::BashoResult(_basho_id, _player_id) => {
                 todo!()
             }
         };

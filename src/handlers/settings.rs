@@ -9,7 +9,7 @@ use rusqlite::Connection;
 use super::user_agent::UserAgent;
 use super::{BaseTemplate, HandlerError, Result};
 use crate::data::player::{self, Player, PlayerId};
-use crate::data::push::{self, PushTypeKey, Subscription};
+use crate::data::push::{PushTypeKey, Subscription};
 use crate::handlers::IdentityExt;
 use crate::AppState;
 
