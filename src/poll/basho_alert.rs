@@ -21,6 +21,7 @@ fn do_tick(app_state: &AppState) -> anyhow::Result<()> {
             if basho.has_started() {
                 trace!("current basho {} is underway; no alerts", basho.id);
             } else {
+                trace!("todo: maybe notify basho alert for {}", basho.id);
             }
         }
         _ => trace!("no current basho to alert"),

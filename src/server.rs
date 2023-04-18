@@ -16,7 +16,7 @@ use std::cmp::max;
 use std::time::Duration;
 use tokio::task::spawn;
 
-pub async fn run(app_state: AppState) -> anyhow::Result<()> {
+pub async fn run(app_state: &AppState) -> anyhow::Result<()> {
     let config = app_state.config.clone();
     let is_dev = config.is_dev();
     let port = config.port;
@@ -35,7 +35,7 @@ pub async fn run(app_state: AppState) -> anyhow::Result<()> {
         workers = max(num_cpus::get(), 4);
         static_ttl = 3600;
     }
-    let app_data = web::Data::new(app_state);
+    let app_data = web::Data::new(app_state.clone());
 
     info!("starting server at {}:{}", config.host, config.port);
     let server = HttpServer::new(move || {

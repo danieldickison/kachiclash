@@ -119,10 +119,10 @@ pub fn init_env() -> anyhow::Result<AppState> {
     Ok(AppState { config, db, push })
 }
 
-pub async fn run_server(app_state: AppState) -> anyhow::Result<()> {
-    server::run(app_state).await
+pub async fn run_server(app_state: &AppState) -> anyhow::Result<()> {
+    server::run(&app_state).await
 }
 
-pub fn start_poll(app_state: AppState) -> anyhow::Result<()> {
-    poll::start(app_state)
+pub fn start_poll(app_state: &AppState) -> anyhow::Result<()> {
+    poll::start(&app_state)
 }
