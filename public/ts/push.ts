@@ -39,18 +39,13 @@ export type Payload =
       day: Day,
       rikishi: [RikishiDayResult, RikishiDayResult, RikishiDayResult, RikishiDayResult, RikishiDayResult],
       rank: number,
-      leaders: String[],
       leader_score: number
     }
   )
 
 export type RikishiDayResult = {
   name: string,
-  won?: boolean,
-  against?: string,
-  wins: number,
-  losses: number,
-  absence: number
+  win?: boolean
 }
 
 export async function sendTestNotification() {

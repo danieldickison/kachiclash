@@ -1,4 +1,5 @@
 use super::{BaseTemplate, HandlerError, Result};
+use crate::data::push::mass_notify_day_result;
 use crate::data::{self, basho, Award, BashoId, DataError, Player, PlayerId, Rank};
 use crate::external::discord::DiscordAuthProvider;
 use crate::external::google::GoogleAuthProvider;
@@ -218,6 +219,7 @@ async fn fetch_sumo_db_torikumi(basho_id: BashoId, day: u8) -> Result<String> {
 #[derive(Debug, Deserialize)]
 pub struct TorikumiData {
     torikumi: Vec<data::basho::TorikumiMatchUpdateData>,
+    notify: bool,
 }
 
 pub async fn torikumi_post(
@@ -225,11 +227,16 @@ pub async fn torikumi_post(
     torikumi: web::Json<TorikumiData>,
     state: web::Data<AppState>,
     identity: Identity,
-) -> Result<impl Responder> {
-    let mut db = state.db.lock().unwrap();
-    admin_base(&db, &identity, &state)?;
-    let res = data::basho::update_torikumi(&mut db, path.0, path.1, &torikumi.torikumi);
-    map_empty_response(res)
+) -> Result<HttpResponse> {
+    {
+        let mut db = state.db.lock().unwrap();
+        admin_base(&db, &identity, &state)?;
+        data::basho::update_torikumi(&mut db, path.0, path.1, &torikumi.torikumi)?;
+    }
+    if torikumi.notify {
+        mass_notify_day_result(&state.db, &state.push, path.0, path.1).await?;
+    }
+    Ok(HttpResponse::Ok().finish())
 }
 
 #[derive(Debug, Deserialize)]

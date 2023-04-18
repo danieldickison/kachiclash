@@ -2,6 +2,7 @@ use std::collections::HashSet;
 
 use super::{BashoId, BashoInfo, DataError, Day, DbConn, PlayerId, Result};
 use chrono::{Duration, Utc};
+use itertools::Itertools;
 use rusqlite::Connection;
 use web_push::{
     ContentEncoding, PartialVapidSignatureBuilder, SubscriptionInfo, VapidSignatureBuilder,
@@ -108,42 +109,59 @@ impl Subscription {
         .collect()
     }
 
-    pub fn for_type(db: &Connection, push_type: PushTypeKey) -> Result<Vec<Subscription>> {
-        db.prepare(
-            "
-            SELECT id, player_id, info_json, opt_in_json
+    pub fn for_type(
+        db: &Connection,
+        push_type: PushTypeKey,
+        with_basho_results: Option<BashoId>,
+    ) -> Result<Vec<Subscription>> {
+        let mut query = "
+            SELECT sub.id, sub.player_id, sub.info_json, sub.opt_in_json, :basho_id
             FROM player_push_subscriptions AS sub
-        ",
-        )?
-        .query_map(params![], |row| {
-            let id = row.get::<_, usize>(0)?;
-            let player_id = row.get::<_, PlayerId>(1)?;
-            let info = row.get::<_, String>(2)?;
-            let opt_in = row.get::<_, String>(3)?;
-            Ok((id, player_id, info, opt_in))
-        })?
-        .map(|row| {
-            row.map_or_else(
-                |err| Err(DataError::DatabaseError(err)),
-                |(id, player_id, info, opt_in)| {
-                    Ok(Subscription {
-                        id,
-                        player_id,
-                        info: serde_json::from_str(&info)?,
-                        opt_in: serde_json::from_str(&opt_in)?,
-                    })
-                },
+        "
+        .to_string();
+        if with_basho_results.is_some() {
+            query.push_str(
+                "
+                NATURAL JOIN basho_result AS br
+                WHERE br.basho_id = :basho_id
+            ",
             )
-        })
-        .filter(|res| {
-            res.as_ref()
-                .map(|sub| sub.opt_in.contains(&push_type))
-                .unwrap_or(false)
-        })
-        // convert Vec<Result<..>> to Result<Vec<..>>
-        .collect::<Vec<Result<Subscription>>>()
-        .into_iter()
-        .collect()
+        }
+        db.prepare(&query)?
+            .query_map(
+                named_params! {
+                    ":basho_id": with_basho_results
+                },
+                |row| {
+                    let id = row.get::<_, usize>(0)?;
+                    let player_id = row.get::<_, PlayerId>(1)?;
+                    let info = row.get::<_, String>(2)?;
+                    let opt_in = row.get::<_, String>(3)?;
+                    Ok((id, player_id, info, opt_in))
+                },
+            )?
+            .map(|row| {
+                row.map_or_else(
+                    |err| Err(DataError::DatabaseError(err)),
+                    |(id, player_id, info, opt_in)| {
+                        Ok(Subscription {
+                            id,
+                            player_id,
+                            info: serde_json::from_str(&info)?,
+                            opt_in: serde_json::from_str(&opt_in)?,
+                        })
+                    },
+                )
+            })
+            .filter(|res| {
+                res.as_ref()
+                    .map(|sub| sub.opt_in.contains(&push_type))
+                    .unwrap_or(false)
+            })
+            // convert Vec<Result<..>> to Result<Vec<..>>
+            .collect::<Vec<Result<Subscription>>>()
+            .into_iter()
+            .collect()
     }
 }
 
@@ -165,7 +183,7 @@ impl PushBuilder {
         self,
         payload: Payload,
         ttl: Duration,
-        subscriptions: Vec<Subscription>,
+        subscriptions: &[Subscription],
         db: &DbConn,
     ) -> Result<()> {
         trace!(
@@ -174,7 +192,7 @@ impl PushBuilder {
             subscriptions.len()
         );
         let mut invalid_subscriptions = vec![];
-        for sub in &subscriptions {
+        for sub in subscriptions {
             {
                 let endpoint_url = url::Url::parse(&sub.info.endpoint);
                 match endpoint_url {
@@ -305,8 +323,78 @@ impl PushType {
                     },
                 }
             }
-            PushType::DayResult(_basho_id, _player_id, _day) => {
-                todo!()
+            PushType::DayResult(basho_id, player_id, day) => {
+                let (name, score, rank, leader_score) = db.query_row(
+                    "
+                    SELECT
+                        player.name,
+                        br.wins,
+                        br.rank,
+                        (
+                            SELECT MAX(wins)
+                            FROM basho_result
+                            WHERE basho_id = ?
+                        )
+                    FROM player
+                    NATURAL JOIN basho_result AS br
+                    WHERE player.id = ? AND br.basho_id = ?
+                ",
+                    params![basho_id, player_id, basho_id],
+                    |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+                )?;
+                let rikishi: Vec<RikishiDayResult> = db
+                    .prepare(
+                        "
+                        SELECT
+                            banzuke.family_name,
+                            torikumi.win
+                        FROM pick
+                        NATURAL JOIN banzuke
+                        LEFT NATURAL JOIN torikumi
+                        WHERE
+                            pick.player_id = ? AND
+                            pick.basho_id = ? AND
+                            torikumi.day = ?
+                        ORDER BY torikumi.seq DESC
+                    ",
+                    )?
+                    .query_map(params![player_id, basho_id, day], |row| {
+                        Ok(RikishiDayResult {
+                            name: row.get(0)?,
+                            win: row.get(1)?,
+                        })
+                    })?
+                    .collect::<rusqlite::Result<_>>()?;
+                Payload {
+                    title: format!("Day {} Results", day),
+                    body: format!(
+                        "{} now ranked #{}, {} points behind the leader. {}",
+                        name,
+                        rank,
+                        leader_score - score,
+                        rikishi
+                            .iter()
+                            .map(|r| format!(
+                                "{} {}",
+                                match r.win {
+                                    Some(true) => "⚪️",
+                                    Some(false) => "⚫️",
+                                    None => "❌",
+                                },
+                                r.name
+                            ))
+                            .join(", ")
+                    ),
+                    data: PayloadData::DayResult {
+                        basho_id: *basho_id,
+                        name,
+                        day: *day,
+                        rikishi,
+                        rank,
+                        score,
+                        leader_score,
+                    },
+                }
             }
             PushType::BashoResult(_basho_id, _player_id) => {
                 todo!()
@@ -315,6 +403,44 @@ impl PushType {
 
         Ok(payload)
     }
+}
+
+pub async fn mass_notify_day_result(
+    db_conn: &DbConn,
+    push_builder: &PushBuilder,
+    basho_id: BashoId,
+    day: u8,
+) -> Result<()> {
+    let all_subs;
+    let subs_by_player;
+    {
+        let db = db_conn.lock().unwrap();
+        let subs = Subscription::for_type(&db, PushTypeKey::DayResult, Some(basho_id))?;
+        all_subs = subs.len();
+        subs_by_player = subs.into_iter().into_group_map_by(|sub| sub.player_id);
+    }
+    info!(
+        "Sending day {} results to {} push subscriptions across {} players",
+        day,
+        all_subs,
+        subs_by_player.len()
+    );
+    for (i, (player_id, player_subs)) in subs_by_player.iter().enumerate() {
+        trace!("Notifying player {}/{}", i, all_subs);
+        let payload;
+        let ttl;
+        {
+            let db = db_conn.lock().unwrap();
+            let push_type = PushType::DayResult(basho_id, *player_id, day);
+            payload = push_type.build_payload(&db)?;
+            ttl = push_type.ttl();
+        }
+        push_builder
+            .clone()
+            .send(payload, ttl, player_subs, db_conn)
+            .await?;
+    }
+    Ok(())
 }
 
 // Keep in sync with service-worker.ts
@@ -346,9 +472,9 @@ enum PayloadData {
         basho_id: BashoId,
         name: String,
         day: Day,
-        rikishi: [RikishiDayResult; 5],
+        rikishi: Vec<RikishiDayResult>,
         rank: u16,
-        leaders: Vec<String>,
+        score: u8,
         leader_score: u8,
     },
 }
@@ -356,9 +482,5 @@ enum PayloadData {
 #[derive(Debug, Serialize)]
 struct RikishiDayResult {
     name: String,
-    won: Option<bool>,
-    against: Option<String>,
-    wins: u8,
-    losses: u8,
-    absence: u8,
+    win: Option<bool>,
 }

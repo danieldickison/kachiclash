@@ -46,7 +46,7 @@ pub async fn test(state: web::Data<AppState>, identity: Identity) -> Result<Http
     state
         .push
         .clone()
-        .send(payload, push_type.ttl(), subs, &state.db)
+        .send(payload, push_type.ttl(), &subs, &state.db)
         .await?;
 
     Ok(HttpResponse::Ok().finish())
@@ -69,14 +69,14 @@ pub async fn trigger(
             return Err(HandlerError::MustBeLoggedIn);
         }
         payload = data.build_payload(&db)?;
-        subscriptions = Subscription::for_type(&db, data.key())?;
+        subscriptions = Subscription::for_type(&db, data.key(), None)?;
         ttl = data.ttl();
     }
 
     state
         .push
         .clone()
-        .send(payload, ttl, subscriptions, &state.db)
+        .send(payload, ttl, &subscriptions, &state.db)
         .await?;
 
     Ok(HttpResponse::Created().finish())
