@@ -78,12 +78,11 @@ fn n_completed_basho(basho_list: &[BashoInfo], n: usize) -> Range<BashoId> {
     }
 
     let first = basho_list.first().unwrap();
-    let end;
-    if first.winners.is_empty() {
-        end = first.id;
+    let end = if first.winners.is_empty() {
+        first.id
     } else {
-        end = first.id.incr(1);
-    }
+        first.id.incr(1)
+    };
     Range {
         end,
         start: end.incr(-(n as isize)),
