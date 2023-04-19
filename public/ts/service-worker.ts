@@ -6,8 +6,6 @@
 // declare const self: any
 // export default null
 
-import type { Payload } from './push.js'
-
 // Workaround by doing iife:
 (function(self: any) {
   self.addEventListener("install", (e: any) => {
@@ -15,7 +13,7 @@ import type { Payload } from './push.js'
   })
 
   self.addEventListener('push', (e: any) => {
-    const { title, body, ...data } = e.data.json() as Payload
+    const { title, body, ...data } = e.data.json() // as Payload // needs to be esmodule to import
     console.debug('Received push notification with data', data)
     e.waitUntil(
       self.registration.showNotification(title, { body })
