@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "outDir": "public/js",
     "target": "ES2021",
     "sourceMap": true
   },

@@ -6,7 +6,11 @@
 
 {% block head %}
     <script src="/static/js/basho.js" type="module"></script>
+    {% if base.is_admin() %}
+        <script src="/static/js/basho-admin.js" type="module"></script>
+    {% endif %}
     <link rel="stylesheet" href="/static/css/basho.css">
+    <meta name="basho_id" content="{{basho.id.id()}}" />
 {% endblock %}
 
 {% block main %}
@@ -16,14 +20,24 @@
     {% if base.is_admin() %}
         <section id="admin">
             <h2>Admin Controls</h2>
-            <ul>
-                <li><a href="{{basho.id.url_path()}}/edit">edit basho banzuke</a></li>
+            <menu>
+                <li><a href="{{basho.id.url_path()}}/edit">edit banzuke</a></li>
+                <li>notifications:
+                    <menu>
+                        <li><button class="trigger-announcement">announcement…</button></li>
+                        {% if basho.has_started() %}
+                        {% else %}
+                            <li><button class="trigger-entries-open">entries open</button></li>
+                            <li><button class="trigger-countdown">basho countdown</button></li>
+                        {% endif %}
+                    </menu>
+                </li>
                 {% if next_day <= 15 %}
-                    <li><a href="{{basho.id.url_path()}}/day/{{next_day}}">enter day {{next_day}} results</a></li>
+                    <li><a href="{{basho.id.url_path()}}/day/{{next_day}}">enter day {{next_day}} torikumi</a></li>
                 {% else %}
                     <li><form method="post" action="{{basho.id.url_path()}}/finalize"><button>finalize basho</button></form></li>
                 {% endif %}
-            </ul>
+            </menu>
         </section>
     {% endif %}
 

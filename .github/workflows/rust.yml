@@ -1,6 +1,8 @@
-name: Rust
+name: Rust build, test and clippy
 
-on: [push]
+on:
+  push:
+  pull_request:
 
 jobs:
   build:

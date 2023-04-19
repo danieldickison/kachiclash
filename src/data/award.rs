@@ -3,7 +3,7 @@ use rusqlite::types::{FromSql, FromSqlError, FromSqlResult, ToSqlOutput, ValueRe
 use rusqlite::{Connection, ToSql};
 use std::str::FromStr;
 
-#[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Copy, Clone)]
+#[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Copy, Clone, serde::Serialize)]
 pub enum Award {
     EmperorsCup = 1,
 }

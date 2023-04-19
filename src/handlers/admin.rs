@@ -1,4 +1,5 @@
 use super::{BaseTemplate, HandlerError, Result};
+use crate::data::push::mass_notify_day_result;
 use crate::data::{self, basho, Award, BashoId, DataError, Player, PlayerId, Rank};
 use crate::external::discord::DiscordAuthProvider;
 use crate::external::google::GoogleAuthProvider;
@@ -32,7 +33,7 @@ pub async fn edit_basho_page(
 ) -> Result<EditBashoTemplate> {
     let db = state.db.lock().unwrap();
     Ok(EditBashoTemplate {
-        base: admin_base(&db, &identity)?,
+        base: admin_base(&db, &identity, &state)?,
         basho: BashoData::with_id(&db, *path)?,
     })
 }
@@ -118,7 +119,7 @@ pub async fn edit_basho_post(
     identity: Identity,
 ) -> Result<web::Json<BanzukeResponseData>> {
     let mut db = state.db.lock().unwrap();
-    admin_base(&db, &identity)?;
+    admin_base(&db, &identity, &state)?;
     let basho_id = data::basho::update_basho(
         &mut db,
         *path,
@@ -135,8 +136,12 @@ pub async fn edit_basho_post(
     }))
 }
 
-fn admin_base(db: &Connection, identity: &Identity) -> Result<BaseTemplate> {
-    let base = BaseTemplate::new(db, identity)?;
+fn admin_base(
+    db: &Connection,
+    identity: &Identity,
+    state: &web::Data<AppState>,
+) -> Result<BaseTemplate> {
+    let base = BaseTemplate::new(db, identity, state)?;
     if base.player.as_ref().map_or(false, |p| p.is_admin()) {
         Ok(base)
     } else {
@@ -164,7 +169,7 @@ pub async fn torikumi_page(
     let day = path.1;
     let base = {
         let db = state.db.lock().unwrap();
-        admin_base(&db, &identity)?
+        admin_base(&db, &identity, &state)?
     };
     let sumo_db_text = fetch_sumo_db_torikumi(basho_id, day)
         .map_ok(Some)
@@ -214,6 +219,7 @@ async fn fetch_sumo_db_torikumi(basho_id: BashoId, day: u8) -> Result<String> {
 #[derive(Debug, Deserialize)]
 pub struct TorikumiData {
     torikumi: Vec<data::basho::TorikumiMatchUpdateData>,
+    notify: bool,
 }
 
 pub async fn torikumi_post(
@@ -221,11 +227,16 @@ pub async fn torikumi_post(
     torikumi: web::Json<TorikumiData>,
     state: web::Data<AppState>,
     identity: Identity,
-) -> Result<impl Responder> {
-    let mut db = state.db.lock().unwrap();
-    admin_base(&db, &identity)?;
-    let res = data::basho::update_torikumi(&mut db, path.0, path.1, &torikumi.torikumi);
-    map_empty_response(res)
+) -> Result<HttpResponse> {
+    {
+        let mut db = state.db.lock().unwrap();
+        admin_base(&db, &identity, &state)?;
+        data::basho::update_torikumi(&mut db, path.0, path.1, &torikumi.torikumi)?;
+    }
+    if torikumi.notify {
+        mass_notify_day_result(&state.db, &state.push, path.0, path.1).await?;
+    }
+    Ok(HttpResponse::Ok().finish())
 }
 
 #[derive(Debug, Deserialize)]
@@ -240,7 +251,7 @@ pub async fn bestow_emperors_cup(
     identity: Identity,
 ) -> Result<impl Responder> {
     let mut db = state.db.lock().unwrap();
-    admin_base(&db, &identity)?;
+    admin_base(&db, &identity, &state)?;
     let res = Award::EmperorsCup.bestow(&mut db, *path, award.player_id);
     map_empty_response(res)
 }
@@ -252,7 +263,7 @@ pub async fn revoke_emperors_cup(
     identity: Identity,
 ) -> Result<impl Responder> {
     let mut db = state.db.lock().unwrap();
-    admin_base(&db, &identity)?;
+    admin_base(&db, &identity, &state)?;
     let res = Award::EmperorsCup.revoke(&mut db, *path, award.player_id);
     map_empty_response(res)
 }
@@ -270,7 +281,7 @@ pub async fn finalize_basho(
     identity: Identity,
 ) -> Result<impl Responder> {
     let mut db = state.db.lock().unwrap();
-    admin_base(&db, &identity)?;
+    admin_base(&db, &identity, &state)?;
     basho::finalize_basho(&mut db, *path)?;
     Ok(HttpResponse::SeeOther()
         .insert_header((http::header::LOCATION, &*path.url_path()))
@@ -289,7 +300,7 @@ pub async fn list_players(
     identity: Identity,
 ) -> Result<ListPlayersTemplate> {
     let db = state.db.lock().unwrap();
-    let base = admin_base(&db, &identity)?;
+    let base = admin_base(&db, &identity, &state)?;
     Ok(ListPlayersTemplate {
         base,
         players: Player::list_all(&db)?,

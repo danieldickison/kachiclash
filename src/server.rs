@@ -1,7 +1,6 @@
+use super::handlers;
+use super::AppState;
 use crate::data::DbConn;
-
-use super::{data, handlers};
-use super::{AppState, Config};
 
 use std::convert::TryInto;
 use std::process::Command;
@@ -17,7 +16,8 @@ use std::cmp::max;
 use std::time::Duration;
 use tokio::task::spawn;
 
-pub async fn run(config: Config) -> std::io::Result<()> {
+pub async fn run(app_state: &AppState) -> anyhow::Result<()> {
+    let config = app_state.config.clone();
     let is_dev = config.is_dev();
     let port = config.port;
     let session_secret: [u8; 32] = config
@@ -25,21 +25,21 @@ pub async fn run(config: Config) -> std::io::Result<()> {
         .as_bytes()
         .try_into()
         .expect("session key should be 32 utf8 bytes");
-    let db_mutex = data::make_conn(&config.db_path);
+    let db_mutex = app_state.db.clone();
     let workers;
+    let static_ttl;
     if is_dev {
-        workers = 2
+        workers = 2;
+        static_ttl = 60;
     } else {
-        workers = max(num_cpus::get(), 4)
+        workers = max(num_cpus::get(), 4);
+        static_ttl = 3600;
     }
-    let app_data = web::Data::new(AppState {
-        config: config.clone(),
-        db: db_mutex.clone(),
-    });
+    let app_data = web::Data::new(app_state.clone());
 
     info!("starting server at {}:{}", config.host, config.port);
     let server = HttpServer::new(move || {
-        let mut app = App::new()
+        App::new()
             .app_data(web::Data::clone(&app_data))
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
@@ -61,7 +61,11 @@ pub async fn run(config: Config) -> std::io::Result<()> {
             )
             .service(
                 web::scope("/static")
-                    .wrap(middleware::DefaultHeaders::new().add(("Cache-Control", "max-age=3600")))
+                    .wrap(
+                        middleware::DefaultHeaders::new()
+                            .add(("Cache-Control", format!("max-age={static_ttl}")))
+                            .add(("Service-Worker-Allowed", "/")),
+                    )
                     .service(Files::new("/", &config.static_path).prefer_utf8(true)),
             )
             .service(web::resource("/").to(handlers::index::index))
@@ -80,10 +84,13 @@ pub async fn run(config: Config) -> std::io::Result<()> {
                         web::resource("/reddit_redirect").to(handlers::login::reddit_redirect),
                     ),
             )
+            .service(handlers::settings::settings_page)
+            .service(handlers::settings::settings_post)
             .service(
-                web::resource("/settings")
-                    .route(web::get().to(handlers::settings::settings_page))
-                    .route(web::post().to(handlers::settings::settings_post)),
+                web::scope("/push")
+                    .service(handlers::push::check)
+                    .service(handlers::push::test)
+                    .service(handlers::push::trigger),
             )
             .service(web::resource("/stats").route(web::get().to(handlers::stats::stats_page)))
             .service(
@@ -124,12 +131,7 @@ pub async fn run(config: Config) -> std::io::Result<()> {
                             .route(web::post().to(handlers::admin::update_user_images)),
                     ),
             )
-            .default_service(web::route().to(default_not_found));
-
-        if config.is_dev() {
-            app = app.service(Files::new("/scss", "scss"));
-        }
-        app
+            .default_service(web::route().to(default_not_found))
     })
     .workers(workers)
     .bind(("0.0.0.0", port))?
@@ -142,12 +144,21 @@ pub async fn run(config: Config) -> std::io::Result<()> {
         // Not sure if we need to .wait on the child process or kill it manually. On my mac it seems to be unnecessary.
         let _sass = Command::new("sass")
             .arg("--watch")
-            .arg("scss/:public/css/")
+            .arg("public/scss/:public/css/")
             .spawn()
             .expect("run sass");
+
+        info!("starting npx tsc --watch");
+        // Not sure if we need to .wait on the child process or kill it manually. On my mac it seems to be unnecessary.
+        let _sass = Command::new("npx")
+            .arg("tsc")
+            .arg("--watch")
+            .arg("--preserveWatchOutput")
+            .spawn()
+            .expect("run tsc");
     }
 
-    server.await
+    server.await.map_err(|e| e.into())
 }
 
 async fn default_not_found() -> Result<HttpResponse, handlers::HandlerError> {

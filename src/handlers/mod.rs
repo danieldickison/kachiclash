@@ -1,9 +1,10 @@
 extern crate askama;
 
 use crate::data::{DataError, Player, PlayerId};
+use crate::AppState;
 
 use actix_identity::Identity;
-use actix_web::{error, HttpResponse};
+use actix_web::{error, web, HttpResponse};
 use rusqlite::Connection;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
@@ -13,8 +14,11 @@ pub mod basho;
 pub mod index;
 pub mod login;
 pub mod player;
+pub mod push;
 pub mod settings;
 pub mod stats;
+
+mod user_agent;
 
 type Result<T> = std::result::Result<T, HandlerError>;
 
@@ -71,6 +75,12 @@ impl From<DataError> for HandlerError {
     }
 }
 
+impl From<rusqlite::Error> for HandlerError {
+    fn from(err: rusqlite::Error) -> Self {
+        Self::DatabaseError(DataError::from(err))
+    }
+}
+
 impl From<anyhow::Error> for HandlerError {
     fn from(err: anyhow::Error) -> Self {
         Self::Failure(err)
@@ -92,10 +102,11 @@ impl From<actix_web::Error> for HandlerError {
 
 struct BaseTemplate {
     player: Option<Player>,
+    vapid_public_key: String,
 }
 
 impl BaseTemplate {
-    fn new(db: &Connection, identity: &Identity) -> Result<Self> {
+    fn new(db: &Connection, identity: &Identity, state: &web::Data<AppState>) -> Result<Self> {
         let player = match identity.player_id() {
             Some(id) => {
                 let player = Player::with_id(db, id)?;
@@ -110,7 +121,11 @@ impl BaseTemplate {
             }
             None => None,
         };
-        Ok(Self { player })
+        let vapid_public_key = state.config.vapid_public_key.clone();
+        Ok(Self {
+            player,
+            vapid_public_key,
+        })
     }
 
     fn is_admin(&self) -> bool {

@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc};
 use rusqlite::{
     Connection, Error as SqlError, ErrorCode, OptionalExtension, Result as SqlResult, Row,
+    Transaction,
 };
 
 use super::{Award, BashoId, Rank, Result};
@@ -38,6 +39,22 @@ pub struct Player {
 }
 
 impl Player {
+    pub fn name_is_valid(name: &str) -> bool {
+        lazy_static! {
+            static ref RE: Regex = RegexBuilder::new(NAME_REGEX).build().unwrap();
+        }
+
+        NAME_LENGTH.contains(&name.len()) && RE.is_match(name)
+    }
+
+    pub fn set_name(txn: &Transaction, player_id: PlayerId, name: &str) -> Result<()> {
+        txn.execute(
+            "UPDATE player SET name = ? WHERE id = ?",
+            params![name, player_id],
+        )?;
+        Ok(())
+    }
+
     pub fn with_id(db: &Connection, player_id: PlayerId) -> Result<Option<Self>> {
         db.query_row(
             "
@@ -162,11 +179,11 @@ impl Player {
         }
     }
 
-    pub async fn update_image(&self, _db: &mut Connection) -> Result<()> {
-        let _auth = self.login_service_provider()?;
-
-        Ok(())
-    }
+    //     pub async fn update_image(&self, _db: &mut Connection) -> Result<()> {
+    //         let _auth = self.login_service_provider()?;
+    //
+    //         Ok(())
+    //     }
 }
 
 pub fn player_id_with_external_user(
@@ -181,9 +198,9 @@ pub fn player_id_with_external_user(
             let name_suggestion = match user_info.name_suggestion() {
                 None => user_info.anon_name_suggestion(),
                 Some(name) => {
-                    let mut name = name.replace(' ', "").replace('_', "");
+                    let mut name = name.replace([' ', '_'], "");
                     name.truncate(*NAME_LENGTH.end());
-                    if name_is_valid(&name) {
+                    if Player::name_is_valid(&name) {
                         name
                     } else {
                         user_info.anon_name_suggestion()
@@ -223,15 +240,7 @@ pub fn player_id_with_external_user(
     }
 }
 
-pub fn name_is_valid(name: &str) -> bool {
-    lazy_static! {
-        static ref RE: Regex = RegexBuilder::new(NAME_REGEX).build().unwrap();
-    }
-
-    NAME_LENGTH.contains(&name.len()) && RE.is_match(name)
-}
-
-#[derive(Debug)]
+#[derive(Debug, serde::Serialize)]
 pub struct BashoScore {
     pub basho_id: BashoId,
     pub rikishi: [Option<PlayerBashoRikishi>; 5],
@@ -328,7 +337,7 @@ impl BashoScore {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, serde::Serialize)]
 pub struct PlayerBashoRikishi {
     pub name: String,
     pub wins: u8,

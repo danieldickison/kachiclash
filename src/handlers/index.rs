@@ -61,7 +61,7 @@ pub async fn index(state: web::Data<AppState>, identity: Identity) -> Result<Ind
         None => None,
     };
     Ok(IndexTemplate {
-        base: BaseTemplate::new(&db, &identity)?,
+        base: BaseTemplate::new(&db, &identity, &state)?,
         leaders,
         self_leader_index,
         current_basho,

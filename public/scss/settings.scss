@@ -1,0 +1,52 @@
+#p-settings {
+    #settings-form {
+        .messages {
+            display: none; // overridden inline via js
+            background: var(--color-light-yellow-bg);
+            border: solid 2px var(--color-border-message);
+            padding: var(--section-padding);
+            font-size: 1.25rem;
+            font-style: italic;
+            
+            &.error {
+                border-color: var(--color-border-error);
+            }
+        }
+    
+        input[name="name"] {
+            font-size: 1.5rem;
+            padding: 0.25rem;
+            margin: 0 0.5rem;
+            border: solid 2px var(--color-border);
+        }
+
+        .hint {
+            color: var(--color-fg-sub);
+            display: inline-block;
+        }
+        
+        fieldset {
+            margin: 1rem 0;
+            padding: var(--section-padding);
+            background: var(--color-bg);
+            border: solid 2px var(--color-border);
+            
+            > legend {
+                background: var(--color-bg);
+                border: solid 2px var(--color-border);
+                padding: 0.25rem;
+            }
+        }
+        
+        fieldset[name="notifications"] ul {
+            list-style: none;
+            padding-inline-start: 1rem;
+        }
+        
+        .save-button {
+            margin-left: auto;
+            padding-left: 2rem;
+            padding-right: 2rem;
+        }
+    }
+}

@@ -48,40 +48,13 @@
             margin-top: 2.5rem;
         }
 
-        > .edit {
+        > .buttons {
             position: absolute;
             top: 1rem;
+            left: 10rem;
             right: 1rem;
-        }
-
-        > form {
-            display: none;
-
-            input[name="name"] {
-                font-size: 1.5rem;
-                padding: 0.25rem;
-            }
-
-            .hint {
-                color: var(--color-fg-sub);
-            }
-
-            .cancel {
-                background: var(--color-bg-sub);
-                color: var(--color-fg);
-            }
-            .buttons {
-                display: flex;
-                flex-flow: row wrap;
-            }
-        }
-        &.editing {
-            .hide-while-editing {
-                display: none;
-            }
-            > form {
-                display: block;
-            }
+            display: flex;
+            flex-flow: row wrap;
         }
     }
 

@@ -28,7 +28,7 @@ struct LoginTemplate {
 pub async fn index(state: web::Data<AppState>, identity: Identity) -> Result<impl Responder> {
     let db = state.db.lock().unwrap();
     let s = LoginTemplate {
-        base: BaseTemplate::new(&db, &identity)?,
+        base: BaseTemplate::new(&db, &identity, &state)?,
     }
     .render()
     .unwrap();

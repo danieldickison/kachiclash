@@ -6,7 +6,6 @@
 
 {% block head %}
     <link rel="stylesheet" href="/static/css/player.css">
-    <script src="/static/js/player.js" type="module"></script>
 {% endblock %}
 
 {% block main %}
@@ -15,33 +14,18 @@
         <span class="img-wrapper"><img alt="avatar" class="js-player-img" src="{{player.medium_thumb()}}"></span>
 
         {% if self.is_self() %}
-            <button class="edit hide-while-editing">edit ✏️</button>
-            <form method="POST" action="/settings">
-                <label>
-                    Display Name:
-                    <input name="name" type="text"
-                        required
-                        minlength="{{player::NAME_LENGTH.start()}}"
-                        maxlength="{{player::NAME_LENGTH.end()}}"
-                        pattern="{{player::NAME_REGEX}}"
-                        value="{{base.player.as_ref().unwrap().name}}"
-                    >
-                    <span class="hint">(letters and numbers only)</span>
-                </label>
-                <div class="buttons">
-                    <button class="g-big-button cancel" type="button">Cancel</button>
-                    <button class="g-big-button">Save</button>
-                </div>
-            </form>
+            <div class="buttons">
+                <a class="g-small-button edit" href="/settings">✏️ edit</a>
+            </div>
         {% endif %}
 
-        <div class="name hide-while-editing">
+        <div class="name">
             {{player.name}}
             {% if player.has_emperors_cup() -%}
                 {{crate::data::award::Award::EmperorsCup.emoji()}}
             {%- endif %}
         </div>
-        <div class="join-date hide-while-editing">
+        <div class="join-date">
             Joined: {{player.join_date.format("%Y-%m-%d")}} via {{player.login_service_name()}}
         </div>
     </section>

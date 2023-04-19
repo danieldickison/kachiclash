@@ -2,8 +2,8 @@
 extern crate log;
 extern crate actix_identity;
 extern crate actix_web;
-extern crate env_logger;
 extern crate envconfig;
+extern crate pretty_env_logger;
 extern crate reqwest;
 #[macro_use]
 extern crate serde_derive;
@@ -14,6 +14,7 @@ extern crate rusqlite;
 #[macro_use]
 extern crate lazy_static;
 
+use crate::data::push::PushBuilder;
 use envconfig::Envconfig;
 use std::path::PathBuf;
 use url::Url;
@@ -21,6 +22,7 @@ use url::Url;
 mod data;
 mod external;
 mod handlers;
+mod poll;
 mod server;
 mod util;
 
@@ -49,6 +51,12 @@ pub struct Config {
 
     #[envconfig(from = "SESSION_SECRET", default = "abcdefghijklmnopqrstuvwxyz012345")]
     pub session_secret: String,
+
+    #[envconfig(from = "VAPID_PUBLIC_KEY")]
+    pub vapid_public_key: String,
+
+    #[envconfig(from = "VAPID_PRIVATE_KEY")]
+    pub vapid_private_key: String,
 
     #[envconfig(from = "DISCORD_CLIENT_ID")]
     pub discord_client_id: String,
@@ -86,21 +94,35 @@ impl Config {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone)]
 pub struct AppState {
     config: Config,
     db: data::DbConn,
+    push: data::push::PushBuilder,
 }
 
-pub async fn run_server() -> std::io::Result<()> {
-    std::env::set_var("RUST_LOG", "info,kachiclash=debug");
+pub fn init_env() -> anyhow::Result<AppState> {
+    if std::env::var_os("RUST_LOG").is_none() {
+        std::env::set_var("RUST_LOG", "info,kachiclash=debug");
+    }
     //std::env::set_var("RUST_LOG", "debug");
-    env_logger::init();
+    pretty_env_logger::init();
 
     let config = Config::init_from_env().expect("Could not read config from environment");
     if config.env != "dev" && config.session_secret == "abcdefghijklmnopqrstuvwxyz012345" {
         panic!("default session_secret specified for non-dev deployment");
     }
 
-    server::run(config).await
+    let db = data::make_conn(&config.db_path);
+    let push = PushBuilder::with_base64_private_key(&config.vapid_private_key)?;
+
+    Ok(AppState { config, db, push })
+}
+
+pub async fn run_server(app_state: &AppState) -> anyhow::Result<()> {
+    server::run(app_state).await
+}
+
+pub fn start_poll(app_state: &AppState) -> anyhow::Result<()> {
+    poll::start(app_state)
 }

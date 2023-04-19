@@ -3,7 +3,7 @@ use std::process::Command;
 fn main() -> Result<(), String> {
     println!("running sass");
     let status = Command::new("sass")
-        .arg("scss/:public/css/")
+        .arg("public/scss/:public/css/")
         .status()
         .expect("run sass");
     if !status.success() {

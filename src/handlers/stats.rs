@@ -56,7 +56,7 @@ pub async fn stats_page(
         None => None,
     };
     Ok(StatsTemplate {
-        base: BaseTemplate::new(&db, &identity)?,
+        base: BaseTemplate::new(&db, &identity, &state)?,
         basho_list,
         leader_basho_count,
         leader_basho_count_options: LEADER_BASHO_COUNT_OPTIONS
@@ -78,12 +78,11 @@ fn n_completed_basho(basho_list: &[BashoInfo], n: usize) -> Range<BashoId> {
     }
 
     let first = basho_list.first().unwrap();
-    let end;
-    if first.winners.is_empty() {
-        end = first.id;
+    let end = if first.winners.is_empty() {
+        first.id
     } else {
-        end = first.id.incr(1);
-    }
+        first.id.incr(1)
+    };
     Range {
         end,
         start: end.incr(-(n as isize)),

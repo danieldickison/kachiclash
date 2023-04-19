@@ -3,12 +3,13 @@ const torikumiForm = document.getElementById('torikumi-form') as HTMLFormElement
 interface HTMLFormControlsCollection extends HTMLCollectionBase {
   // [item: string]: HTMLElement | RadioNodeList
   torikumi: HTMLInputElement
+  notify: HTMLInputElement
 }
 
 let parsedTorikumi
 torikumiForm.elements.torikumi.addEventListener('input', torikumiFormInput)
 
-function torikumiFormInput () {
+function torikumiFormInput() {
   parsedTorikumi = parseTorikumi(torikumiForm.elements.torikumi.value)
   const tbody = torikumiForm.querySelector('.parsed-torikumi tbody')
   tbody.innerHTML = ''
@@ -29,7 +30,7 @@ function torikumiFormInput () {
 // Matches rank, name, record, kimarite, rank, name, record
 const TORIKUMI_REGEX = /^ *[a-z]{1,2}\d{1,3}[ew] +([a-z]+) +\(\d+(?:-\d+){1,2}\) +[a-z]+ *[a-z]{1,2}\d{1,3}[ew] +([a-z]+) +\(\d+(?:-\d+){1,2}\) *$/gim
 
-function parseTorikumi (str) {
+function parseTorikumi(str) {
   console.log('parsing torikumi')
   const torikumi = []
   let match
@@ -45,7 +46,8 @@ function parseTorikumi (str) {
 torikumiForm.addEventListener('submit', event => {
   event.preventDefault()
   const data = {
-    torikumi: parsedTorikumi
+    torikumi: parsedTorikumi,
+    notify: torikumiForm.elements.notify.checked
   }
   const postURL = location.href
   const bashoURL = postURL.replace(/\/day\/.*$/i, '')

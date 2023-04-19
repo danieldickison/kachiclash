@@ -3,7 +3,7 @@ use actix_web::web;
 use askama::Template;
 
 use super::{BaseTemplate, HandlerError, Result};
-use crate::data::{player, player::BashoScore, Player};
+use crate::data::{player::BashoScore, Player};
 use crate::AppState;
 
 #[derive(Template)]
@@ -24,7 +24,7 @@ pub async fn player(
     let player = Player::with_name(&db, name)?
         .ok_or_else(|| HandlerError::NotFound("player".to_string()))?;
     let basho_scores = BashoScore::with_player_id(&db, player.id, &player.name)?;
-    let base = BaseTemplate::new(&db, &identity)?;
+    let base = BaseTemplate::new(&db, &identity, &state)?;
     Ok(PlayerTemplate {
         base,
         player,

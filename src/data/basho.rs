@@ -5,7 +5,7 @@ use itertools::Itertools;
 use result::ResultIteratorExt;
 use rusqlite::types::{FromSql, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
 use rusqlite::{params_from_iter, Connection, Result as SqlResult, Transaction};
-use serde::{Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::cmp::max;
 use std::collections::{HashMap, HashSet};
 use std::convert::From;
@@ -18,6 +18,7 @@ use super::{
 };
 use crate::data::leaders::{assign_ord, Rankable};
 
+#[derive(Debug)]
 pub struct BashoInfo {
     pub id: BashoId,
     pub start_date: DateTime<Utc>,
@@ -236,7 +237,8 @@ impl BashoId {
     }
 
     fn month_name(self) -> String {
-        let date = NaiveDate::from_ymd(self.year, self.month.into(), 1);
+        let date = NaiveDate::from_ymd_opt(self.year, self.month.into(), 1)
+            .expect("invalid basho month date");
         format!("{}", date.format("%B"))
     }
 
@@ -292,6 +294,15 @@ impl From<NaiveDate> for BashoId {
             year: date.year(),
             month: date.month() as u8,
         }
+    }
+}
+
+impl Serialize for BashoId {
+    fn serialize<S>(&self, serializer: S) -> StdResult<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&self.id())
     }
 }
 

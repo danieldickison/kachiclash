@@ -62,7 +62,7 @@ pub async fn basho(
                 .finish(),
         ));
     }
-    let base = BaseTemplate::new(&db, &identity)?;
+    let base = BaseTemplate::new(&db, &identity, &state)?;
     let player_id = base.player.as_ref().map(|p| p.id);
     let picks = fetch_player_picks(&db, player_id, basho_id)?;
     let FetchBashoRikishi {
