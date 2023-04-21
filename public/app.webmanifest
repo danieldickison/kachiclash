@@ -13,7 +13,7 @@
       "sizes": "512x512"
     }
   ],
-  "start_url": "/?pwa",
+  "start_url": "/pwa",
   "scope": "/",
   "display": "standalone"
 }

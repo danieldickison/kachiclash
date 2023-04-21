@@ -6,7 +6,8 @@ use crate::data::{BashoId, BashoInfo, Rank};
 use crate::util::GroupRuns;
 use crate::AppState;
 use actix_identity::Identity;
-use actix_web::web;
+use actix_web::http::header::LOCATION;
+use actix_web::{get, web, HttpResponse};
 use askama::Template;
 
 #[derive(Template)]
@@ -44,6 +45,7 @@ impl IndexTemplate {
 
 const LEADERS_LIMIT: u32 = 270;
 
+#[get("/")]
 pub async fn index(state: web::Data<AppState>, identity: Identity) -> Result<IndexTemplate> {
     let db = state.db.lock().unwrap();
     let (current_basho, prev_basho) = BashoInfo::current_and_previous(&db)?;
@@ -69,4 +71,19 @@ pub async fn index(state: web::Data<AppState>, identity: Identity) -> Result<Ind
         next_basho_id,
         hero_img_src: state.config.hero_img_src.to_owned(),
     })
+}
+
+#[get("/pwa")]
+pub async fn pwa(state: web::Data<AppState>) -> Result<HttpResponse> {
+    let db = state.db.lock().unwrap();
+    let (current_basho, _) = BashoInfo::current_and_previous(&db)?;
+    let page;
+    if let Some(basho) = current_basho {
+        page = basho.link_url();
+    } else {
+        page = "/".to_string();
+    }
+    Ok(HttpResponse::TemporaryRedirect()
+        .insert_header((LOCATION, page))
+        .finish())
 }
