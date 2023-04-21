@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json.schemastore.org/web-manifest-combined.json",
+  "name": "Kachi Clash",
+  "icons": [
+    {
+      "src": "/static/icon/icon-512.webp",
+      "type": "image/webp",
+      "sizes": "512x512"
+    },
+    {
+      "src": "/static/icon/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/?pwa",
+  "scope": "/",
+  "display": "standalone"
+}
