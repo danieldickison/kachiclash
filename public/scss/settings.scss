@@ -38,9 +38,40 @@
             }
         }
         
-        fieldset[name="notifications"] ul {
-            list-style: none;
-            padding-inline-start: 1rem;
+        fieldset[name="notifications"] {
+            > p {
+                display: none;
+                margin: 0;
+                &.warning {
+                    color: var(--color-fg-warning);
+                    font-style: italic;
+                }
+            }
+            &[data-permission-state="granted"] > p.available,
+            &[data-permission-state="prompt"] > p.available {
+                display: block;
+            }
+            &[data-permission-state="denied"] > p.denied {
+                display: block;
+            }
+            &[data-permission-state="unavailable"] > p.unavailable {
+                display: block;
+            }
+            @media (display-mode: browser) {
+                &.ios[data-permission-state="unavailable"] {
+                    > p.unavailable {
+                        display: none;
+                    }
+                    > p.unavailable-ios-pwa {
+                        display: block;
+                    }
+                }
+            }
+            
+            ul {
+                list-style: none;
+                padding-inline-start: 1rem;
+            }
         }
         
         .save-button {

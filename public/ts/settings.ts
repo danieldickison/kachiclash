@@ -8,17 +8,19 @@ const messages = form.querySelector('.messages') as HTMLElement
 const saveButton = form.querySelector('.save-button') as HTMLButtonElement
 const nameField = form.elements['name'] as HTMLInputElement
 const testNotificationButton = form.elements['test-notification'] as HTMLButtonElement
-const notificationTypes = form.elements['notifications'] as HTMLFieldSetElement
-const typeCheckboxes = notificationTypes.querySelectorAll('input[type="checkbox"]') as NodeListOf<HTMLInputElement>
+const notifications = form.elements['notifications'] as HTMLFieldSetElement
+const typeCheckboxes = notifications.querySelectorAll('input[type="checkbox"]') as NodeListOf<HTMLInputElement>
 
 let subscriptionState: SubscriptionState | null = null
 let edited = false
+
+notifications.classList.toggle('ios', /iPhone|iPad/.test(navigator.userAgent))
 
 form.addEventListener('submit', async event => {
   event.preventDefault()
   await save()
 })
-form.addEventListener('input', event => {
+form.addEventListener('input', _event => {
   showMessage(false, '')
   edited = true
   refreshBusyState(false)
@@ -32,6 +34,7 @@ testNotificationButton.addEventListener('click', async event => {
 async function refreshState() {
   refreshBusyState(true)
   const permission = await pushPermissionState()
+  notifications.dataset.permissionState = permission
   subscriptionState = permission === 'granted' ? await pushSubscriptionState() : null
   for (const checkbox of typeCheckboxes) {
     checkbox.checked = subscriptionState && subscriptionState.opt_in.includes(checkbox.value)
@@ -42,7 +45,7 @@ async function refreshState() {
 function refreshBusyState(busy: boolean) {
   form.classList.toggle('busy', busy)
   saveButton.disabled = busy || !edited
-  notificationTypes.disabled = busy
+  notifications.disabled = busy
   nameField.disabled = busy
   testNotificationButton.disabled = busy || !subscriptionState
 }
