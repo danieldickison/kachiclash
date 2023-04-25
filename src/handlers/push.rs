@@ -40,7 +40,7 @@ pub async fn test(state: web::Data<AppState>, identity: Identity) -> Result<Http
                 "push subscription".to_owned(),
             ));
         }
-        payload = push_type.build_payload(&db)?;
+        payload = push_type.build_payload(&state.config.url(), &db)?;
     }
 
     state
@@ -68,7 +68,7 @@ pub async fn trigger(
         if !player.map_or(false, |p| p.is_admin()) {
             return Err(HandlerError::MustBeLoggedIn);
         }
-        payload = data.build_payload(&db)?;
+        payload = data.build_payload(&state.config.url(), &db)?;
         subscriptions = Subscription::for_type(&db, data.key(), None)?;
         ttl = data.ttl();
     }

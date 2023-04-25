@@ -13,7 +13,7 @@ export type PushType =
   { 'BashoResult': [BashoId, PlayerId] }
 
 export type Payload =
-  { title: string, body: string }
+  { title: string, body: string, url: string }
   &
   (
     {

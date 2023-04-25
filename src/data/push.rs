@@ -4,6 +4,7 @@ use super::{BashoId, BashoInfo, DataError, Day, DbConn, PlayerId, Result};
 use chrono::{Duration, Utc};
 use itertools::Itertools;
 use rusqlite::Connection;
+use url::Url;
 use web_push::{
     ContentEncoding, PartialVapidSignatureBuilder, SubscriptionInfo, VapidSignatureBuilder,
     WebPushClient, WebPushMessageBuilder, URL_SAFE_NO_PAD,
@@ -273,16 +274,19 @@ impl PushType {
         }
     }
 
-    pub fn build_payload(&self, db: &Connection) -> Result<Payload> {
+    pub fn build_payload(&self, base_url: &Url, db: &Connection) -> Result<Payload> {
+        let url = base_url.join("pwa").unwrap().to_string();
         let payload = match self {
             PushType::Test => Payload {
                 title: "Test".to_owned(),
                 body: "It worked!".to_owned(),
+                url,
                 data: PayloadData::Empty,
             },
             PushType::Announcement(msg) => Payload {
                 title: "Announcement".to_owned(),
                 body: msg.to_owned(),
+                url,
                 data: PayloadData::Empty,
             },
             PushType::EntriesOpen(basho_id) => {
@@ -291,6 +295,7 @@ impl PushType {
                 Payload {
                     title: "New Basho!".to_owned(),
                     body: format!("Entries for {} are now open", basho_id),
+                    url,
                     data: PayloadData::EntriesOpen {
                         basho_id: *basho_id,
                         start_date: basho.start_date.timestamp(),
@@ -317,6 +322,7 @@ impl PushType {
                 Payload {
                     title: "Basho Reminder".to_owned(),
                     body,
+                    url,
                     data: PayloadData::BashoStartCountdown {
                         basho_id: basho.id,
                         start_date: basho.start_date.timestamp_millis(),
@@ -385,6 +391,7 @@ impl PushType {
                             ))
                             .join(", ")
                     ),
+                    url,
                     data: PayloadData::DayResult {
                         basho_id: *basho_id,
                         name,
@@ -408,6 +415,7 @@ impl PushType {
 pub async fn mass_notify_day_result(
     db_conn: &DbConn,
     push_builder: &PushBuilder,
+    url: &Url,
     basho_id: BashoId,
     day: u8,
 ) -> Result<()> {
@@ -432,7 +440,7 @@ pub async fn mass_notify_day_result(
         {
             let db = db_conn.lock().unwrap();
             let push_type = PushType::DayResult(basho_id, *player_id, day);
-            payload = push_type.build_payload(&db)?;
+            payload = push_type.build_payload(&url, &db)?;
             ttl = push_type.ttl();
         }
         push_builder
@@ -449,6 +457,7 @@ pub async fn mass_notify_day_result(
 pub struct Payload {
     title: String,
     body: String,
+    url: String,
     #[serde(flatten)]
     data: PayloadData,
 }

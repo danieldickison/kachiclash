@@ -234,7 +234,8 @@ pub async fn torikumi_post(
         data::basho::update_torikumi(&mut db, path.0, path.1, &torikumi.torikumi)?;
     }
     if torikumi.notify {
-        mass_notify_day_result(&state.db, &state.push, path.0, path.1).await?;
+        let url = state.config.url();
+        mass_notify_day_result(&state.db, &state.push, &url, path.0, path.1).await?;
     }
     Ok(HttpResponse::Ok().finish())
 }
