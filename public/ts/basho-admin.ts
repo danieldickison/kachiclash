@@ -34,11 +34,11 @@ document.querySelector('.trigger-announcement').addEventListener('click', event 
   const msg = prompt('Message:')
   adminTrigger({ Announcement: msg })
 })
-document.querySelector('.trigger-entries-open').addEventListener('click', event => {
+document.querySelector('.trigger-entries-open')?.addEventListener('click', event => {
   event.preventDefault()
   adminTrigger({ EntriesOpen: bashoId })
 })
-document.querySelector('.trigger-countdown').addEventListener('click', event => {
+document.querySelector('.trigger-countdown')?.addEventListener('click', event => {
   event.preventDefault()
   adminTrigger({ BashoStartCountdown: bashoId })
 })
