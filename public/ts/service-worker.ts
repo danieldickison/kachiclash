@@ -8,7 +8,7 @@
 //
 // Workaround by doing iife:
 (function(self: any) {
-  const VERSION = 1
+  const VERSION = 2
 
   self.addEventListener('install', (e: any) => {
     console.debug(`Installing version ${VERSION}`)
@@ -42,6 +42,13 @@
 
     console.debug(`opening ${url} in ${client ? 'existing' : 'new'} window`)
     client ||= await self.clients.openWindow(url)
-    client.focus()
+    await client.focus()
+
+    // close all notifications indiscriminately; probably no reason to keep any notifications around
+    const oldNotifications = await self.registration.getNotifications()
+    console.debug(`closing ${oldNotifications.length} old notifications`, oldNotifications)
+    for (const notification of oldNotifications) {
+      notification.close()
+    }
   }
 })(self)
