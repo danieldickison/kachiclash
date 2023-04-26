@@ -36,23 +36,17 @@ export async function subscribeToPushNotifications(): Promise<PushSubscription> 
   }
 }
 
-export async function unsubscribeFromPushNotifications() {
-  const registration = await registrationPromise
-  const subscription = await registration.pushManager.getSubscription()
-  return await subscription?.unsubscribe()
-}
-
 export type PushPermissionState = PermissionState | 'unavailable'
 
-export async function pushPermissionState() {
+export async function pushPermissionState(): Promise<PushPermissionState> {
   const registration = await registrationPromise
   if (!registration.pushManager) {
-    return Promise.resolve('unavailable' as PushPermissionState)
+    return 'unavailable'
   } else {
     return await registration.pushManager.permissionState({
       userVisibleOnly: true,
-      applicationServerKey: appKey
-    }) as PushPermissionState
+      applicationServerKey: base64ToUint8Array(appKey)
+    })
   }
 }
 
