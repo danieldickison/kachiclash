@@ -21,8 +21,8 @@ jobs:
     - run: sudo npm install -g sass
       
     - name: Check
-      run: cargo check --verbose --all-targets --frozen
+      run: cargo check --verbose --all-targets --locked
     - name: Run tests
       run: cargo test --verbose
     - name: Clippy
-      run: cargo clippy --verbose --no-deps --all-targets --frozen
+      run: cargo clippy --verbose --no-deps --all-targets --locked
