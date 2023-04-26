@@ -20,9 +20,9 @@ jobs:
 
     - run: sudo npm install -g sass
       
-    - name: Build
-      run: cargo build --verbose
+    - name: Check
+      run: cargo check --verbose --all-targets --frozen
     - name: Run tests
       run: cargo test --verbose
     - name: Clippy
-      run: cargo clippy --verbose --no-deps
+      run: cargo clippy --verbose --no-deps --all-targets --frozen
