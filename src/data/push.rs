@@ -89,8 +89,8 @@ impl Subscription {
         Ok(Self {
             id: row.get_unwrap("id"),
             player_id: row.get_unwrap("player_id"),
-            info: parse_json(&row, "info_json")?,
-            opt_in: parse_json(&row, "opt_in_json")?,
+            info: parse_json(row, "info_json")?,
+            opt_in: parse_json(row, "opt_in_json")?,
             user_agent: row.get_unwrap("user_agent"),
         })
     }
@@ -121,7 +121,7 @@ impl Subscription {
     }
 
     pub fn for_type(db: &Connection, push_type: PushTypeKey) -> Result<Vec<Subscription>> {
-        Ok(Self::list_all(&db)?
+        Ok(Self::list_all(db)?
             .into_iter()
             .filter(|sub| sub.opt_in.contains(&push_type))
             .collect())
@@ -402,7 +402,7 @@ pub async fn mass_notify_day_result(
         {
             let db = db_conn.lock().unwrap();
             let push_type = PushType::DayResult(basho_id, *player_id, day);
-            payload = push_type.build_payload(&url, &db)?;
+            payload = push_type.build_payload(url, &db)?;
             ttl = push_type.ttl();
         }
         push_builder
