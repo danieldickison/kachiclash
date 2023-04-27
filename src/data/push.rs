@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use super::{BashoId, BashoInfo, DataError, Day, DbConn, PlayerId, Result};
 use chrono::{Duration, Utc};
 use itertools::Itertools;
-use rusqlite::Connection;
+use rusqlite::{types::FromSqlResult, Connection, Row, RowIndex};
 use url::Url;
 use web_push::{
     ContentEncoding, PartialVapidSignatureBuilder, SubscriptionInfo, VapidSignatureBuilder,
@@ -27,6 +27,7 @@ pub struct Subscription {
     pub player_id: PlayerId,
     pub info: SubscriptionInfo,
     pub opt_in: HashSet<PushTypeKey>,
+    pub user_agent: String,
 }
 
 impl Subscription {
@@ -77,92 +78,53 @@ impl Subscription {
         Ok(())
     }
 
-    pub fn for_player(db: &Connection, player_id: PlayerId) -> Result<Vec<Subscription>> {
+    fn from_row(row: &Row) -> rusqlite::Result<Self> {
+        fn parse_json<I: RowIndex, T: serde::de::DeserializeOwned>(
+            row: &Row,
+            idx: I,
+        ) -> FromSqlResult<T> {
+            serde_json::from_slice(row.get_ref_unwrap(idx).as_bytes().unwrap())
+                .map_err(|e| rusqlite::types::FromSqlError::Other(e.into()))
+        }
+        Ok(Self {
+            id: row.get_unwrap("id"),
+            player_id: row.get_unwrap("player_id"),
+            info: parse_json(&row, "info_json")?,
+            opt_in: parse_json(&row, "opt_in_json")?,
+            user_agent: row.get_unwrap("user_agent"),
+        })
+    }
+
+    pub fn list_all(db: &Connection) -> Result<Vec<Subscription>> {
         db.prepare(
             "
-            SELECT id, info_json, opt_in_json
-            FROM player_push_subscriptions AS sub
-            WHERE player_id = ?
-        ",
+                SELECT id, player_id, info_json, opt_in_json, user_agent
+                FROM player_push_subscriptions
+            ",
         )?
-        .query_map(params![player_id], |row| {
-            let id = row.get::<_, usize>(0)?;
-            let info = row.get::<_, String>(1)?;
-            let opt_in = row.get::<_, String>(2)?;
-            Ok((id, info, opt_in))
-        })?
-        .map(|row| {
-            row.map_or_else(
-                |err| Err(DataError::DatabaseError(err)),
-                |(id, info, opt_in)| {
-                    Ok(Subscription {
-                        id,
-                        player_id,
-                        info: serde_json::from_str(&info)?,
-                        opt_in: serde_json::from_str(&opt_in)?,
-                    })
-                },
-            )
-        })
-        // convert Vec<Result<..>> to Result<Vec<..>>
-        .collect::<Vec<Result<Subscription>>>()
-        .into_iter()
+        .query_map(params![], Self::from_row)?
+        .map(|res| res.map_err(DataError::from))
         .collect()
     }
 
-    pub fn for_type(
-        db: &Connection,
-        push_type: PushTypeKey,
-        with_basho_results: Option<BashoId>,
-    ) -> Result<Vec<Subscription>> {
-        let mut query = "
-            SELECT sub.id, sub.player_id, sub.info_json, sub.opt_in_json, :basho_id
-            FROM player_push_subscriptions AS sub
-        "
-        .to_string();
-        if with_basho_results.is_some() {
-            query.push_str(
-                "
-                NATURAL JOIN basho_result AS br
-                WHERE br.basho_id = :basho_id
+    pub fn for_player(db: &Connection, player_id: PlayerId) -> Result<Vec<Subscription>> {
+        db.prepare(
+            "
+                SELECT id, player_id, info_json, opt_in_json, user_agent
+                FROM player_push_subscriptions
+                WHERE player_id = ?
             ",
-            )
-        }
-        db.prepare(&query)?
-            .query_map(
-                named_params! {
-                    ":basho_id": with_basho_results
-                },
-                |row| {
-                    let id = row.get::<_, usize>(0)?;
-                    let player_id = row.get::<_, PlayerId>(1)?;
-                    let info = row.get::<_, String>(2)?;
-                    let opt_in = row.get::<_, String>(3)?;
-                    Ok((id, player_id, info, opt_in))
-                },
-            )?
-            .map(|row| {
-                row.map_or_else(
-                    |err| Err(DataError::DatabaseError(err)),
-                    |(id, player_id, info, opt_in)| {
-                        Ok(Subscription {
-                            id,
-                            player_id,
-                            info: serde_json::from_str(&info)?,
-                            opt_in: serde_json::from_str(&opt_in)?,
-                        })
-                    },
-                )
-            })
-            .filter(|res| {
-                res.as_ref()
-                    .map(|sub| sub.opt_in.contains(&push_type))
-                    .unwrap_or(false)
-            })
-            // convert Vec<Result<..>> to Result<Vec<..>>
-            .collect::<Vec<Result<Subscription>>>()
+        )?
+        .query_map(params![player_id], Self::from_row)?
+        .map(|res| res.map_err(DataError::from))
+        .collect()
+    }
+
+    pub fn for_type(db: &Connection, push_type: PushTypeKey) -> Result<Vec<Subscription>> {
+        Ok(Self::list_all(&db)?
             .into_iter()
-            .collect()
+            .filter(|sub| sub.opt_in.contains(&push_type))
+            .collect())
     }
 }
 
@@ -423,7 +385,7 @@ pub async fn mass_notify_day_result(
     let subs_by_player;
     {
         let db = db_conn.lock().unwrap();
-        let subs = Subscription::for_type(&db, PushTypeKey::DayResult, Some(basho_id))?;
+        let subs = Subscription::for_type(&db, PushTypeKey::DayResult)?;
         all_subs = subs.len();
         subs_by_player = subs.into_iter().into_group_map_by(|sub| sub.player_id);
     }
