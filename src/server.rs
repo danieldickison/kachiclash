@@ -6,9 +6,11 @@ use std::convert::TryInto;
 use std::process::Command;
 
 use actix_files::Files;
-use actix_identity::{CookieIdentityPolicy, IdentityService};
-use actix_session::CookieSession;
-use actix_web::cookie::SameSite;
+use actix_identity::IdentityMiddleware;
+use actix_session::config::PersistentSession;
+use actix_session::storage::CookieSessionStore;
+use actix_session::SessionMiddleware;
+use actix_web::cookie::Key;
 use actix_web::dev::ServerHandle;
 use actix_web::rt::time::interval;
 use actix_web::{middleware, web, App, HttpResponse, HttpServer};
@@ -36,6 +38,7 @@ pub async fn run(app_state: &AppState) -> anyhow::Result<()> {
         static_ttl = 3600;
     }
     let app_data = web::Data::new(app_state.clone());
+    let year = actix_web::cookie::time::Duration::days(365);
 
     info!("starting server at {}:{}", config.host, config.port);
     let server = HttpServer::new(move || {
@@ -43,18 +46,14 @@ pub async fn run(app_state: &AppState) -> anyhow::Result<()> {
             .app_data(web::Data::clone(&app_data))
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
-            .wrap(IdentityService::new(
-                CookieIdentityPolicy::new(&session_secret)
-                    .domain(&config.host)
-                    .secure(!config.is_dev())
-                    .same_site(SameSite::Lax)
-                    .max_age_secs(10 * 365 * 24 * 60 * 60),
-            ))
+            .wrap(IdentityMiddleware::builder().build())
             .wrap(
-                CookieSession::signed(&session_secret)
-                    .domain(&config.host)
-                    .secure(config.env != "dev")
-                    .same_site(SameSite::Lax),
+                SessionMiddleware::builder(
+                    CookieSessionStore::default(),
+                    Key::from(&session_secret),
+                )
+                .session_lifecycle(PersistentSession::default().session_ttl(10 * year))
+                .build(),
             )
             .wrap(
                 middleware::DefaultHeaders::new().add(("Content-Type", "text/html; charset=utf-8")),
