@@ -9,14 +9,23 @@
         text-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
     }
     
-    #entries, #leaderboard {
+    #entries, #leaderboard, #admin {
         background: var(--color-light-yellow-bg);
         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        -webkit-backdrop-filter: blur(3px);
+        backdrop-filter: blur(3px);
         
         @media (hover: none) {
             background: var(--color-light-yellow-bg-opaque);
         }
-        
+    }
+    
+    #admin > menu {
+        display: flex;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        gap: 2rem;
     }
     
     #entries > ul {
