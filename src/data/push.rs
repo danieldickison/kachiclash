@@ -236,6 +236,37 @@ impl PushType {
         }
     }
 
+    pub fn subscriptions(&self, db: &Connection) -> Result<Vec<Subscription>> {
+        match self {
+            PushType::Test | PushType::Announcement(_) | PushType::EntriesOpen(_) => {
+                Subscription::for_type(db, self.key())
+            }
+            PushType::BashoStartCountdown(basho_id) => {
+                let procrastinators = db
+                    .prepare(
+                        "
+                        SELECT player.id
+                        FROM player
+                        LEFT JOIN pick ON pick.player_id = player.id AND pick.basho_id = ?
+                        GROUP BY player.id
+                        HAVING COUNT(*) < 5
+                    ",
+                    )?
+                    .query_map(params![basho_id], |row| row.get::<_, PlayerId>(0))?
+                    .collect::<rusqlite::Result<HashSet<_>>>()?;
+                Ok(Subscription::for_type(db, self.key())?
+                    .into_iter()
+                    .filter(|s| procrastinators.contains(&s.player_id))
+                    .collect())
+            }
+            PushType::DayResult(_, player_id, _) => Ok(Subscription::for_player(db, *player_id)?
+                .into_iter()
+                .filter(|s| s.opt_in.contains(&PushTypeKey::DayResult))
+                .collect()),
+            PushType::BashoResult(_, _) => todo!(),
+        }
+    }
+
     pub fn build_payload(&self, base_url: &Url, db: &Connection) -> Result<Payload> {
         let url = base_url.join("pwa").unwrap().to_string();
         let payload = match self {
@@ -304,13 +335,13 @@ impl PushType {
                             WHERE basho_id = ?
                         )
                     FROM player
-                    NATURAL JOIN basho_result AS br
+                    JOIN basho_result AS br ON br.player_id = player.id
                     WHERE player.id = ? AND br.basho_id = ?
                 ",
                     params![basho_id, player_id, basho_id],
                     |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
                 )?;
-                let rikishi: Vec<RikishiDayResult> = db
+                let rikishi = db
                     .prepare(
                         "
                         SELECT
@@ -332,7 +363,7 @@ impl PushType {
                             win: row.get(1)?,
                         })
                     })?
-                    .collect::<rusqlite::Result<_>>()?;
+                    .collect::<rusqlite::Result<Vec<RikishiDayResult>>>()?;
                 Payload {
                     title: format!("Day {} Results", day),
                     body: format!(
@@ -381,33 +412,50 @@ pub async fn mass_notify_day_result(
     basho_id: BashoId,
     day: u8,
 ) -> Result<()> {
-    let all_subs;
-    let subs_by_player;
+    let player_ids;
     {
         let db = db_conn.lock().unwrap();
-        let subs = Subscription::for_type(&db, PushTypeKey::DayResult)?;
-        all_subs = subs.len();
-        subs_by_player = subs.into_iter().into_group_map_by(|sub| sub.player_id);
+        player_ids = db
+            .prepare(
+                "
+            SELECT player_id
+            FROM basho_result
+            WHERE basho_id = ?
+        ",
+            )?
+            .query_map(params![basho_id], |row| row.get::<_, PlayerId>(0))?
+            .collect::<rusqlite::Result<Vec<PlayerId>>>()?;
     }
     info!(
-        "Sending day {} results to {} push subscriptions across {} players",
+        "Sending day {} results to {} possible players",
         day,
-        all_subs,
-        subs_by_player.len()
+        player_ids.len()
     );
-    for (i, (player_id, player_subs)) in subs_by_player.iter().enumerate() {
-        trace!("Notifying player {}/{}", i, all_subs);
+    for (i, player_id) in player_ids.iter().enumerate() {
         let payload;
+        let subscriptions;
         let ttl;
         {
             let db = db_conn.lock().unwrap();
             let push_type = PushType::DayResult(basho_id, *player_id, day);
+            subscriptions = push_type.subscriptions(&db)?;
+            if subscriptions.is_empty() {
+                continue;
+            }
             payload = push_type.build_payload(url, &db)?;
             ttl = push_type.ttl();
         }
+        trace!(
+            "Notifying player {}/{} id {} with {} subscriptions: {}",
+            i,
+            player_ids.len(),
+            player_id,
+            subscriptions.len(),
+            payload.body
+        );
         push_builder
             .clone()
-            .send(payload, ttl, player_subs, db_conn)
+            .send(payload, ttl, &subscriptions, db_conn)
             .await?;
     }
     Ok(())

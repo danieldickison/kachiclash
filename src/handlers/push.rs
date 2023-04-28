@@ -69,7 +69,7 @@ pub async fn trigger(
             return Err(HandlerError::MustBeLoggedIn);
         }
         payload = data.build_payload(&state.config.url(), &db)?;
-        subscriptions = Subscription::for_type(&db, data.key())?;
+        subscriptions = data.subscriptions(&db)?;
         ttl = data.ttl();
     }
 
