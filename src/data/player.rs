@@ -255,7 +255,7 @@ impl BashoScore {
         player_id: PlayerId,
         player_name: &str,
     ) -> Result<Vec<Self>> {
-        // Build mapping of bashi_id => PlayerBashoRikishi that can be inserted into the BashoScores later
+        // Build mapping of basho_id => PlayerBashoRikishi that can be inserted into the BashoScores later
         let mut basho_rikishi = HashMap::new();
         {
             struct RikishiRow(BashoId, String, Rank, u8, u8);
