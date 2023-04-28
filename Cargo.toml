@@ -7,8 +7,8 @@ publish = false
 
 [dependencies]
 actix-web = "4"
-actix-identity = "0.4.0-beta.9"
-actix-session = "0.5.0-beta.8"
+actix-identity = "0.4.0"
+actix-session = "0.5.0"
 actix-files = "0.6"
 async-trait = "0.1"
 url = "2.2"
@@ -29,21 +29,15 @@ oauth2 = "4.1"
 anyhow = "1.0"
 num_cpus = "1.13"
 web-push = "0.9.3"
+askama_actix = "0.14.0"
 
 [dependencies.tokio]
 version = "1.0"
 features = ["full"]
 
 [dependencies.askama]
-version = "0.11"
-git = "https://github.com/djc/askama"
-# rev = "refs/pull/584/head"
+version = "0.12 "
 features = ["with-actix-web"]
-
-[dependencies.askama_actix]
-version = "0.13"
-git = "https://github.com/djc/askama"
-# rev = "refs/pull/584/head"
 
 [dependencies.rusqlite]
 version = "0.26"

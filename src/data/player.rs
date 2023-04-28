@@ -10,7 +10,7 @@ use crate::external::discord::DiscordAuthProvider;
 use crate::external::google::GoogleAuthProvider;
 use crate::external::reddit::RedditAuthProvider;
 use crate::external::{discord, AuthProvider, ImageSize, UserInfo};
-use askama_actix::Template;
+use askama::Template;
 use rand::random;
 use regex::{Regex, RegexBuilder};
 use std::collections::HashMap;
