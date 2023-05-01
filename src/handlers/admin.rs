@@ -141,7 +141,7 @@ fn admin_base(
     identity: &Identity,
     state: &web::Data<AppState>,
 ) -> Result<BaseTemplate> {
-    let base = BaseTemplate::new(db, identity, state)?;
+    let base = BaseTemplate::new(db, Some(identity), state)?;
     if base.player.as_ref().map_or(false, |p| p.is_admin()) {
         Ok(base)
     } else {
@@ -325,9 +325,13 @@ pub async fn update_user_images(
         "reddit" => Ok(Box::new(RedditAuthProvider) as Box<dyn AuthProvider>),
         _ => Err(HandlerError::NotFound("auth service".to_string())),
     }?;
-    session.insert("image_update_data", serde_json::to_string(&json.0).unwrap())?;
+    session
+        .insert("image_update_data", &json.0)
+        .map_err(anyhow::Error::from)?;
     let (auth_url, csrf_token) = provider.authorize_url(&state.config);
-    session.insert("oauth_csrf", csrf_token)?;
+    session
+        .insert("oauth_csrf", csrf_token)
+        .map_err(anyhow::Error::from)?;
     Ok(HttpResponse::SeeOther()
         .insert_header((http::header::LOCATION, auth_url.to_string()))
         .finish())

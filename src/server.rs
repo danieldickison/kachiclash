@@ -6,9 +6,11 @@ use std::convert::TryInto;
 use std::process::Command;
 
 use actix_files::Files;
-use actix_identity::{CookieIdentityPolicy, IdentityService};
-use actix_session::CookieSession;
-use actix_web::cookie::SameSite;
+use actix_identity::IdentityMiddleware;
+use actix_session::config::PersistentSession;
+use actix_session::storage::CookieSessionStore;
+use actix_session::SessionMiddleware;
+use actix_web::cookie::Key;
 use actix_web::dev::ServerHandle;
 use actix_web::rt::time::interval;
 use actix_web::{middleware, web, App, HttpResponse, HttpServer};
@@ -20,11 +22,11 @@ pub async fn run(app_state: &AppState) -> anyhow::Result<()> {
     let config = app_state.config.clone();
     let is_dev = config.is_dev();
     let port = config.port;
-    let session_secret: [u8; 32] = config
+    let session_secret: [u8; 64] = config
         .session_secret
         .as_bytes()
         .try_into()
-        .expect("session key should be 32 utf8 bytes");
+        .expect("session key should be 64 utf8 bytes");
     let db_mutex = app_state.db.clone();
     let workers;
     let static_ttl;
@@ -36,6 +38,7 @@ pub async fn run(app_state: &AppState) -> anyhow::Result<()> {
         static_ttl = 3600;
     }
     let app_data = web::Data::new(app_state.clone());
+    let year = actix_web::cookie::time::Duration::days(365);
 
     info!("starting server at {}:{}", config.host, config.port);
     let server = HttpServer::new(move || {
@@ -43,18 +46,20 @@ pub async fn run(app_state: &AppState) -> anyhow::Result<()> {
             .app_data(web::Data::clone(&app_data))
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
-            .wrap(IdentityService::new(
-                CookieIdentityPolicy::new(&session_secret)
-                    .domain(&config.host)
-                    .secure(!config.is_dev())
-                    .same_site(SameSite::Lax)
-                    .max_age_secs(10 * 365 * 24 * 60 * 60),
-            ))
+            .wrap(IdentityMiddleware::builder().build())
             .wrap(
-                CookieSession::signed(&session_secret)
-                    .domain(&config.host)
-                    .secure(config.env != "dev")
-                    .same_site(SameSite::Lax),
+                SessionMiddleware::builder(
+                    CookieSessionStore::default(),
+                    Key::from(&session_secret),
+                )
+                .session_lifecycle(PersistentSession::default().session_ttl(10 * year))
+                .cookie_content_security(if is_dev {
+                    actix_session::config::CookieContentSecurity::Signed
+                } else {
+                    actix_session::config::CookieContentSecurity::Private
+                })
+                .cookie_secure(!is_dev)
+                .build(),
             )
             .wrap(
                 middleware::DefaultHeaders::new().add(("Content-Type", "text/html; charset=utf-8")),
@@ -70,20 +75,16 @@ pub async fn run(app_state: &AppState) -> anyhow::Result<()> {
             )
             .service(handlers::index::index)
             .service(handlers::index::pwa)
-            .service(web::resource("/logout").to(handlers::login::logout))
+            .service(handlers::login::logout)
             .service(
                 web::scope("/login")
-                    .service(web::resource("").to(handlers::login::index))
-                    .service(web::resource("/discord").to(handlers::login::discord))
-                    .service(
-                        web::resource("/discord_redirect").to(handlers::login::discord_redirect),
-                    )
-                    .service(web::resource("/google").to(handlers::login::google))
-                    .service(web::resource("/google_redirect").to(handlers::login::google_redirect))
-                    .service(web::resource("/reddit").to(handlers::login::reddit))
-                    .service(
-                        web::resource("/reddit_redirect").to(handlers::login::reddit_redirect),
-                    ),
+                    .service(handlers::login::index)
+                    .service(handlers::login::discord)
+                    .service(handlers::login::discord_redirect)
+                    .service(handlers::login::google)
+                    .service(handlers::login::google_redirect)
+                    .service(handlers::login::reddit)
+                    .service(handlers::login::reddit_redirect),
             )
             .service(handlers::settings::settings_page)
             .service(handlers::settings::settings_post)

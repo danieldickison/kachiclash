@@ -1,12 +1,11 @@
 extern crate oauth2;
 extern crate url;
 
-use oauth2::{AuthorizationCode, TokenResponse};
+use oauth2::{AuthorizationCode, CsrfToken, TokenResponse};
 
 use actix_identity::Identity;
 use actix_session::Session;
-use actix_web::cookie::{time::Duration, Cookie};
-use actix_web::{http, web};
+use actix_web::{get, http, web, HttpMessage, HttpRequest};
 use actix_web::{HttpResponse, Responder};
 
 use askama::Template;
@@ -25,33 +24,48 @@ struct LoginTemplate {
     base: BaseTemplate,
 }
 
-pub async fn index(state: web::Data<AppState>, identity: Identity) -> Result<impl Responder> {
+#[get("")]
+pub async fn index(
+    state: web::Data<AppState>,
+    identity: Option<Identity>,
+) -> Result<impl Responder> {
     let db = state.db.lock().unwrap();
     let s = LoginTemplate {
-        base: BaseTemplate::new(&db, &identity, &state)?,
+        base: BaseTemplate::new(&db, identity.as_ref(), &state)?,
     }
     .render()
     .unwrap();
     Ok(HttpResponse::Ok().body(s))
 }
 
+#[get("/discord")]
 pub async fn discord(state: web::Data<AppState>, session: Session) -> HttpResponse {
     oauth_login(&state.config, session, DiscordAuthProvider)
 }
 
+#[get("/google")]
 pub async fn google(state: web::Data<AppState>, session: Session) -> HttpResponse {
     oauth_login(&state.config, session, GoogleAuthProvider)
 }
 
+#[get("/reddit")]
 pub async fn reddit(state: web::Data<AppState>, session: Session) -> HttpResponse {
     oauth_login(&state.config, session, RedditAuthProvider)
 }
 
 fn oauth_login(config: &Config, session: Session, provider: impl AuthProvider) -> HttpResponse {
     let (auth_url, csrf_token) = provider.authorize_url(config);
+    trace!(
+        "session entries before login redirect: {:?}",
+        session.entries()
+    );
     session
         .insert("oauth_csrf", csrf_token)
         .expect("could not set oauth_csrf session value");
+    trace!(
+        "session entries after login redirect: {:?}",
+        session.entries()
+    );
     HttpResponse::SeeOther()
         .insert_header((http::header::LOCATION, auth_url.to_string()))
         .finish()
@@ -63,42 +77,46 @@ pub struct OAuthRedirectQuery {
     state: String,
 }
 
+#[get("/discord_redirect")]
 pub async fn discord_redirect(
+    request: HttpRequest,
     query: web::Query<OAuthRedirectQuery>,
     state: web::Data<AppState>,
     session: Session,
-    id: Identity,
 ) -> Result<impl Responder> {
-    oauth_redirect(&query, state, session, id, DiscordAuthProvider).await
+    oauth_redirect(request, &query, state, session, DiscordAuthProvider).await
 }
 
+#[get("/google_redirect")]
 pub async fn google_redirect(
+    request: HttpRequest,
     query: web::Query<OAuthRedirectQuery>,
     state: web::Data<AppState>,
     session: Session,
-    id: Identity,
 ) -> Result<impl Responder> {
-    oauth_redirect(&query, state, session, id, GoogleAuthProvider).await
+    oauth_redirect(request, &query, state, session, GoogleAuthProvider).await
 }
 
+#[get("/reddit_redirect")]
 pub async fn reddit_redirect(
+    request: HttpRequest,
     query: web::Query<OAuthRedirectQuery>,
     state: web::Data<AppState>,
     session: Session,
-    id: Identity,
 ) -> Result<impl Responder> {
-    oauth_redirect(&query, state, session, id, RedditAuthProvider).await
+    oauth_redirect(request, &query, state, session, RedditAuthProvider).await
 }
 
 async fn oauth_redirect(
+    request: HttpRequest,
     query: &OAuthRedirectQuery,
     state: web::Data<AppState>,
     session: Session,
-    id: Identity,
     provider: impl AuthProvider + Sync,
 ) -> Result<impl Responder> {
-    match session.get::<String>("oauth_csrf").unwrap_or(None) {
-        Some(ref session_csrf) if *session_csrf == query.state => {
+    trace!("session entries on oauth rerturn: {:?}", session.entries());
+    match session.get::<CsrfToken>("oauth_csrf").unwrap_or(None) {
+        Some(ref session_csrf) if *session_csrf.secret() == query.state => {
             debug!("exchanging oauth code for access token from {:?}", provider);
             let auth_code = AuthorizationCode::new(query.code.to_owned());
             let token_res = provider
@@ -131,7 +149,7 @@ async fn oauth_redirect(
                     })?;
 
             debug!("logged in as player {}, is_new: {}", player_id, is_new);
-            id.remember(player_id.to_string());
+            Identity::login(&request.extensions(), player_id.to_string())?;
             session.remove("oauth_csrf");
 
             Ok(HttpResponse::SeeOther()
@@ -146,27 +164,17 @@ async fn oauth_redirect(
                 "bad CSRF token received in {:?} oauth redirect endpoint",
                 provider
             );
+            trace!("session entries: {:?}", session.entries());
+            // session.purge();
             Err(HandlerError::CSRFError)
         }
     }
 }
 
-pub async fn logout(id: Identity, state: web::Data<AppState>) -> impl Responder {
-    id.forget();
-
-    // Also clear any older versions of identity and session cookies that didn't specify domain
-    let clear_old_identity = Cookie::build("actix-identity", "")
-        .secure(!state.config.is_dev())
-        .max_age(Duration::ZERO)
-        .finish();
-    let clear_old_session = Cookie::build("actix-session", "")
-        .secure(!state.config.is_dev())
-        .max_age(Duration::ZERO)
-        .finish();
-
+#[get("/logout")]
+pub async fn logout(id: Identity) -> impl Responder {
+    id.logout();
     HttpResponse::SeeOther()
         .insert_header((http::header::LOCATION, "/"))
-        .append_header((http::header::SET_COOKIE, clear_old_identity.to_string()))
-        .append_header((http::header::SET_COOKIE, clear_old_session.to_string()))
         .finish()
 }

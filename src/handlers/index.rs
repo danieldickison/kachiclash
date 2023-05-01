@@ -46,7 +46,10 @@ impl IndexTemplate {
 const LEADERS_LIMIT: u32 = 270;
 
 #[get("/")]
-pub async fn index(state: web::Data<AppState>, identity: Identity) -> Result<IndexTemplate> {
+pub async fn index(
+    state: web::Data<AppState>,
+    identity: Option<Identity>,
+) -> Result<IndexTemplate> {
     let db = state.db.lock().unwrap();
     let (current_basho, prev_basho) = BashoInfo::current_and_previous(&db)?;
     let next_basho_id = prev_basho
@@ -58,12 +61,15 @@ pub async fn index(state: web::Data<AppState>, identity: Identity) -> Result<Ind
         end: next_basho_id,
     };
     let leaders = HistoricLeader::with_basho_range(&db, leaders_basho_range, LEADERS_LIMIT)?;
-    let self_leader_index = match identity.player_id() {
-        Some(id) => leaders.iter().position(|l| l.player.id == id),
+    let self_leader_index = match identity.as_ref() {
+        Some(id) => {
+            let player_id = id.player_id()?;
+            leaders.iter().position(|l| l.player.id == player_id)
+        }
         None => None,
     };
     Ok(IndexTemplate {
-        base: BaseTemplate::new(&db, &identity, &state)?,
+        base: BaseTemplate::new(&db, identity.as_ref(), &state)?,
         leaders,
         self_leader_index,
         current_basho,

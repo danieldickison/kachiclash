@@ -15,7 +15,7 @@ pub async fn check(
     state: web::Data<AppState>,
     identity: Identity,
 ) -> Result<impl Responder> {
-    let player_id = identity.require_player_id()?;
+    let player_id = identity.player_id()?;
     let db = state.db.lock().unwrap();
     for sub in Subscription::for_player(&db, player_id)? {
         if sub.info == subscription.0 {
@@ -28,7 +28,7 @@ pub async fn check(
 
 #[post("/test")]
 pub async fn test(state: web::Data<AppState>, identity: Identity) -> Result<HttpResponse> {
-    let player_id = identity.require_player_id()?;
+    let player_id = identity.player_id()?;
     let push_type = PushType::Test;
     let payload;
     let subs;
@@ -58,7 +58,7 @@ pub async fn trigger(
     identity: Identity,
     data: web::Json<PushType>,
 ) -> Result<HttpResponse> {
-    let player_id = identity.require_player_id()?;
+    let player_id = identity.player_id()?;
     let payload;
     let subscriptions;
     let ttl;
