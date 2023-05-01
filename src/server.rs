@@ -53,7 +53,12 @@ pub async fn run(app_state: &AppState) -> anyhow::Result<()> {
                     Key::from(&session_secret),
                 )
                 .session_lifecycle(PersistentSession::default().session_ttl(10 * year))
-                .cookie_content_security(actix_session::config::CookieContentSecurity::Signed)
+                .cookie_content_security(if is_dev {
+                    actix_session::config::CookieContentSecurity::Signed
+                } else {
+                    actix_session::config::CookieContentSecurity::Private
+                })
+                .cookie_secure(!is_dev)
                 .build(),
             )
             .wrap(
@@ -74,11 +79,9 @@ pub async fn run(app_state: &AppState) -> anyhow::Result<()> {
             .service(
                 web::scope("/login")
                     .service(handlers::login::index)
-                    .service(handlers::login::discord)
+                    .service(handlers::login::oauth_start)
                     .service(handlers::login::discord_redirect)
-                    .service(handlers::login::google)
                     .service(handlers::login::google_redirect)
-                    .service(handlers::login::reddit)
                     .service(handlers::login::reddit_redirect),
             )
             .service(handlers::settings::settings_page)
