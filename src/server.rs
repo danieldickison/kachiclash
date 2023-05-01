@@ -79,9 +79,11 @@ pub async fn run(app_state: &AppState) -> anyhow::Result<()> {
             .service(
                 web::scope("/login")
                     .service(handlers::login::index)
-                    .service(handlers::login::oauth_start)
+                    .service(handlers::login::discord)
                     .service(handlers::login::discord_redirect)
+                    .service(handlers::login::google)
                     .service(handlers::login::google_redirect)
+                    .service(handlers::login::reddit)
                     .service(handlers::login::reddit_redirect),
             )
             .service(handlers::settings::settings_page)

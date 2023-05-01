@@ -24,7 +24,7 @@ struct LoginTemplate {
     base: BaseTemplate,
 }
 
-#[get("/")]
+#[get("")]
 pub async fn index(
     state: web::Data<AppState>,
     identity: Option<Identity>,
