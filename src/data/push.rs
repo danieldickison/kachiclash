@@ -160,8 +160,10 @@ impl PushBuilder {
                 let endpoint_url = url::Url::parse(&sub.info.endpoint);
                 match endpoint_url {
                     Ok(url) => trace!(
-                        "Sending push {:?} to {}",
+                        "Sending push “{}-{}” to player {} on {}",
                         payload.title,
+                        payload.body,
+                        sub.player_id,
                         url.host_str().unwrap_or("<invalid host>")
                     ),
                     Err(e) => warn!("endpoint url parse error {}", e),
