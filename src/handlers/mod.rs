@@ -58,8 +58,8 @@ impl error::ResponseError for HandlerError {
         );
         match self {
             HandlerError::NotFound(_) => HttpResponse::NotFound(),
-            HandlerError::ExternalServiceError => HttpResponse::InternalServerError(),
-            HandlerError::DatabaseError(_)
+            HandlerError::ExternalServiceError
+            | HandlerError::DatabaseError(_)
             | HandlerError::Failure(_)
             | HandlerError::ActixError(_) => HttpResponse::InternalServerError(),
             HandlerError::CSRFError | HandlerError::MustBeLoggedIn => HttpResponse::Forbidden(),
@@ -106,20 +106,20 @@ struct BaseTemplate {
 }
 
 impl BaseTemplate {
-    fn new(db: &Connection, identity: &Identity, state: &web::Data<AppState>) -> Result<Self> {
-        let player = match identity.player_id() {
-            Some(id) => {
-                let player = Player::with_id(db, id)?;
-                match player.as_ref() {
-                    Some(p) => debug!("Logged in player: {} ({})", p.name, p.id),
-                    None => {
-                        error!("identity player id {} not found; forcing log out", id);
-                        identity.forget();
-                    }
-                };
-                player
-            }
+    fn new(
+        db: &Connection,
+        identity: Option<&Identity>,
+        state: &web::Data<AppState>,
+    ) -> Result<Self> {
+        let player = match identity {
             None => None,
+            Some(id) => {
+                let player_id = id.player_id()?;
+                Some(Player::with_id(db, player_id)?.ok_or_else(|| {
+                    error!("identity player id {} not found", player_id);
+                    HandlerError::NotFound("player".to_string())
+                })?)
+            }
         };
         let vapid_public_key = state.config.vapid_public_key.clone();
         Ok(Self {
@@ -137,15 +137,11 @@ impl BaseTemplate {
 }
 
 trait IdentityExt {
-    fn player_id(&self) -> Option<PlayerId>;
-
-    fn require_player_id(&self) -> Result<PlayerId> {
-        self.player_id().ok_or(HandlerError::MustBeLoggedIn)
-    }
+    fn player_id(&self) -> anyhow::Result<PlayerId>;
 }
 
 impl IdentityExt for Identity {
-    fn player_id(&self) -> Option<PlayerId> {
-        self.identity().and_then(|str| str.parse().ok())
+    fn player_id(&self) -> anyhow::Result<PlayerId> {
+        Ok(self.id()?.parse()?)
     }
 }

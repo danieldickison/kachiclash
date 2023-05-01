@@ -5,7 +5,6 @@ use actix_web::{get, post, web, HttpResponse, Responder};
 use anyhow::anyhow;
 use askama::Template;
 
-
 use super::user_agent::UserAgent;
 use super::{BaseTemplate, HandlerError, Result};
 use crate::data::player::{self, Player, PlayerId};
@@ -33,7 +32,7 @@ pub async fn settings_page(
     identity: Identity,
 ) -> Result<SettingsTemplate> {
     let db = state.db.lock().unwrap();
-    let base = BaseTemplate::new(&db, &identity, &state)?;
+    let base = BaseTemplate::new(&db, Some(&identity), &state)?;
     if base.player.is_some() {
         Ok(SettingsTemplate { base })
     } else {
@@ -48,7 +47,7 @@ pub async fn settings_post(
     user_agent: web::Header<UserAgent>,
     identity: Identity,
 ) -> Result<impl Responder> {
-    let player_id = identity.require_player_id()?;
+    let player_id = identity.player_id()?;
     match settings_post_inner(state.db.clone(), player_id, form.0, user_agent.0).await {
         Ok(_) => Ok(HttpResponse::Accepted().finish()),
         Err(e) => {

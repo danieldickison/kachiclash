@@ -49,7 +49,10 @@ pub struct Config {
     )]
     pub hero_img_src: String,
 
-    #[envconfig(from = "SESSION_SECRET", default = "abcdefghijklmnopqrstuvwxyz012345")]
+    #[envconfig(
+        from = "SESSION_SECRET",
+        default = "abcdefghijklmnopqrstuvwxyz012345abcdefghijklmnopqrstuvwxyz012345"
+    )]
     pub session_secret: String,
 
     #[envconfig(from = "VAPID_PUBLIC_KEY")]

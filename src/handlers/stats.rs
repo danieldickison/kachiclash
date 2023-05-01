@@ -44,19 +44,22 @@ const LEADERS_LIMIT: u32 = 500;
 pub async fn stats_page(
     query: web::Query<QueryParams>,
     state: web::Data<AppState>,
-    identity: Identity,
+    identity: Option<Identity>,
 ) -> Result<StatsTemplate> {
     let db = state.db.lock().unwrap();
     let basho_list = BashoInfo::list_all(&db)?;
     let leader_basho_count = query.b.unwrap_or(6);
     let basho_range = n_completed_basho(&basho_list, leader_basho_count);
     let leaders = HistoricLeader::with_basho_range(&db, basho_range, LEADERS_LIMIT)?;
-    let self_leader_index = match identity.player_id() {
-        Some(id) => leaders.iter().position(|l| l.player.id == id),
+    let self_leader_index = match identity.as_ref() {
+        Some(id) => {
+            let player_id = id.player_id()?;
+            leaders.iter().position(|l| l.player.id == player_id)
+        }
         None => None,
     };
     Ok(StatsTemplate {
-        base: BaseTemplate::new(&db, &identity, &state)?,
+        base: BaseTemplate::new(&db, identity.as_ref(), &state)?,
         basho_list,
         leader_basho_count,
         leader_basho_count_options: LEADER_BASHO_COUNT_OPTIONS

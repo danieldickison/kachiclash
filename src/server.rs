@@ -22,11 +22,11 @@ pub async fn run(app_state: &AppState) -> anyhow::Result<()> {
     let config = app_state.config.clone();
     let is_dev = config.is_dev();
     let port = config.port;
-    let session_secret: [u8; 32] = config
+    let session_secret: [u8; 64] = config
         .session_secret
         .as_bytes()
         .try_into()
-        .expect("session key should be 32 utf8 bytes");
+        .expect("session key should be 64 utf8 bytes");
     let db_mutex = app_state.db.clone();
     let workers;
     let static_ttl;

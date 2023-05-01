@@ -48,7 +48,7 @@ pub async fn basho(
     path: web::Path<BashoId>,
     query: web::Query<BashoQuery>,
     state: web::Data<AppState>,
-    identity: Identity,
+    identity: Option<Identity>,
 ) -> Result<Either<BashoTemplate, HttpResponse>> {
     let basho_id = path.into_inner();
     let db = state.db.lock().unwrap();
@@ -62,7 +62,7 @@ pub async fn basho(
                 .finish(),
         ));
     }
-    let base = BaseTemplate::new(&db, &identity, &state)?;
+    let base = BaseTemplate::new(&db, identity.as_ref(), &state)?;
     let player_id = base.player.as_ref().map(|p| p.id);
     let picks = fetch_player_picks(&db, player_id, basho_id)?;
     let FetchBashoRikishi {
@@ -147,7 +147,7 @@ pub async fn save_picks(
     state: web::Data<AppState>,
     identity: Identity,
 ) -> Result<impl Responder> {
-    let player_id = identity.require_player_id()?;
+    let player_id = identity.player_id()?;
     let picks = &[
         form.rank_group_1,
         form.rank_group_2,
