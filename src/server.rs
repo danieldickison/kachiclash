@@ -53,6 +53,7 @@ pub async fn run(app_state: &AppState) -> anyhow::Result<()> {
                     Key::from(&session_secret),
                 )
                 .session_lifecycle(PersistentSession::default().session_ttl(10 * year))
+                .cookie_content_security(actix_session::config::CookieContentSecurity::Signed)
                 .build(),
             )
             .wrap(

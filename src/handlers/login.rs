@@ -1,7 +1,7 @@
 extern crate oauth2;
 extern crate url;
 
-use oauth2::{AuthorizationCode, TokenResponse};
+use oauth2::{AuthorizationCode, CsrfToken, TokenResponse};
 
 use actix_identity::Identity;
 use actix_session::Session;
@@ -51,9 +51,17 @@ pub async fn reddit(state: web::Data<AppState>, session: Session) -> HttpRespons
 
 fn oauth_login(config: &Config, session: Session, provider: impl AuthProvider) -> HttpResponse {
     let (auth_url, csrf_token) = provider.authorize_url(config);
+    trace!(
+        "session entries before login redirect: {:?}",
+        session.entries()
+    );
     session
         .insert("oauth_csrf", csrf_token)
         .expect("could not set oauth_csrf session value");
+    trace!(
+        "session entries after login redirect: {:?}",
+        session.entries()
+    );
     HttpResponse::SeeOther()
         .insert_header((http::header::LOCATION, auth_url.to_string()))
         .finish()
@@ -99,8 +107,9 @@ async fn oauth_redirect(
     session: Session,
     provider: impl AuthProvider + Sync,
 ) -> Result<impl Responder> {
-    match session.get::<String>("oauth_csrf").unwrap_or(None) {
-        Some(ref session_csrf) if *session_csrf == query.state => {
+    trace!("session entries on oauth rerturn: {:?}", session.entries());
+    match session.get::<CsrfToken>("oauth_csrf").unwrap_or(None) {
+        Some(ref session_csrf) if *session_csrf.secret() == query.state => {
             debug!("exchanging oauth code for access token from {:?}", provider);
             let auth_code = AuthorizationCode::new(query.code.to_owned());
             let token_res = provider
@@ -148,8 +157,8 @@ async fn oauth_redirect(
                 "bad CSRF token received in {:?} oauth redirect endpoint",
                 provider
             );
-            debug!("session entries: {:?}", session.entries());
-            session.purge();
+            trace!("session entries: {:?}", session.entries());
+            // session.purge();
             Err(HandlerError::CSRFError)
         }
     }
