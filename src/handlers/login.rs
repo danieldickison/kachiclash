@@ -5,7 +5,7 @@ use oauth2::{AuthorizationCode, CsrfToken, TokenResponse};
 
 use actix_identity::Identity;
 use actix_session::Session;
-use actix_web::{http, web, HttpMessage, HttpRequest};
+use actix_web::{get, http, web, HttpMessage, HttpRequest};
 use actix_web::{HttpResponse, Responder};
 
 use askama::Template;
@@ -24,6 +24,7 @@ struct LoginTemplate {
     base: BaseTemplate,
 }
 
+#[get("/")]
 pub async fn index(
     state: web::Data<AppState>,
     identity: Option<Identity>,
@@ -37,14 +38,17 @@ pub async fn index(
     Ok(HttpResponse::Ok().body(s))
 }
 
+#[get("/discord")]
 pub async fn discord(state: web::Data<AppState>, session: Session) -> HttpResponse {
     oauth_login(&state.config, session, DiscordAuthProvider)
 }
 
+#[get("/google")]
 pub async fn google(state: web::Data<AppState>, session: Session) -> HttpResponse {
     oauth_login(&state.config, session, GoogleAuthProvider)
 }
 
+#[get("/reddit")]
 pub async fn reddit(state: web::Data<AppState>, session: Session) -> HttpResponse {
     oauth_login(&state.config, session, RedditAuthProvider)
 }
@@ -73,6 +77,7 @@ pub struct OAuthRedirectQuery {
     state: String,
 }
 
+#[get("/discord_redirect")]
 pub async fn discord_redirect(
     request: HttpRequest,
     query: web::Query<OAuthRedirectQuery>,
@@ -82,6 +87,7 @@ pub async fn discord_redirect(
     oauth_redirect(request, &query, state, session, DiscordAuthProvider).await
 }
 
+#[get("/google_redirect")]
 pub async fn google_redirect(
     request: HttpRequest,
     query: web::Query<OAuthRedirectQuery>,
@@ -91,6 +97,7 @@ pub async fn google_redirect(
     oauth_redirect(request, &query, state, session, GoogleAuthProvider).await
 }
 
+#[get("/reddit_redirect")]
 pub async fn reddit_redirect(
     request: HttpRequest,
     query: web::Query<OAuthRedirectQuery>,
@@ -164,6 +171,7 @@ async fn oauth_redirect(
     }
 }
 
+#[get("/logout")]
 pub async fn logout(id: Identity) -> impl Responder {
     id.logout();
     HttpResponse::SeeOther()

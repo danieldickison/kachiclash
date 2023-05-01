@@ -70,20 +70,16 @@ pub async fn run(app_state: &AppState) -> anyhow::Result<()> {
             )
             .service(handlers::index::index)
             .service(handlers::index::pwa)
-            .service(web::resource("/logout").to(handlers::login::logout))
+            .service(handlers::login::logout)
             .service(
                 web::scope("/login")
-                    .service(web::resource("").to(handlers::login::index))
-                    .service(web::resource("/discord").to(handlers::login::discord))
-                    .service(
-                        web::resource("/discord_redirect").to(handlers::login::discord_redirect),
-                    )
-                    .service(web::resource("/google").to(handlers::login::google))
-                    .service(web::resource("/google_redirect").to(handlers::login::google_redirect))
-                    .service(web::resource("/reddit").to(handlers::login::reddit))
-                    .service(
-                        web::resource("/reddit_redirect").to(handlers::login::reddit_redirect),
-                    ),
+                    .service(handlers::login::index)
+                    .service(handlers::login::discord)
+                    .service(handlers::login::discord_redirect)
+                    .service(handlers::login::google)
+                    .service(handlers::login::google_redirect)
+                    .service(handlers::login::reddit)
+                    .service(handlers::login::reddit_redirect),
             )
             .service(handlers::settings::settings_page)
             .service(handlers::settings::settings_post)
