@@ -7,7 +7,7 @@ use crate::util::GroupRuns;
 use crate::AppState;
 use actix_identity::Identity;
 use actix_web::http::header::LOCATION;
-use actix_web::{get, web, HttpResponse};
+use actix_web::{get, route, web, HttpResponse};
 use askama::Template;
 
 #[derive(Template)]
@@ -45,7 +45,7 @@ impl IndexTemplate {
 
 const LEADERS_LIMIT: u32 = 270;
 
-#[get("/")]
+#[route("/", method = "GET", method = "HEAD")]
 pub async fn index(
     state: web::Data<AppState>,
     identity: Option<Identity>,
