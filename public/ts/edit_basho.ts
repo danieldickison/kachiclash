@@ -5,12 +5,13 @@ interface HTMLFormControlsCollection extends HTMLCollectionBase {
   banzuke: HTMLInputElement
   venue: HTMLInputElement
   start_date: HTMLInputElement
+  notify_kyujyo: HTMLInputElement
 }
 
 let parsedBanzuke
 bashoForm.elements.banzuke.addEventListener('input', bashoFormInput)
 
-function bashoFormInput (event) {
+function bashoFormInput(event) {
   parsedBanzuke = parseBanzuke(bashoForm.elements.banzuke.value)
   const tbody = bashoForm.querySelector('.parsed-banzuke tbody')
   tbody.innerHTML = ''
@@ -25,7 +26,7 @@ function bashoFormInput (event) {
     const name = document.createElement('td')
     name.innerText = rikishi.name
     tr.appendChild(name)
-    
+
     const kyujyo = document.createElement('td')
     kyujyo.innerText = rikishi.is_kyujyo ? '㊡' : ''
     tr.appendChild(kyujyo)
@@ -35,7 +36,7 @@ function bashoFormInput (event) {
 // Maches rank and name
 const BANZUKE_REGEX = /^ *(\w{1,2}\d{1,3}[ew]) *(\w+).*?( x)?$/gm
 
-function parseBanzuke (str) {
+function parseBanzuke(str) {
   const rikishi = []
   let match
   while ((match = BANZUKE_REGEX.exec(str))) {
@@ -53,7 +54,8 @@ bashoForm.addEventListener('submit', event => {
   const data = {
     venue: bashoForm.elements.venue.value,
     start_date: bashoForm.elements.start_date.value,
-    banzuke: parsedBanzuke
+    banzuke: parsedBanzuke,
+    notify_kyujyo: bashoForm.elements.notify_kyujyo.checked
   }
   const url = location.href
   return fetch(url, {

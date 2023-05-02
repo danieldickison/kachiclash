@@ -407,7 +407,7 @@ pub fn update_basho(
     venue: &str,
     start_date: &NaiveDateTime,
     banzuke: &[(String, Rank, bool)],
-) -> Result<BashoId> {
+) -> Result<()> {
     let txn = db.transaction()?;
     txn.execute(
         "
@@ -495,7 +495,7 @@ pub fn update_basho(
     }
     txn.commit()?;
 
-    Ok(basho_id)
+    Ok(())
 }
 
 #[derive(Debug, Deserialize)]

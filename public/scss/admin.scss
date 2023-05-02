@@ -9,7 +9,7 @@
         display: block;
         margin-bottom: 10px;
         
-        > input {
+        > input:not([type="checkbox"]) {
             display: block;
         }
 

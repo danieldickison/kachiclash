@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use super::{BashoId, BashoInfo, DataError, Day, DbConn, PlayerId, Result};
+use super::{BashoId, BashoInfo, DataError, Day, DbConn, PlayerId, Rank, Result, RikishiId};
 use chrono::{Duration, Utc};
 use itertools::Itertools;
 use rusqlite::{types::FromSqlResult, Connection, Row, RowIndex};
@@ -149,18 +149,13 @@ impl PushBuilder {
         subscriptions: &[Subscription],
         db: &DbConn,
     ) -> Result<()> {
-        trace!(
-            "sending “{}” to {} subscriptions",
-            payload.title,
-            subscriptions.len()
-        );
         let mut invalid_subscriptions = vec![];
         for sub in subscriptions {
             {
                 let endpoint_url = url::Url::parse(&sub.info.endpoint);
                 match endpoint_url {
                     Ok(url) => trace!(
-                        "Sending push “{}-{}” to player {} on {}",
+                        "Sending push “{}—{}” to player {} on {}",
                         payload.title,
                         payload.body,
                         sub.player_id,
@@ -211,6 +206,7 @@ pub enum PushType {
     Announcement(String),
     EntriesOpen(BashoId),
     BashoStartCountdown(BashoId),
+    KyujyoAlert(BashoId, RikishiId),
     DayResult(BashoId, PlayerId, Day),
     BashoResult(BashoId, PlayerId),
 }
@@ -221,7 +217,9 @@ impl PushType {
             PushType::Test => PushTypeKey::Test,
             PushType::Announcement(_) => PushTypeKey::Announcement,
             PushType::EntriesOpen(_) => PushTypeKey::EntriesOpen,
-            PushType::BashoStartCountdown(_) => PushTypeKey::BashoStartCountdown,
+            PushType::BashoStartCountdown(_) | PushType::KyujyoAlert(_, _) => {
+                PushTypeKey::BashoStartCountdown
+            }
             PushType::DayResult(_, _, _) => PushTypeKey::DayResult,
             PushType::BashoResult(_, _) => PushTypeKey::BashoResult,
         }
@@ -233,6 +231,7 @@ impl PushType {
             PushType::Announcement(_) => Duration::days(1),
             PushType::EntriesOpen(_) => Duration::days(1),
             PushType::BashoStartCountdown(_basho) => Duration::hours(12),
+            PushType::KyujyoAlert(_, _) => Duration::days(3),
             PushType::DayResult(_, _, _) => Duration::days(1),
             PushType::BashoResult(_, _) => Duration::days(7),
         }
@@ -259,6 +258,24 @@ impl PushType {
                 Ok(Subscription::for_type(db, self.key())?
                     .into_iter()
                     .filter(|s| procrastinators.contains(&s.player_id))
+                    .collect())
+            }
+            PushType::KyujyoAlert(basho_id, rikishi_id) => {
+                let players = db
+                    .prepare(
+                        "
+                        SELECT player_id
+                        FROM pick
+                        WHERE basho_id = ? AND rikishi_id = ?
+                    ",
+                    )?
+                    .query_map(params![basho_id, rikishi_id], |row| {
+                        row.get::<_, PlayerId>(0)
+                    })?
+                    .collect::<rusqlite::Result<HashSet<_>>>()?;
+                Ok(Subscription::for_type(db, self.key())?
+                    .into_iter()
+                    .filter(|s| players.contains(&s.player_id))
                     .collect())
             }
             PushType::DayResult(_, player_id, _) => Ok(Subscription::for_player(db, *player_id)?
@@ -322,6 +339,25 @@ impl PushType {
                         basho_id: basho.id,
                         start_date: basho.start_date.timestamp_millis(),
                     },
+                }
+            }
+            PushType::KyujyoAlert(basho_id, rikishi_id) => {
+                let (rikishi_name, rank): (String, Rank) = db.query_row(
+                    "
+                    SELECT family_name, rank FROM banzuke
+                    WHERE basho_id = ? AND rikishi_id = ?
+                ",
+                    params![basho_id, rikishi_id],
+                    |row| Ok((row.get(0)?, row.get(1)?)),
+                )?;
+                Payload {
+                    title: "Kyujyo Alert!".to_owned(),
+                    body: format!(
+                        "{} ({}) has gone kyujyo. You should pick another rikishi.",
+                        rikishi_name, rank
+                    ),
+                    url,
+                    data: PayloadData::Empty,
                 }
             }
             PushType::DayResult(basho_id, player_id, day) => {
@@ -405,6 +441,55 @@ impl PushType {
 
         Ok(payload)
     }
+}
+
+pub async fn mass_notify_kyujyo(
+    db_conn: &DbConn,
+    push_builder: &PushBuilder,
+    url: &Url,
+    basho_id: BashoId,
+) -> Result<()> {
+    let rikishi;
+    {
+        let db = db_conn.lock().unwrap();
+        rikishi = db
+            .prepare(
+                "
+            SELECT rikishi_id, family_name
+            FROM banzuke
+            WHERE basho_id = ? AND kyujyo = 1
+        ",
+            )?
+            .query_map(params![basho_id], |row| Ok((row.get(0)?, row.get(1)?)))?
+            .collect::<rusqlite::Result<Vec<(RikishiId, String)>>>()?;
+    }
+    for (rikishi_id, rikishi_name) in rikishi {
+        info!(
+            "Building kyujyo notice for {} (id {})",
+            rikishi_name, rikishi_id
+        );
+        let payload;
+        let ttl;
+        let subscriptions;
+        {
+            let push_type = PushType::KyujyoAlert(basho_id, rikishi_id);
+            let db = db_conn.lock().unwrap();
+            payload = push_type.build_payload(url, &db)?;
+            ttl = push_type.ttl();
+            subscriptions = push_type.subscriptions(&db)?;
+        }
+        debug!(
+            "Notifying {} devices for kyujyo rikishi {}",
+            subscriptions.len(),
+            rikishi_name
+        );
+        push_builder
+            .clone()
+            .send(payload, ttl, &subscriptions, db_conn)
+            .await?;
+    }
+
+    Ok(())
 }
 
 pub async fn mass_notify_day_result(

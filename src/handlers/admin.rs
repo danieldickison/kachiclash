@@ -1,5 +1,5 @@
 use super::{BaseTemplate, HandlerError, Result};
-use crate::data::push::mass_notify_day_result;
+use crate::data::push::{mass_notify_day_result, mass_notify_kyujyo};
 use crate::data::{self, basho, Award, BashoId, DataError, Player, PlayerId, Rank};
 use crate::external::discord::DiscordAuthProvider;
 use crate::external::google::GoogleAuthProvider;
@@ -44,6 +44,7 @@ pub struct BashoData {
     #[serde(deserialize_with = "deserialize_datetime")]
     start_date: NaiveDateTime,
     banzuke: Vec<BanzukeRikishi>,
+    notify_kyujyo: bool,
 }
 
 impl BashoData {
@@ -63,6 +64,7 @@ impl BashoData {
                     start_date,
                     venue: row.get("venue")?,
                     banzuke: Self::fetch_banzuke(db, id)?,
+                    notify_kyujyo: true,
                 })
             },
         )
@@ -118,19 +120,25 @@ pub async fn edit_basho_post(
     state: web::Data<AppState>,
     identity: Identity,
 ) -> Result<web::Json<BanzukeResponseData>> {
-    let mut db = state.db.lock().unwrap();
-    admin_base(&db, &identity, &state)?;
-    let basho_id = data::basho::update_basho(
-        &mut db,
-        *path,
-        &basho.venue,
-        &basho.start_date,
-        &basho
-            .banzuke
-            .iter()
-            .map(|b| (b.name.to_owned(), b.rank.to_owned(), b.is_kyujyo))
-            .collect::<Vec<_>>(),
-    )?;
+    let basho_id = *path;
+    {
+        let mut db = state.db.lock().unwrap();
+        admin_base(&db, &identity, &state)?;
+        data::basho::update_basho(
+            &mut db,
+            basho_id,
+            &basho.venue,
+            &basho.start_date,
+            &basho
+                .banzuke
+                .iter()
+                .map(|b| (b.name.to_owned(), b.rank.to_owned(), b.is_kyujyo))
+                .collect::<Vec<_>>(),
+        )?;
+    }
+    if basho.notify_kyujyo {
+        mass_notify_kyujyo(&state.db, &state.push, &state.config.url(), basho_id).await?;
+    }
     Ok(web::Json(BanzukeResponseData {
         basho_url: basho_id.url_path(),
     }))
