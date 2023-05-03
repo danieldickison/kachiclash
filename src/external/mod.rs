@@ -2,7 +2,7 @@ use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use oauth2::basic::{BasicClient, BasicTokenResponse};
-use oauth2::{AccessToken, AuthorizationCode, CsrfToken, Scope};
+use oauth2::{AccessToken, AuthorizationCode, CsrfToken, RequestTokenError, Scope};
 use rusqlite::Transaction;
 use url::Url;
 
@@ -68,11 +68,34 @@ pub trait AuthProvider: Send + Sync + Debug {
         config: &Config,
         auth_code: AuthorizationCode,
     ) -> anyhow::Result<BasicTokenResponse> {
+        async fn http_client(
+            request: oauth2::HttpRequest,
+        ) -> Result<oauth2::HttpResponse, oauth2::reqwest::Error<reqwest::Error>> {
+            let mut request = request.clone();
+            request.headers.insert(
+                "User-Agent",
+                "web:com.kachiclash:v0.5.0 (by /u/dand)".parse().unwrap(),
+            );
+            oauth2::reqwest::async_http_client(request).await
+        }
         self.make_oauth_client(config)
             .exchange_code(auth_code)
-            .request_async(oauth2::reqwest::async_http_client)
+            .request_async(http_client)
             .await
-            .map_err(|e| anyhow!("oauth code exchange error: {}", e))
+            .map_err(|e| {
+                let msg = format!("oauth code exchange error: {}", e);
+                match e {
+                    RequestTokenError::Parse(orig, body) => {
+                        trace!("Request token response error: {}", orig);
+                        trace!(
+                            "Request token response body: {}",
+                            String::from_utf8(body).unwrap_or("not utf8".to_string())
+                        );
+                    }
+                    _ => {}
+                }
+                anyhow!(msg)
+            })
     }
 
     async fn get_logged_in_user_info(
