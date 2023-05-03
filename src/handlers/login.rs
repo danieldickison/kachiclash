@@ -55,17 +55,9 @@ pub async fn reddit(state: web::Data<AppState>, session: Session) -> HttpRespons
 
 fn oauth_login(config: &Config, session: Session, provider: impl AuthProvider) -> HttpResponse {
     let (auth_url, csrf_token) = provider.authorize_url(config);
-    trace!(
-        "session entries before login redirect: {:?}",
-        session.entries()
-    );
     session
         .insert("oauth_csrf", csrf_token)
         .expect("could not set oauth_csrf session value");
-    trace!(
-        "session entries after login redirect: {:?}",
-        session.entries()
-    );
     HttpResponse::SeeOther()
         .insert_header((http::header::LOCATION, auth_url.to_string()))
         .finish()
@@ -114,7 +106,6 @@ async fn oauth_redirect(
     session: Session,
     provider: impl AuthProvider + Sync,
 ) -> Result<impl Responder> {
-    trace!("session entries on oauth rerturn: {:?}", session.entries());
     match session.get::<CsrfToken>("oauth_csrf").unwrap_or(None) {
         Some(ref session_csrf) if *session_csrf.secret() == query.state => {
             debug!("exchanging oauth code for access token from {:?}", provider);

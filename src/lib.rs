@@ -112,7 +112,10 @@ pub fn init_env() -> anyhow::Result<AppState> {
     pretty_env_logger::init();
 
     let config = Config::init_from_env().expect("Could not read config from environment");
-    if config.env != "dev" && config.session_secret == "abcdefghijklmnopqrstuvwxyz012345" {
+    if config.env != "dev"
+        && config.session_secret
+            == "abcdefghijklmnopqrstuvwxyz012345abcdefghijklmnopqrstuvwxyz012345"
+    {
         panic!("default session_secret specified for non-dev deployment");
     }
 
