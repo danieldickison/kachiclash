@@ -1,6 +1,6 @@
 [package]
 name = "kachiclash"
-version = "0.5.0"
+version = "1.0.0"
 authors = ["Daniel Dickison <kachiclash@danieldickison.com>"]
 edition = "2021"
 publish = false
@@ -39,7 +39,7 @@ version = "0.7.2"
 features = ["cookie-session"]
 
 [dependencies.askama]
-version = "0.12 "
+version = "0.12"
 features = ["with-actix-web"]
 
 [dependencies.rusqlite]

@@ -71,10 +71,13 @@ pub trait AuthProvider: Send + Sync + Debug {
         async fn http_client(
             mut request: oauth2::HttpRequest,
         ) -> Result<oauth2::HttpResponse, oauth2::reqwest::Error<reqwest::Error>> {
-            request.headers.insert(
-                "User-Agent",
-                "web:com.kachiclash:v0.5.0 (by /u/dand)".parse().unwrap(),
+            let user_agent = format!(
+                "web:com.kachiclash:v{} (by /u/dand)",
+                env!("CARGO_PKG_VERSION")
             );
+            request
+                .headers
+                .insert("User-Agent", user_agent.parse().unwrap());
             oauth2::reqwest::async_http_client(request).await
         }
         self.make_oauth_client(config)
