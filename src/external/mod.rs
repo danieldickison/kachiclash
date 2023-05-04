@@ -69,9 +69,8 @@ pub trait AuthProvider: Send + Sync + Debug {
         auth_code: AuthorizationCode,
     ) -> anyhow::Result<BasicTokenResponse> {
         async fn http_client(
-            request: oauth2::HttpRequest,
+            mut request: oauth2::HttpRequest,
         ) -> Result<oauth2::HttpResponse, oauth2::reqwest::Error<reqwest::Error>> {
-            let mut request = request.clone();
             request.headers.insert(
                 "User-Agent",
                 "web:com.kachiclash:v0.5.0 (by /u/dand)".parse().unwrap(),
