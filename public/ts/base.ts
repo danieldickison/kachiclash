@@ -1,7 +1,7 @@
 // Init basho start count down clock
 for (const timeSpan of document.querySelectorAll('.js-basho-count-down') as NodeListOf<HTMLElement>) {
   const startTimestamp = parseInt(timeSpan.dataset.startDate)
-  const updateTimeRemaining = function () {
+  const updateTimeRemaining = function() {
     const remaining = (startTimestamp - Date.now()) / 1000
     const seconds = Math.floor(remaining % 60)
     const minutes = Math.floor(remaining / 60) % 60
@@ -60,14 +60,16 @@ if (menuHeader instanceof HTMLAnchorElement) {
   const bodyClickHandler = (event: Event) => {
     const target = event.target
     if (target instanceof Element && !target.matches('.player-menu *')) {
-      event.preventDefault()
       playerMenu.classList.remove('open')
-      document.body.removeEventListener('click', bodyClickHandler, { capture: true })
+      window.removeEventListener('click', bodyClickHandler, { capture: true })
     }
   }
   menuHeader.addEventListener('click', event => {
     event.preventDefault()
-    playerMenu.classList.toggle('open')
-    document.body.addEventListener('click', bodyClickHandler, { capture: true })
+    if (playerMenu.classList.toggle('open')) {
+      window.addEventListener('click', bodyClickHandler, { capture: true })
+    } else {
+      window.removeEventListener('click', bodyClickHandler, { capture: true })
+    }
   })
 }
