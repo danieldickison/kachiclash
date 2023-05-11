@@ -1,7 +1,7 @@
 /target
 *.sublime-workspace
 .DS_Store
-/var/kachiclash.sqlite*
+/var/*.sqlite*
 /run-dev-server
 /public/css
 /.idea/workspace.xml
