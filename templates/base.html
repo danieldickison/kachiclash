@@ -38,13 +38,13 @@
             {%- when Some with (player) -%}
                 {{player.render().unwrap()|safe}}
                 <menu>
-                    <li><a href="/stats">stats</a></li>
-                    <li><a href="https://discordapp.com/invite/Wg4DsMt" target="_blank">discord</a></li>
-                    <li><a class="dbox-donation-button" href="https://donorbox.org/kachi-clash-website-donations" target="_blank">donate</a></li>
-                    <li><hr /></li>
                     <li><a href="{{player.url_path()}}">profile</a></li>
                     <li><a href="/settings">settings</a></li>
                     <li><a href="/logout">log out</a></li>
+                    <li><hr /></li>
+                    <li><a href="/stats">stats</a></li>
+                    <li><a href="https://discordapp.com/invite/Wg4DsMt" target="_blank">discord</a></li>
+                    <li><a class="dbox-donation-button" href="https://donorbox.org/kachi-clash-website-donations" target="_blank">donate</a></li>
                 </menu>
 
             {%- when None -%}
