@@ -106,6 +106,20 @@ a {
         text-decoration: underline;
     }
 }
+button.g-link-button {
+    text-decoration: none;
+    color: var(--color-navy);
+    font-weight: 500;
+    border: none;
+    background: none;
+    padding: 0;
+    margin: 0;
+    display: inline;
+    
+    &:hover {
+        text-decoration: underline;
+    }
+}
 
 h2 {
     text-align: center;
@@ -215,6 +229,41 @@ section {
     }
 }
 
+#push-promo {
+    display: none;
+    z-index: -1;
+    position: absolute;
+    top: calc(var(--header-height) + 1rem);
+    right: 1.5rem;
+    width: 10rem;
+    background: var(--color-light-yellow-bg-opaque);
+    padding: 0.5rem;
+    color: var(--color-fg);
+    box-shadow: 0 2px 6px #0003;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    
+    &::before {
+        content: ' ';
+        display: block;
+        position: absolute;
+        clip-path: polygon(0 100%, 50% 0, 100% 100%);
+        background: var(--color-light-yellow-bg-opaque);
+        right: 1rem;
+        top: -1rem;
+        width: 2rem;
+        height: 1rem;
+    }
+    
+    p {
+        margin: 0;
+    }
+    
+    button {
+        float: right;
+    }
+}
+
 body > main {
     width: 100%;
     max-width: var(--content-max-width);
@@ -293,6 +342,21 @@ hr {
     }
 }
 
+button, a.g-small-button {
+    font-size: 0.875rem;
+    background: var(--color-bg-sub);
+    color: var(--color-fg);
+    border: solid 1px var(--color-border);
+    border-radius: 3px;
+    display: inline-block;
+    margin: 0.5rem;
+    padding: 0.125rem 0.25rem;
+
+    &:active {
+        background: var(--color-navy-highlight);
+    }
+}
+    
 .g-big-button {
     font-size: 1.5rem;
     background: var(--color-bg-inv);
@@ -305,21 +369,6 @@ hr {
 
     &:active {
         background: var(--color-mauve);
-    }
-}
-
-.g-small-button {
-    font-size: 0.875rem;
-    background: var(--color-bg-sub);
-    color: var(--color-fg);
-    border: solid 1px var(--color-border);
-    border-radius: 3px;
-    display: block;
-    margin: 0.5rem;
-    padding: 0.125rem 0.25rem;
-
-    &:active {
-        background: var(--color-navy-highlight);
     }
 }
 

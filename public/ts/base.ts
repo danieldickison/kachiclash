@@ -1,7 +1,8 @@
-export default {}
+import { pushPermissionState } from './service-client.js'
 
 initBashoCountDown()
 initUserMenu()
+initPushPromo()
 
 // Init basho start count down clock
 function initBashoCountDown() {
@@ -76,4 +77,21 @@ function initUserMenu() {
       }
     })
   }
+}
+
+async function initPushPromo() {
+  const promo = document.getElementById('push-promo')
+
+  if (!promo || localStorage.getItem('push-promo-dismissed') || await pushPermissionState() !== 'prompt') {
+    return
+  }
+
+  promo.style.display = 'block'
+
+  const dismiss = promo.querySelector('button') as HTMLButtonElement
+  dismiss.addEventListener('click', event => {
+    event.preventDefault()
+    promo.style.display = ''
+    localStorage.setItem('push-promo-dismissed', '1')
+  })
 }

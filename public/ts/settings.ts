@@ -9,7 +9,6 @@ const saveButton = form.querySelector('.save-button') as HTMLButtonElement
 const nameField = form.elements['name'] as HTMLInputElement
 const testNotificationButton = form.elements['test-notification'] as HTMLButtonElement
 const notifications = form.elements['notifications'] as HTMLFieldSetElement
-const shareMenuButton = notifications.querySelector('.share-menu') as HTMLAnchorElement
 const typeCheckboxes = notifications.querySelectorAll('input[type="checkbox"]') as NodeListOf<HTMLInputElement>
 
 let subscriptionState: SubscriptionState | null = null
@@ -30,11 +29,6 @@ form.addEventListener('input', _event => {
 testNotificationButton.addEventListener('click', async event => {
   event.preventDefault()
   await sendTestNotification()
-})
-
-shareMenuButton.addEventListener('click', async event => {
-  event.preventDefault()
-  await navigator.share()
 })
 
 async function refreshState() {
