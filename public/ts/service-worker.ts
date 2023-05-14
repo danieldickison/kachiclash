@@ -37,12 +37,17 @@
   })
 
   async function openOrFocusClient(url: string) {
-    let client = (await self.clients.matchAll())[0]
+    const client = (await self.clients.matchAll())[0]
     // todo: maybe match client url with deets from notification
 
-    console.debug(`opening ${url} in ${client ? 'existing' : 'new'} window`)
-    client ||= await self.clients.openWindow(url)
-    await client.focus()
+    if (client) {
+      console.debug(`opening ${url} in existing client`, client)
+      await client.focus()
+      await client.navigate(url)
+    } else {
+      console.debug(`opening ${url} in new window`)
+      await self.clients.openWindow(url)
+    }
 
     // close all notifications indiscriminately; probably no reason to keep any notifications around
     const oldNotifications = await self.registration.getNotifications()
