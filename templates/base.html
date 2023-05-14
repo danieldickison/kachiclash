@@ -16,6 +16,19 @@
     <script async defer data-domain="kachiclash.com" src="https://plausible.io/js/plausible.js"></script>
     <script defer src="https://donorbox.org/install-popup-button.js"></script>
     
+    {# Show standard placeholder for broken player avatar images #}
+    <script>
+        window.addEventListener(
+            'error',
+            event => {
+                if (event.target instanceof HTMLImageElement && event.target.classList.contains('js-player-img')) {
+                    event.target.src = '/static/img/oicho-silhouette.png'
+                }
+            },
+            true
+        )
+    </script>
+    
     {% block head %}{% endblock %}
 </head>
 <body>
