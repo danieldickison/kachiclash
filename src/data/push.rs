@@ -534,7 +534,7 @@ pub async fn mass_notify_day_result(
         }
         trace!(
             "Notifying player {}/{} id {} with {} subscriptions: {}",
-            i,
+            i + 1,
             player_ids.len(),
             player_id,
             subscriptions.len(),
