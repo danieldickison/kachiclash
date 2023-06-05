@@ -68,16 +68,16 @@ impl BashoPlayerResults {
                 "
                 SELECT
                     player.*,
-                    COALESCE(br.wins, 0) AS wins,
-                    COALESCE(br.rank, 0) AS rank,
+                    COALESCE(br.wins, 0) AS basho_wins,
+                    COALESCE(br.rank, 0) AS basho_rank,
                     player.id = :player_id AS is_self,
                     GROUP_CONCAT(pick.rikishi_id) AS pick_ids
                 FROM pick
                 JOIN player_info AS player ON player.id = pick.player_id
-                LEFT NATURAL JOIN basho_result AS br
+                LEFT JOIN basho_result AS br USING (player_id, basho_id)
                 WHERE pick.basho_id = :basho_id
                 GROUP BY player.id
-                ORDER BY is_self DESC, wins DESC, player.id ASC
+                ORDER BY is_self DESC, basho_wins DESC, player.id ASC
                 LIMIT :limit
             ",
             )
@@ -91,8 +91,8 @@ impl BashoPlayerResults {
                 |row| -> SqlResult<(Player, u8, u32, String)> {
                     Ok((
                         Player::from_row(row)?,
-                        row.get("wins")?,
-                        row.get("rank")?,
+                        row.get("basho_wins")?,
+                        row.get("basho_rank")?,
                         row.get("pick_ids")?,
                     ))
                 },
@@ -112,7 +112,7 @@ impl BashoPlayerResults {
                 }
                 let (days, total_validation) = picks_to_days(&pick_rikishi);
                 if total != total_validation {
-                    warn!("total wins for player {player} mismatch betwen basho_result {total} and live data {total_validation}")
+                    warn!("total wins for player {} mismatch betwen basho_result {total} and live data {total_validation}", player.name)
                 }
                 BashoPlayerResults {
                     is_self: player_id.map_or(false, |id| player.id == id),

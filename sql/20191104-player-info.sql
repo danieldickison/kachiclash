@@ -1,3 +1,5 @@
+-- DEPRECATED; see new version in 20230605-player_rank.sql
+
 CREATE VIEW player_info (
     id, name, join_date, admin_level,
     discord_user_id, discord_avatar, discord_discriminator,

@@ -13,6 +13,7 @@ use std::fmt;
 use std::result::Result as StdResult;
 use std::str::FromStr;
 
+use super::leaders::HistoricLeader;
 use super::{
     Award, DataError, Day, Player, PlayerId, Rank, RankGroup, RankSide, Result, RikishiId,
 };
@@ -787,13 +788,14 @@ pub fn finalize_basho(db: &mut Connection, basho_id: BashoId) -> Result<()> {
     debug!("finalizing basho {}", basho_id);
     let txn = db.transaction()?;
     upsert_basho_results(&txn, basho_id, true)?;
+    upsert_player_ranks(&txn, basho_id)?;
     debug!("committing");
     txn.commit()?;
     Ok(())
 }
 
 fn upsert_basho_results(txn: &Transaction, basho_id: BashoId, bestow_awards: bool) -> Result<()> {
-    debug!(
+    info!(
         "upsert_basho_results for {}; bestow_awards: {}",
         basho_id, bestow_awards
     );
@@ -836,6 +838,33 @@ fn upsert_basho_results(txn: &Transaction, basho_id: BashoId, bestow_awards: boo
             debug!("  ! awarding emperor's cup to {}", p.name);
             insert_award_stmt.execute(params![basho_id, p.id, Award::EmperorsCup])?;
         }
+    }
+    Ok(())
+}
+
+fn upsert_player_ranks(txn: &Transaction, last_basho: BashoId) -> Result<()> {
+    let basho_range = last_basho.incr(-6)..last_basho.incr(1);
+    let leaders = HistoricLeader::with_basho_range(&txn, basho_range, u32::MAX)?;
+    info!(
+        "upsert_player_ranks for {} players after basho {}",
+        leaders.len(),
+        last_basho
+    );
+    let mut insert_rank_stmt = txn.prepare(
+        "
+            INSERT INTO player_rank (player_id, rank, past_year_wins)
+            VALUES (?, ?, ?)
+        ",
+    )?;
+    for l in leaders {
+        debug!(
+            "- player {} ({}) now ranked {} with {} wins",
+            l.player.id,
+            l.player.name,
+            l.rank,
+            l.wins.total.unwrap_or(0)
+        );
+        insert_rank_stmt.execute(params![l.player.id, l.rank, l.wins.total.unwrap_or(0)])?;
     }
     Ok(())
 }
