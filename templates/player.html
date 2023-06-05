@@ -25,9 +25,17 @@
                 {{crate::data::award::Award::EmperorsCup.emoji()}}
             {%- endif %}
         </div>
-        <div class="join-date">
-            Joined: {{player.join_date.format("%Y-%m-%d")}} via {{player.login_service_name()}}
-        </div>
+        <ul class="stats">
+            <li class="rank">
+                {%- match player.rank -%}
+                {%- when Some(rank) -%} Rank: {{rank|fmt("{:#}")}}
+                {%- when None -%} Unranked
+                {%- endmatch -%}
+            </li>
+            <li class="join-date">
+                Joined: {{player.join_date.format("%Y-%m-%d")}} via {{player.login_service_name()}}
+            </li>
+        </ul>
     </section>
 
     <section id="history">
