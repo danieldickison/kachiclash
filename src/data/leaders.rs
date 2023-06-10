@@ -247,13 +247,13 @@ impl HistoricLeader {
                 FROM (
                     SELECT p.id, r.basho_id, r.wins, r.rank
                     FROM player AS p
-                    LEFT JOIN basho_result AS r ON r.player_id = p.id AND r.basho_id >= ? AND r.basho_id < ?
+                    JOIN basho_result AS r ON r.player_id = p.id AND r.basho_id >= ? AND r.basho_id < ?
 
                     UNION ALL
 
                     SELECT p.id, e.basho_id, e.wins, e.rank
                     FROM player AS p
-                    LEFT JOIN external_basho_player AS e ON e.name = p.name AND e.basho_id >= ? AND e.basho_id < ?
+                    JOIN external_basho_player AS e ON e.name = p.name AND e.basho_id >= ? AND e.basho_id < ?
                 ) AS r
                 JOIN player_info AS p ON p.id = r.id
                 LEFT JOIN player_rank AS pr ON pr.player_id = p.id AND pr.before_basho_id = ?

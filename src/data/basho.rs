@@ -843,7 +843,8 @@ fn upsert_basho_results(txn: &Transaction, basho_id: BashoId, bestow_awards: boo
 }
 
 fn upsert_player_ranks(txn: &Transaction, last_basho: BashoId) -> Result<()> {
-    let basho_range = last_basho.incr(-6)..last_basho.incr(1);
+    let before_basho_id = last_basho.incr(1);
+    let basho_range = before_basho_id.incr(-6)..before_basho_id;
     let leaders = HistoricLeader::with_basho_range(&txn, basho_range, u32::MAX)?;
     info!(
         "upsert_player_ranks for {} players after basho {}",
@@ -852,19 +853,24 @@ fn upsert_player_ranks(txn: &Transaction, last_basho: BashoId) -> Result<()> {
     );
     let mut insert_rank_stmt = txn.prepare(
         "
-            INSERT INTO player_rank (player_id, rank, past_year_wins)
-            VALUES (?, ?, ?)
+            INSERT INTO player_rank (player_id, before_basho_id, rank, past_year_wins)
+            VALUES (?, ?, ?, ?)
         ",
     )?;
     for l in leaders {
         debug!(
-            "- player {} ({}) now ranked {} with {} wins",
+            "- player {} ({}) ranked {} with {} wins",
             l.player.id,
             l.player.name,
             l.rank,
             l.wins.total.unwrap_or(0)
         );
-        insert_rank_stmt.execute(params![l.player.id, l.rank, l.wins.total.unwrap_or(0)])?;
+        insert_rank_stmt.execute(params![
+            l.player.id,
+            before_basho_id,
+            l.rank,
+            l.wins.total.unwrap_or(0)
+        ])?;
     }
     Ok(())
 }
