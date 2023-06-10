@@ -1,4 +1,4 @@
--- DEPRECATED; see new version in 20230605-player_rank.sql
+-- DEPRECATED; see new version in 20191106 migration
 
 CREATE VIEW player_info (
     id, name, join_date, admin_level,

@@ -8,7 +8,6 @@ CREATE TABLE player_reddit (
 
 CREATE INDEX player_reddit__player_id ON player_reddit (player_id);
 
--- DEPRECATED; see new version in 20230605
 DROP VIEW player_info;
 CREATE VIEW player_info (
     id, name, join_date, admin_level,

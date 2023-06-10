@@ -68,12 +68,14 @@ impl BashoPlayerResults {
                 "
                 SELECT
                     player.*,
+                    pr.rank,
                     COALESCE(br.wins, 0) AS basho_wins,
                     COALESCE(br.rank, 0) AS basho_rank,
                     player.id = :player_id AS is_self,
                     GROUP_CONCAT(pick.rikishi_id) AS pick_ids
                 FROM pick
                 JOIN player_info AS player ON player.id = pick.player_id
+                LEFT JOIN player_rank AS pr ON pr.player_id = player.id AND pr.before_basho_id = pick.basho_id
                 LEFT JOIN basho_result AS br USING (player_id, basho_id)
                 WHERE pick.basho_id = :basho_id
                 GROUP BY player.id
@@ -234,6 +236,7 @@ impl HistoricLeader {
         let mut leaders = db.prepare("
                 SELECT
                     p.*,
+                    pr.rank,
                     SUM(r.wins) AS total_wins,
                     MIN(r.wins) AS min_wins,
                     MAX(r.wins) AS max_wins,
@@ -253,12 +256,13 @@ impl HistoricLeader {
                     LEFT JOIN external_basho_player AS e ON e.name = p.name AND e.basho_id >= ? AND e.basho_id < ?
                 ) AS r
                 JOIN player_info AS p ON p.id = r.id
+                LEFT JOIN player_rank AS pr ON pr.player_id = p.id AND pr.before_basho_id = ?
                 GROUP BY p.id
                 ORDER BY total_wins DESC, max_wins DESC, min_rank ASC NULLS LAST
                 LIMIT ?
             ")?
             .query_and_then(
-                params![range.start, range.end, range.start, range.end, player_limit],
+                params![range.start, range.end, range.start, range.end, range.end, player_limit],
                 |row| Ok(Self {
                     player: Player::from_row(row)?,
                     ord: 0,
