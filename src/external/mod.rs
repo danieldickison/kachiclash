@@ -86,15 +86,12 @@ pub trait AuthProvider: Send + Sync + Debug {
             .await
             .map_err(|e| {
                 let msg = format!("oauth code exchange error: {}", e);
-                match e {
-                    RequestTokenError::Parse(orig, body) => {
-                        trace!("Request token response error: {}", orig);
-                        trace!(
-                            "Request token response body: {}",
-                            String::from_utf8(body).unwrap_or("not utf8".to_string())
-                        );
-                    }
-                    _ => {}
+                if let RequestTokenError::Parse(orig, body) = e {
+                    trace!("Request token response error: {}", orig);
+                    trace!(
+                        "Request token response body: {}",
+                        String::from_utf8(body).unwrap_or("not utf8".to_string())
+                    );
                 }
                 anyhow!(msg)
             })

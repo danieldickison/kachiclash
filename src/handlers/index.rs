@@ -1,7 +1,5 @@
-use std::ops::Range;
-
 use super::{BaseTemplate, IdentityExt, Result};
-use crate::data::leaders::HistoricLeader;
+use crate::data::leaders::PlayerRanking;
 use crate::data::{BashoId, BashoInfo, Rank};
 use crate::util::GroupRuns;
 use crate::AppState;
@@ -14,7 +12,7 @@ use askama::Template;
 #[template(path = "index.html")]
 pub struct IndexTemplate {
     base: BaseTemplate,
-    leaders: Vec<HistoricLeader>,
+    leaders: Vec<PlayerRanking>,
     self_leader_index: Option<usize>,
     current_basho: Option<BashoInfo>,
     prev_basho: Option<BashoInfo>,
@@ -23,18 +21,18 @@ pub struct IndexTemplate {
 }
 
 impl IndexTemplate {
-    fn leaders_by_rank(&self) -> Vec<(Rank, &[HistoricLeader])> {
+    fn leaders_by_rank(&self) -> Vec<(Rank, &[PlayerRanking])> {
         self.leaders
             .group_runs(|a, b| a.rank == b.rank)
             .map(|group| (group.first().unwrap().rank, group))
             .collect()
     }
 
-    fn self_leader(&self) -> Option<&HistoricLeader> {
+    fn self_leader(&self) -> Option<&PlayerRanking> {
         self.self_leader_index.and_then(|i| self.leaders.get(i))
     }
 
-    fn is_self(&self, leader: &HistoricLeader) -> bool {
+    fn is_self(&self, leader: &PlayerRanking) -> bool {
         if let Some(self_leader) = self.self_leader() {
             self_leader.player.id == leader.player.id
         } else {
@@ -42,8 +40,6 @@ impl IndexTemplate {
         }
     }
 }
-
-const LEADERS_LIMIT: u32 = 270;
 
 #[route("/", method = "GET", method = "HEAD")]
 pub async fn index(
@@ -56,11 +52,7 @@ pub async fn index(
         .as_ref()
         .map(|basho| basho.id.next())
         .unwrap_or_else(|| "201911".parse().unwrap());
-    let leaders_basho_range = Range {
-        start: next_basho_id.incr(-6),
-        end: next_basho_id,
-    };
-    let leaders = HistoricLeader::with_basho_range(&db, leaders_basho_range, LEADERS_LIMIT)?;
+    let leaders = PlayerRanking::for_home_page(&db, next_basho_id)?;
     let self_leader_index = match identity.as_ref() {
         Some(id) => {
             let player_id = id.player_id()?;

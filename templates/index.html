@@ -81,7 +81,7 @@
                                 {{player.player.render().unwrap()|safe}}
                             </span>
                             <span class="wins">
-                                {%- call numeric_stat(player.wins.total) -%}
+                                {{-player.wins-}}
                             </span>
                         </li>
                     {% endfor %}
@@ -98,10 +98,3 @@
         </div>
     </section>
 {% endblock %}
-
-{%- macro numeric_stat(opt_num) -%}
-    {%- match opt_num -%}
-    {%- when Some with (num) -%} {{"{:.1}"|format(num)}}
-    {%- when None -%}
-    {%- endmatch -%}
-{%- endmacro -%}

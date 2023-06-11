@@ -68,16 +68,18 @@ impl BashoPlayerResults {
                 "
                 SELECT
                     player.*,
-                    COALESCE(br.wins, 0) AS wins,
-                    COALESCE(br.rank, 0) AS rank,
+                    pr.rank,
+                    COALESCE(br.wins, 0) AS basho_wins,
+                    COALESCE(br.rank, 0) AS basho_rank,
                     player.id = :player_id AS is_self,
                     GROUP_CONCAT(pick.rikishi_id) AS pick_ids
                 FROM pick
                 JOIN player_info AS player ON player.id = pick.player_id
-                LEFT NATURAL JOIN basho_result AS br
+                LEFT JOIN player_rank AS pr ON pr.player_id = player.id AND pr.before_basho_id = pick.basho_id
+                LEFT JOIN basho_result AS br USING (player_id, basho_id)
                 WHERE pick.basho_id = :basho_id
                 GROUP BY player.id
-                ORDER BY is_self DESC, wins DESC, player.id ASC
+                ORDER BY is_self DESC, basho_wins DESC, player.id ASC
                 LIMIT :limit
             ",
             )
@@ -91,8 +93,8 @@ impl BashoPlayerResults {
                 |row| -> SqlResult<(Player, u8, u32, String)> {
                     Ok((
                         Player::from_row(row)?,
-                        row.get("wins")?,
-                        row.get("rank")?,
+                        row.get("basho_wins")?,
+                        row.get("basho_rank")?,
                         row.get("pick_ids")?,
                     ))
                 },
@@ -112,7 +114,7 @@ impl BashoPlayerResults {
                 }
                 let (days, total_validation) = picks_to_days(&pick_rikishi);
                 if total != total_validation {
-                    warn!("total wins for player {player} mismatch betwen basho_result {total} and live data {total_validation}")
+                    warn!("total wins for player {} mismatch betwen basho_result {total} and live data {total_validation}", player.name)
                 }
                 BashoPlayerResults {
                     is_self: player_id.map_or(false, |id| player.id == id),
@@ -197,6 +199,52 @@ fn picks_to_days(picks: &[Option<&BashoRikishi>; 5]) -> ([Option<u8>; 15], u8) {
     (days, total_validation)
 }
 
+pub struct PlayerRanking {
+    pub player: Player,
+    pub ord: usize,
+    pub rank: Rank,
+    pub wins: u32,
+}
+
+impl Rankable for PlayerRanking {
+    fn get_score(&self) -> i32 {
+        self.wins as i32
+    }
+
+    fn set_rank(&mut self, ord: usize) {
+        self.ord = ord;
+    }
+}
+
+impl PlayerRanking {
+    pub fn for_home_page(db: &Connection, next_basho_id: BashoId) -> Result<Vec<Self>> {
+        let mut rows = db
+            .prepare(
+                "
+            SELECT
+                p.*,
+                pr.rank,
+                pr.past_year_wins
+            FROM player_rank AS pr
+            JOIN player_info AS p ON p.id = pr.player_id
+            WHERE pr.before_basho_id = ?
+            ORDER BY past_year_wins DESC, LOWER(name) ASC
+        ",
+            )?
+            .query_map(params![next_basho_id], |row| {
+                Ok(Self {
+                    player: Player::from_row(row)?,
+                    ord: 0, // set later
+                    rank: row.get("rank")?,
+                    wins: row.get("past_year_wins")?,
+                })
+            })?
+            .collect::<rusqlite::Result<Vec<Self>>>()?;
+        assign_ord(&mut rows.iter_mut());
+        Ok(rows)
+    }
+}
+
 #[derive(Debug)]
 pub struct HistoricLeader {
     pub player: Player,
@@ -244,13 +292,13 @@ impl HistoricLeader {
                 FROM (
                     SELECT p.id, r.basho_id, r.wins, r.rank
                     FROM player AS p
-                    LEFT JOIN basho_result AS r ON r.player_id = p.id AND r.basho_id >= ? AND r.basho_id < ?
+                    JOIN basho_result AS r ON r.player_id = p.id AND r.basho_id >= ? AND r.basho_id < ?
 
                     UNION ALL
 
                     SELECT p.id, e.basho_id, e.wins, e.rank
                     FROM player AS p
-                    LEFT JOIN external_basho_player AS e ON e.name = p.name AND e.basho_id >= ? AND e.basho_id < ?
+                    JOIN external_basho_player AS e ON e.name = p.name AND e.basho_id >= ? AND e.basho_id < ?
                 ) AS r
                 JOIN player_info AS p ON p.id = r.id
                 GROUP BY p.id

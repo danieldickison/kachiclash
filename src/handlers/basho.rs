@@ -11,7 +11,7 @@ use crate::data::{
 };
 use crate::AppState;
 
-use actix_web::{http, web, Either, HttpResponse, Responder};
+use actix_web::{get, http, post, web, Either, HttpResponse, Responder};
 use askama::Template;
 
 #[derive(Template)]
@@ -44,6 +44,7 @@ pub struct BashoQuery {
     all: Option<bool>,
 }
 
+#[get("")]
 pub async fn basho(
     path: web::Path<BashoId>,
     query: web::Query<BashoQuery>,
@@ -141,6 +142,7 @@ pub struct SavePicksFormData {
     rank_group_5: Option<RikishiId>,
 }
 
+#[post("/picks")]
 pub async fn save_picks(
     path: web::Path<BashoId>,
     form: web::Form<SavePicksFormData>,

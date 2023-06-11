@@ -10,7 +10,10 @@ pub mod player;
 pub use player::{Player, PlayerId};
 
 pub mod basho;
-pub use basho::{BashoId, BashoInfo, BashoRikishi, BashoRikishiByRank, FetchBashoRikishi};
+pub use basho::{BashoInfo, BashoRikishi, BashoRikishiByRank, FetchBashoRikishi};
+
+pub mod basho_id;
+pub use basho_id::BashoId;
 
 pub mod award;
 pub use award::Award;

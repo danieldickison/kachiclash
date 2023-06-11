@@ -1,5 +1,5 @@
 use crate::data::push::{PushType, Subscription};
-use crate::data::Player;
+use crate::data::{BashoInfo, Player};
 use crate::handlers::HandlerError;
 use crate::AppState;
 use actix_identity::Identity;
@@ -64,7 +64,8 @@ pub async fn trigger(
     let ttl;
     {
         let db = state.db.lock().unwrap();
-        let player = Player::with_id(&db, player_id)?;
+        let current_or_next_basho = BashoInfo::current_or_next_basho_id(&db)?;
+        let player = Player::with_id(&db, player_id, current_or_next_basho)?;
         if !player.map_or(false, |p| p.is_admin()) {
             return Err(HandlerError::MustBeLoggedIn);
         }

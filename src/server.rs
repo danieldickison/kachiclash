@@ -94,45 +94,21 @@ pub async fn run(app_state: &AppState) -> anyhow::Result<()> {
                     .service(handlers::push::test)
                     .service(handlers::push::trigger),
             )
-            .service(web::resource("/stats").route(web::get().to(handlers::stats::stats_page)))
+            .service(handlers::stats::stats_page)
             .service(
                 web::scope("/basho/{basho_id}")
-                    .service(web::resource("").to(handlers::basho::basho))
-                    .service(
-                        web::resource("/edit")
-                            .route(web::get().to(handlers::admin::edit_basho_page))
-                            .route(web::post().to(handlers::admin::edit_basho_post)),
-                    )
-                    .service(
-                        web::resource("/picks").route(web::post().to(handlers::basho::save_picks)),
-                    )
-                    .service(
-                        web::resource("/day/{day}")
-                            .route(web::get().to(handlers::admin::torikumi_page))
-                            .route(web::post().to(handlers::admin::torikumi_post)),
-                    )
-                    .service(
-                        web::resource("/bestow_emperors_cup")
-                            .route(web::post().to(handlers::admin::bestow_emperors_cup)),
-                    )
-                    .service(
-                        web::resource("/revoke_emperors_cup")
-                            .route(web::post().to(handlers::admin::revoke_emperors_cup)),
-                    )
-                    .service(
-                        web::resource("/finalize")
-                            .route(web::post().to(handlers::admin::finalize_basho)),
-                    ),
+                    .service(handlers::basho::basho)
+                    .service(handlers::basho::save_picks)
+                    .service(handlers::admin::edit_basho_page)
+                    .service(handlers::admin::edit_basho_post)
+                    .service(handlers::admin::torikumi_page)
+                    .service(handlers::admin::torikumi_post)
+                    .service(handlers::admin::finalize_basho)
+                    .service(handlers::admin::backfill_player_ranks),
             )
-            .service(
-                web::scope("/player")
-                    .service(web::resource("").to(handlers::admin::list_players))
-                    .service(web::resource("/{player_id}").to(handlers::player::player))
-                    .service(
-                        web::resource("/update_images")
-                            .route(web::post().to(handlers::admin::update_user_images)),
-                    ),
-            )
+            .service(handlers::admin::list_players)
+            .service(handlers::player::player_page)
+            .service(handlers::admin::update_user_images)
             .default_service(web::route().to(default_not_found))
     })
     .workers(workers)

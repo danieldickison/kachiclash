@@ -25,9 +25,17 @@
                 {{crate::data::award::Award::EmperorsCup.emoji()}}
             {%- endif %}
         </div>
-        <div class="join-date">
-            Joined: {{player.join_date.format("%Y-%m-%d")}} via {{player.login_service_name()}}
-        </div>
+        <ul class="stats">
+            <li class="rank">
+                {%- match player.rank -%}
+                {%- when Some(rank) -%} Rank: {{rank|fmt("{:#}")}}
+                {%- when None -%} Unranked
+                {%- endmatch -%}
+            </li>
+            <li class="join-date">
+                Joined: {{player.join_date.format("%Y-%m-%d")}} via {{player.login_service_name()}}
+            </li>
+        </ul>
     </section>
 
     <section id="history">
@@ -35,9 +43,10 @@
             <thead>
                 <tr>
                     <th>Basho</th>
+                    <th class="numeric">Rank</th>
                     <th colspan="5" class="pick">Picks</th>
                     <th class="numeric">Score</th>
-                    <th class="numeric">Rank</th>
+                    <th><!-- basho ranking --></th>
                     <th><!-- awards --></th>
                 </tr>
             </thead>
@@ -45,6 +54,13 @@
                 {% for basho in basho_scores -%}
                 <tr {% if basho.basho_id.month == 1 %} class="first-of-year" {% endif %}>
                     <td><a href="{{basho.basho_id.url_path()}}">{{basho.basho_id}}</a></td>
+                    
+                    <td>
+                        {%- match basho.rank -%}
+                        {%- when Some with (rank) -%} #{{rank}}
+                        {%- when None -%} Unranked
+                        {%- endmatch -%}
+                    </td>
 
                     {% for rikishi in basho.rikishi %}
                     <td class="pick">
@@ -62,8 +78,8 @@
                         {%- endmatch -%}
                     </td>
                     <td class="numeric">
-                        {%- match basho.rank -%}
-                        {%- when Some with (rank) -%} #{{rank}}
+                        {%- match basho.place -%}
+                        {%- when Some with (place) -%} #{{place}}
                         {%- when None -%}
                         {%- endmatch -%}
                     </td>

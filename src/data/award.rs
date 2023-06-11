@@ -15,7 +15,7 @@ impl Award {
         }
     }
 
-    pub fn bestow(
+    pub fn _bestow(
         self,
         db: &mut Connection,
         basho_id: BashoId,
@@ -32,7 +32,7 @@ impl Award {
         .map_err(|e| e.into())
     }
 
-    pub fn revoke(
+    pub fn _revoke(
         self,
         db: &mut Connection,
         basho_id: BashoId,

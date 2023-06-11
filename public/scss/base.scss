@@ -407,6 +407,19 @@ button, a.g-small-button {
         flex: none;
         line-height: 1.5rem;
     }
+    
+    .rank {
+        flex: none;
+        font-weight: lighter;
+        font-size: smaller;
+        
+        &:before {
+            content: '(';
+        }
+        &:after {
+            content: ')';
+        }
+    }
 
     .img-wrapper {
         display: inline-block;

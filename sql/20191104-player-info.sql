@@ -1,3 +1,5 @@
+-- DEPRECATED; see new version in 20191106 migration
+
 CREATE VIEW player_info (
     id, name, join_date, admin_level,
     discord_user_id, discord_avatar, discord_discriminator,

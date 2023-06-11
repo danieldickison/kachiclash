@@ -30,6 +30,7 @@ pub struct Player {
     pub name: String,
     pub join_date: DateTime<Utc>,
     pub emperors_cups: u8,
+    pub rank: Option<Rank>,
     admin_level: u8,
     discord_user_id: Option<String>,
     discord_avatar: Option<String>,
@@ -55,42 +56,54 @@ impl Player {
         Ok(())
     }
 
-    pub fn with_id(db: &Connection, player_id: PlayerId) -> Result<Option<Self>> {
+    pub fn with_id(
+        db: &Connection,
+        player_id: PlayerId,
+        rank_for_basho: BashoId,
+    ) -> Result<Option<Self>> {
         db.query_row(
             "
                 SELECT *
                 FROM player_info AS p
+                LEFT JOIN player_rank AS pr ON pr.player_id = p.id AND pr.before_basho_id = ?
                 WHERE p.id = ?
             ",
-            params![player_id],
+            params![rank_for_basho, player_id],
             Player::from_row,
         )
         .optional()
         .map_err(|e| e.into())
     }
 
-    pub fn with_name(db: &Connection, name: String) -> Result<Option<Self>> {
+    pub fn with_name(
+        db: &Connection,
+        name: String,
+        rank_for_basho: BashoId,
+    ) -> Result<Option<Self>> {
         db.query_row(
             "
                 SELECT *
                 FROM player_info AS p
+                LEFT JOIN player_rank AS pr ON pr.player_id = p.id AND pr.before_basho_id = ?
                 WHERE p.name = ?
             ",
-            params![name],
+            params![rank_for_basho, name],
             Player::from_row,
         )
         .optional()
         .map_err(|e| e.into())
     }
 
-    pub fn list_all(db: &Connection) -> Result<Vec<Self>> {
+    pub fn list_all(db: &Connection, basho_id: BashoId) -> Result<Vec<Self>> {
         db.prepare(
             "
-                SELECT * FROM player_info
+                SELECT *
+                FROM player_info AS p
+                LEFT JOIN player_rank AS pr ON pr.player_id = p.id AND pr.before_basho_id = ?
             ",
         )
         .unwrap()
-        .query_map([], Player::from_row)
+        .query_map(params![basho_id], Player::from_row)
         .map(|mapped_rows| mapped_rows.map(|r| r.unwrap()).collect::<Vec<Player>>())
         .map_err(|e| e.into())
     }
@@ -102,6 +115,11 @@ impl Player {
             join_date: row.get("join_date")?,
             emperors_cups: row.get("emperors_cups")?,
             admin_level: row.get("admin_level")?,
+            rank: match row.get("rank") {
+                Ok(rank) => rank,
+                Err(SqlError::InvalidColumnName(_)) => None,
+                Err(e) => return Err(e),
+            },
             discord_user_id: row.get("discord_user_id")?,
             discord_avatar: row.get("discord_avatar")?,
             discord_discriminator: row.get("discord_discriminator")?,
@@ -240,12 +258,13 @@ pub fn player_id_with_external_user(
     }
 }
 
-#[derive(Debug, serde::Serialize)]
+#[derive(Debug)]
 pub struct BashoScore {
     pub basho_id: BashoId,
+    pub rank: Option<Rank>,
     pub rikishi: [Option<PlayerBashoRikishi>; 5],
     pub wins: Option<u8>,
-    pub rank: Option<u16>,
+    pub place: Option<u16>,
     pub awards: Vec<Award>,
 }
 
@@ -305,14 +324,16 @@ impl BashoScore {
             "
                 SELECT
                     b.id AS basho_id,
+                    pr.rank,
                     COALESCE(r.wins, e.wins) AS wins,
-                    COALESCE(r.rank, e.rank) AS rank,
+                    COALESCE(r.rank, e.rank) AS place,
                     (
                         SELECT COALESCE(GROUP_CONCAT(a.type), '')
                         FROM award AS a
                         WHERE a.basho_id = b.id AND a.player_id = ?
                     ) AS awards
                 FROM basho AS b
+                LEFT JOIN player_rank AS pr ON pr.before_basho_id = b.id AND pr.player_id = ?
                 LEFT JOIN basho_result AS r ON r.basho_id = b.id AND r.player_id = ?
                 LEFT JOIN external_basho_player AS e ON e.basho_id = b.id AND e.name = ?
                 ORDER BY b.id DESC
@@ -320,14 +341,15 @@ impl BashoScore {
         )
         .unwrap()
         .query_map(
-            params![player_id, player_id, player_name],
+            params![player_id, player_id, player_id, player_name],
             |row| -> SqlResult<Self> {
                 let basho_id = row.get("basho_id")?;
                 Ok(BashoScore {
                     basho_id,
+                    rank: row.get("rank")?,
                     rikishi: basho_rikishi.remove(&basho_id).unwrap_or_default(),
                     wins: row.get("wins")?,
-                    rank: row.get("rank")?,
+                    place: row.get("place")?,
                     awards: Award::parse_list(row.get("awards")?),
                 })
             },
