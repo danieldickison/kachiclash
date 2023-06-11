@@ -199,6 +199,52 @@ fn picks_to_days(picks: &[Option<&BashoRikishi>; 5]) -> ([Option<u8>; 15], u8) {
     (days, total_validation)
 }
 
+pub struct PlayerRanking {
+    pub player: Player,
+    pub ord: usize,
+    pub rank: Rank,
+    pub wins: u32,
+}
+
+impl Rankable for PlayerRanking {
+    fn get_score(&self) -> i32 {
+        self.wins as i32
+    }
+
+    fn set_rank(&mut self, ord: usize) {
+        self.ord = ord;
+    }
+}
+
+impl PlayerRanking {
+    pub fn for_home_page(db: &Connection, next_basho_id: BashoId) -> Result<Vec<Self>> {
+        let mut rows = db
+            .prepare(
+                "
+            SELECT
+                p.*,
+                pr.rank,
+                pr.past_year_wins
+            FROM player_rank AS pr
+            JOIN player_info AS p ON p.id = pr.player_id
+            WHERE pr.before_basho_id = ?
+            ORDER BY past_year_wins DESC, LOWER(name) ASC
+        ",
+            )?
+            .query_map(params![next_basho_id], |row| {
+                Ok(Self {
+                    player: Player::from_row(row)?,
+                    ord: 0, // set later
+                    rank: row.get("rank")?,
+                    wins: row.get("past_year_wins")?,
+                })
+            })?
+            .collect::<rusqlite::Result<Vec<Self>>>()?;
+        assign_ord(&mut rows.iter_mut());
+        Ok(rows)
+    }
+}
+
 #[derive(Debug)]
 pub struct HistoricLeader {
     pub player: Player,
