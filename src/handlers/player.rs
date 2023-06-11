@@ -21,10 +21,10 @@ pub async fn player(
 ) -> Result<PlayerTemplate> {
     let name = path.into_inner();
     let db = state.db.lock().unwrap();
-    let player = Player::with_name(&db, name)?
+    let base = BaseTemplate::new(&db, identity.as_ref(), &state)?;
+    let player = Player::with_name(&db, name, base.current_or_next_basho_id)?
         .ok_or_else(|| HandlerError::NotFound("player".to_string()))?;
     let basho_scores = BashoScore::with_player_id(&db, player.id, &player.name)?;
-    let base = BaseTemplate::new(&db, identity.as_ref(), &state)?;
     Ok(PlayerTemplate {
         base,
         player,

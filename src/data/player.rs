@@ -56,42 +56,54 @@ impl Player {
         Ok(())
     }
 
-    pub fn with_id(db: &Connection, player_id: PlayerId) -> Result<Option<Self>> {
+    pub fn with_id(
+        db: &Connection,
+        player_id: PlayerId,
+        rank_for_basho: BashoId,
+    ) -> Result<Option<Self>> {
         db.query_row(
             "
                 SELECT *
                 FROM player_info AS p
+                LEFT JOIN player_rank AS pr ON pr.player_id = p.id AND pr.before_basho_id = ?
                 WHERE p.id = ?
             ",
-            params![player_id],
+            params![rank_for_basho, player_id],
             Player::from_row,
         )
         .optional()
         .map_err(|e| e.into())
     }
 
-    pub fn with_name(db: &Connection, name: String) -> Result<Option<Self>> {
+    pub fn with_name(
+        db: &Connection,
+        name: String,
+        rank_for_basho: BashoId,
+    ) -> Result<Option<Self>> {
         db.query_row(
             "
                 SELECT *
                 FROM player_info AS p
+                LEFT JOIN player_rank AS pr ON pr.player_id = p.id AND pr.before_basho_id = ?
                 WHERE p.name = ?
             ",
-            params![name],
+            params![rank_for_basho, name],
             Player::from_row,
         )
         .optional()
         .map_err(|e| e.into())
     }
 
-    pub fn list_all(db: &Connection) -> Result<Vec<Self>> {
+    pub fn list_all(db: &Connection, basho_id: BashoId) -> Result<Vec<Self>> {
         db.prepare(
             "
-                SELECT * FROM player_info
+                SELECT *
+                FROM player_info AS p
+                LEFT JOIN player_rank AS pr ON pr.player_id = p.id AND pr.before_basho_id = ?
             ",
         )
         .unwrap()
-        .query_map([], Player::from_row)
+        .query_map(params![basho_id], Player::from_row)
         .map(|mapped_rows| mapped_rows.map(|r| r.unwrap()).collect::<Vec<Player>>())
         .map_err(|e| e.into())
     }

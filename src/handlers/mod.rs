@@ -1,6 +1,6 @@
 extern crate askama;
 
-use crate::data::{DataError, Player, PlayerId};
+use crate::data::{BashoId, BashoInfo, DataError, Player, PlayerId};
 use crate::AppState;
 
 use actix_identity::Identity;
@@ -102,6 +102,7 @@ impl From<actix_web::Error> for HandlerError {
 
 struct BaseTemplate {
     player: Option<Player>,
+    current_or_next_basho_id: BashoId,
     vapid_public_key: String,
 }
 
@@ -111,19 +112,23 @@ impl BaseTemplate {
         identity: Option<&Identity>,
         state: &web::Data<AppState>,
     ) -> Result<Self> {
+        let current_or_next_basho_id = BashoInfo::current_or_next_basho_id(&db)?;
         let player = match identity {
             None => None,
             Some(id) => {
                 let player_id = id.player_id()?;
-                Some(Player::with_id(db, player_id)?.ok_or_else(|| {
-                    error!("identity player id {} not found", player_id);
-                    HandlerError::NotFound("player".to_string())
-                })?)
+                Some(
+                    Player::with_id(db, player_id, current_or_next_basho_id)?.ok_or_else(|| {
+                        error!("identity player id {} not found", player_id);
+                        HandlerError::NotFound("player".to_string())
+                    })?,
+                )
             }
         };
         let vapid_public_key = state.config.vapid_public_key.clone();
         Ok(Self {
             player,
+            current_or_next_basho_id,
             vapid_public_key,
         })
     }

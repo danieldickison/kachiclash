@@ -311,8 +311,8 @@ pub async fn list_players(
     let db = state.db.lock().unwrap();
     let base = admin_base(&db, &identity, &state)?;
     Ok(ListPlayersTemplate {
+        players: Player::list_all(&db, base.current_or_next_basho_id)?,
         base,
-        players: Player::list_all(&db)?,
     })
 }
 

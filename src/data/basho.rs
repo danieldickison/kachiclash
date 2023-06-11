@@ -30,7 +30,25 @@ pub struct BashoInfo {
     pub winning_score: Option<u8>,
 }
 
+const VERY_FIRST_BASHO: &'static str = "201901";
+
 impl BashoInfo {
+    /// Returns the current basho id if one is in session; otherwise returns the next basho after that last completed one.
+    pub fn current_or_next_basho_id(db: &Connection) -> Result<BashoId> {
+        let last_completed_basho: Option<BashoId> = db.query_row(
+            "
+            SELECT MAX(id)
+            FROM basho AS b
+            WHERE EXISTS (SELECT 1 FROM award AS a WHERE a.basho_id = b.id)
+        ",
+            [],
+            |row| row.get(0),
+        )?;
+        Ok(last_completed_basho
+            .map(|id| id.incr(1))
+            .unwrap_or_else(|| VERY_FIRST_BASHO.parse().unwrap()))
+    }
+
     pub fn with_id(db: &Connection, id: BashoId) -> Result<Option<BashoInfo>> {
         db.query_row("
             SELECT
