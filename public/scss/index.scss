@@ -116,6 +116,10 @@
                 }
             }
         }
+        
+        .g-player-listing .rank {
+            display: none;
+        }
 
         .grid {
             display: grid;
@@ -170,6 +174,8 @@
                 }
 
                 .wins {
+                    font-size: smaller;
+                    
                     &::before {
                         content: '(';
                     }
