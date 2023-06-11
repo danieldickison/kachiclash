@@ -57,7 +57,7 @@
                     
                     <td>
                         {%- match basho.rank -%}
-                        {%- when Some with (rank) -%} #{{rank}}
+                        {%- when Some with (rank) -%} {{rank}}
                         {%- when None -%} Unranked
                         {%- endmatch -%}
                     </td>
