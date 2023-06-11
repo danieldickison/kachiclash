@@ -5,7 +5,7 @@ use crate::data::leaders::HistoricLeader;
 use crate::data::{BashoId, BashoInfo};
 use crate::AppState;
 use actix_identity::Identity;
-use actix_web::web;
+use actix_web::{get, web};
 use askama::Template;
 
 #[derive(Template)]
@@ -41,6 +41,7 @@ pub struct QueryParams {
 const LEADER_BASHO_COUNT_OPTIONS: [usize; 3] = [6, 3, 2];
 const LEADERS_LIMIT: u32 = 500;
 
+#[get("/stats")]
 pub async fn stats_page(
     query: web::Query<QueryParams>,
     state: web::Data<AppState>,

@@ -1,6 +1,7 @@
 use super::{BaseTemplate, HandlerError, Result};
+use crate::data::basho::backfill_past_player_ranks;
 use crate::data::push::{mass_notify_day_result, mass_notify_kyujyo};
-use crate::data::{self, basho, Award, BashoId, DataError, Player, PlayerId, Rank};
+use crate::data::{self, basho, BashoId, DataError, Player, PlayerId, Rank};
 use crate::external::discord::DiscordAuthProvider;
 use crate::external::google::GoogleAuthProvider;
 use crate::external::reddit::RedditAuthProvider;
@@ -9,7 +10,7 @@ use crate::AppState;
 
 use actix_identity::Identity;
 use actix_session::Session;
-use actix_web::{http, web, HttpResponse, Responder};
+use actix_web::{get, http, post, web, HttpResponse, Responder};
 use anyhow::anyhow;
 use askama::Template;
 use chrono::NaiveDateTime;
@@ -26,6 +27,7 @@ pub struct EditBashoTemplate {
     basho: Option<BashoData>,
 }
 
+#[get("/edit")]
 pub async fn edit_basho_page(
     path: web::Path<BashoId>,
     state: web::Data<AppState>,
@@ -114,6 +116,7 @@ pub struct BanzukeResponseData {
     basho_url: String,
 }
 
+#[post("/edit")]
 pub async fn edit_basho_post(
     path: web::Path<BashoId>,
     basho: web::Json<BashoData>,
@@ -168,6 +171,7 @@ pub struct TorikumiTemplate {
     sumo_db_text: Option<String>,
 }
 
+#[get("/day/{day}")]
 pub async fn torikumi_page(
     path: web::Path<(BashoId, u8)>,
     state: web::Data<AppState>,
@@ -230,6 +234,7 @@ pub struct TorikumiData {
     notify: bool,
 }
 
+#[post("/day/{day}")]
 pub async fn torikumi_post(
     path: web::Path<(BashoId, u8)>,
     torikumi: web::Json<TorikumiData>,
@@ -248,42 +253,7 @@ pub async fn torikumi_post(
     Ok(HttpResponse::Ok().finish())
 }
 
-#[derive(Debug, Deserialize)]
-pub struct AwardData {
-    player_id: PlayerId,
-}
-
-pub async fn bestow_emperors_cup(
-    path: web::Path<BashoId>,
-    award: web::Json<AwardData>,
-    state: web::Data<AppState>,
-    identity: Identity,
-) -> Result<impl Responder> {
-    let mut db = state.db.lock().unwrap();
-    admin_base(&db, &identity, &state)?;
-    let res = Award::EmperorsCup.bestow(&mut db, *path, award.player_id);
-    map_empty_response(res)
-}
-
-pub async fn revoke_emperors_cup(
-    path: web::Path<BashoId>,
-    award: web::Json<AwardData>,
-    state: web::Data<AppState>,
-    identity: Identity,
-) -> Result<impl Responder> {
-    let mut db = state.db.lock().unwrap();
-    admin_base(&db, &identity, &state)?;
-    let res = Award::EmperorsCup.revoke(&mut db, *path, award.player_id);
-    map_empty_response(res)
-}
-
-fn map_empty_response(res: std::result::Result<(), DataError>) -> Result<impl Responder> {
-    match res {
-        Ok(_) => Ok(HttpResponse::Ok()),
-        Err(e) => Err(e.into()),
-    }
-}
-
+#[post("/finalize")]
 pub async fn finalize_basho(
     path: web::Path<BashoId>,
     state: web::Data<AppState>,
@@ -297,6 +267,20 @@ pub async fn finalize_basho(
         .finish())
 }
 
+#[post("/backfill_player_ranks")]
+pub async fn backfill_player_ranks(
+    path: web::Path<BashoId>,
+    state: web::Data<AppState>,
+    identity: Identity,
+) -> Result<impl Responder> {
+    let mut db = state.db.lock().unwrap();
+    admin_base(&db, &identity, &state)?;
+    backfill_past_player_ranks(&mut db, *path)?;
+    Ok(HttpResponse::SeeOther()
+        .insert_header((http::header::LOCATION, &*path.url_path()))
+        .finish())
+}
+
 #[derive(Template)]
 #[template(path = "list_players.html")]
 pub struct ListPlayersTemplate {
@@ -304,6 +288,7 @@ pub struct ListPlayersTemplate {
     players: Vec<Player>,
 }
 
+#[get("/player")]
 pub async fn list_players(
     state: web::Data<AppState>,
     identity: Identity,
@@ -322,6 +307,7 @@ pub struct ImageUpdateData {
     player_ids: Vec<PlayerId>,
 }
 
+#[post("/player/update_images")]
 pub async fn update_user_images(
     json: web::Json<ImageUpdateData>,
     state: web::Data<AppState>,

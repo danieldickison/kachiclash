@@ -1,5 +1,5 @@
 use actix_identity::Identity;
-use actix_web::web;
+use actix_web::{get, web};
 use askama::Template;
 
 use super::{BaseTemplate, HandlerError, Result};
@@ -14,7 +14,8 @@ pub struct PlayerTemplate {
     basho_scores: Vec<BashoScore>,
 }
 
-pub async fn player(
+#[get("/player/{player}")]
+pub async fn player_page(
     path: web::Path<String>,
     state: web::Data<AppState>,
     identity: Option<Identity>,
