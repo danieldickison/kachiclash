@@ -1,21 +1,17 @@
-use chrono::naive::{NaiveDate, NaiveDateTime};
+use chrono::naive::NaiveDateTime;
 use chrono::offset::Utc;
-use chrono::{DateTime, Datelike};
+use chrono::DateTime;
 use itertools::Itertools;
 use result::ResultIteratorExt;
-use rusqlite::types::{FromSql, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
 use rusqlite::{params_from_iter, Connection, Result as SqlResult, Transaction};
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::Deserialize;
 use std::cmp::max;
 use std::collections::{HashMap, HashSet};
 use std::convert::From;
-use std::fmt;
-use std::result::Result as StdResult;
-use std::str::FromStr;
 
 use super::leaders::HistoricLeader;
 use super::{
-    Award, DataError, Day, Player, PlayerId, Rank, RankGroup, RankSide, Result, RikishiId,
+    Award, BashoId, DataError, Day, Player, PlayerId, Rank, RankGroup, RankSide, Result, RikishiId,
 };
 use crate::data::leaders::{assign_ord, Rankable};
 
@@ -225,132 +221,6 @@ impl BashoInfo {
             vec.push(player);
         }
         Ok(map)
-    }
-}
-
-#[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Copy, Clone, Hash)]
-pub struct BashoId {
-    pub year: i32,
-    pub month: u8,
-}
-
-impl BashoId {
-    pub fn id(self) -> String {
-        format!("{:04}{:02}", self.year, self.month)
-    }
-
-    pub fn url_path(self) -> String {
-        format!("/basho/{}", self.id())
-    }
-
-    pub fn season(self) -> String {
-        match self.month {
-            1 => "Hatsu".to_string(),
-            3 => "Haru".to_string(),
-            5 => "Natsu".to_string(),
-            7 => "Nagoya".to_string(),
-            9 => "Aki".to_string(),
-            11 => "Kyushu".to_string(),
-            _ => self.month_name(),
-        }
-    }
-
-    fn month_name(self) -> String {
-        let date = NaiveDate::from_ymd_opt(self.year, self.month.into(), 1)
-            .expect("invalid basho month date");
-        format!("{}", date.format("%B"))
-    }
-
-    pub fn next(self) -> BashoId {
-        self.incr(1)
-    }
-
-    pub fn incr(self, count: isize) -> BashoId {
-        self.incr_month(count * 2)
-    }
-
-    fn incr_month(self, months: isize) -> BashoId {
-        let mut year = self.year;
-        let mut month = (self.month as isize) + months;
-        while month > 12 {
-            year += 1;
-            month -= 12;
-        }
-        while month < 1 {
-            year -= 1;
-            month += 12;
-        }
-        BashoId {
-            year,
-            month: month as u8,
-        }
-    }
-}
-
-impl fmt::Display for BashoId {
-    fn fmt(&self, f: &mut fmt::Formatter) -> StdResult<(), fmt::Error> {
-        write!(
-            f,
-            "{} – {} {:04}",
-            self.season(),
-            self.month_name(),
-            self.year
-        )
-    }
-}
-
-impl FromStr for BashoId {
-    type Err = chrono::format::ParseError;
-    fn from_str(s: &str) -> StdResult<Self, Self::Err> {
-        let with_day = format!("{}01", s);
-        NaiveDate::parse_from_str(&with_day, "%Y%m%d").map(|date| date.into())
-    }
-}
-
-impl From<NaiveDate> for BashoId {
-    fn from(date: NaiveDate) -> Self {
-        Self {
-            year: date.year(),
-            month: date.month() as u8,
-        }
-    }
-}
-
-impl Serialize for BashoId {
-    fn serialize<S>(&self, serializer: S) -> StdResult<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_str(&self.id())
-    }
-}
-
-impl<'de> Deserialize<'de> for BashoId {
-    fn deserialize<D>(deserializer: D) -> StdResult<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        s.parse().map_err(serde::de::Error::custom)
-    }
-}
-
-impl FromSql for BashoId {
-    fn column_result(value: ValueRef) -> FromSqlResult<Self> {
-        value.as_i64().map(|num| Self {
-            year: (num / 100) as i32,
-            month: (num % 100) as u8,
-        })
-    }
-}
-
-impl ToSql for BashoId {
-    fn to_sql(&self) -> rusqlite::Result<ToSqlOutput<'_>> {
-        let id: u32 = self
-            .id()
-            .parse()
-            .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
-        Ok(ToSqlOutput::from(id))
     }
 }
 
@@ -812,6 +682,20 @@ pub fn finalize_basho(db: &mut Connection, basho_id: BashoId) -> Result<()> {
     Ok(())
 }
 
+pub fn backfill_past_player_ranks(db: &mut Connection) -> Result<()> {
+    let first_basho = VERY_FIRST_BASHO.parse().unwrap();
+    let current_basho = BashoInfo::current_or_next_basho_id(&db)?;
+
+    let txn = db.transaction()?;
+    let mut basho_id = first_basho;
+    while basho_id < current_basho {
+        upsert_player_ranks(&txn, basho_id)?;
+        basho_id = basho_id.incr(1);
+    }
+    txn.commit()?;
+    Ok(())
+}
+
 fn upsert_basho_results(txn: &Transaction, basho_id: BashoId, bestow_awards: bool) -> Result<()> {
     info!(
         "upsert_basho_results for {}; bestow_awards: {}",
@@ -873,6 +757,9 @@ fn upsert_player_ranks(txn: &Transaction, last_basho: BashoId) -> Result<()> {
         "
             INSERT INTO player_rank (player_id, before_basho_id, rank, past_year_wins)
             VALUES (?, ?, ?, ?)
+            ON CONFLICT (player_id, before_basho_id) DO UPDATE
+            SET rank = excluded.rank,
+                past_year_wins = excluded.past_year_wins
         ",
     )?;
     for l in leaders {
