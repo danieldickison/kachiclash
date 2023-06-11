@@ -26,7 +26,7 @@ pub struct BashoInfo {
     pub winning_score: Option<u8>,
 }
 
-const VERY_FIRST_BASHO: &'static str = "201901";
+const VERY_FIRST_BASHO: &str = "201901";
 
 impl BashoInfo {
     /// Returns the current basho id if one is in session; otherwise returns the next basho after that last completed one.
@@ -753,7 +753,7 @@ fn upsert_basho_results(txn: &Transaction, basho_id: BashoId, bestow_awards: boo
 fn upsert_player_ranks(txn: &Transaction, last_basho: BashoId) -> Result<()> {
     let before_basho_id = last_basho.incr(1);
     let basho_range = before_basho_id.incr(-6)..before_basho_id;
-    let leaders = HistoricLeader::with_basho_range(&txn, basho_range, u32::MAX)?;
+    let leaders = HistoricLeader::with_basho_range(txn, basho_range, u32::MAX)?;
     info!(
         "upsert_player_ranks for {} players after basho {}",
         leaders.len(),

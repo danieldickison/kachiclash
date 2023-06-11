@@ -44,9 +44,6 @@ features = ["with-actix-web"]
 
 [dependencies.rusqlite]
 version = "0.29"
-features = ["bundled", "chrono"]
-
-[target.'cfg(debug_assertions)'.dependencies.rusqlite]
 features = ["bundled", "chrono", "trace"]
 
 [dependencies.reqwest]

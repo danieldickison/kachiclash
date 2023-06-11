@@ -112,7 +112,7 @@ impl BaseTemplate {
         identity: Option<&Identity>,
         state: &web::Data<AppState>,
     ) -> Result<Self> {
-        let current_or_next_basho_id = BashoInfo::current_or_next_basho_id(&db)?;
+        let current_or_next_basho_id = BashoInfo::current_or_next_basho_id(db)?;
         let player = match identity {
             None => None,
             Some(id) => {
