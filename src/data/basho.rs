@@ -682,13 +682,19 @@ pub fn finalize_basho(db: &mut Connection, basho_id: BashoId) -> Result<()> {
     Ok(())
 }
 
-pub fn backfill_past_player_ranks(db: &mut Connection) -> Result<()> {
+pub fn backfill_past_player_ranks(db: &mut Connection, to_basho: BashoId) -> Result<()> {
     let first_basho = VERY_FIRST_BASHO.parse().unwrap();
-    let current_basho = BashoInfo::current_or_next_basho_id(&db)?;
+    info!(
+        "backfill_past_player_ranks from {} to {}",
+        first_basho, to_basho
+    );
+
+    #[cfg(debug_assertions)]
+    db.trace(Some(|out| trace!("sqlite: {}", out)));
 
     let txn = db.transaction()?;
     let mut basho_id = first_basho;
-    while basho_id < current_basho {
+    while basho_id <= to_basho {
         upsert_player_ranks(&txn, basho_id)?;
         basho_id = basho_id.incr(1);
     }

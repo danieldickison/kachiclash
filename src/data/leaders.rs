@@ -236,7 +236,6 @@ impl HistoricLeader {
         let mut leaders = db.prepare("
                 SELECT
                     p.*,
-                    pr.rank,
                     SUM(r.wins) AS total_wins,
                     MIN(r.wins) AS min_wins,
                     MAX(r.wins) AS max_wins,
@@ -256,13 +255,12 @@ impl HistoricLeader {
                     JOIN external_basho_player AS e ON e.name = p.name AND e.basho_id >= ? AND e.basho_id < ?
                 ) AS r
                 JOIN player_info AS p ON p.id = r.id
-                LEFT JOIN player_rank AS pr ON pr.player_id = p.id AND pr.before_basho_id = ?
                 GROUP BY p.id
                 ORDER BY total_wins DESC, max_wins DESC, min_rank ASC NULLS LAST
                 LIMIT ?
             ")?
             .query_and_then(
-                params![range.start, range.end, range.start, range.end, range.end, player_limit],
+                params![range.start, range.end, range.start, range.end, player_limit],
                 |row| Ok(Self {
                     player: Player::from_row(row)?,
                     ord: 0,
