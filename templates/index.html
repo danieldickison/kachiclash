@@ -7,7 +7,12 @@
 {% endblock %}
 
 {% block main %}
-    <h1 id="g-hero"><img src="{{hero_img_src}}" width="1877" height="799" alt="Kachi Clash — a Grand Sumo prediction game"></h1>
+    <h1 id="g-hero">
+        <picture>
+            <source media="(prefers-color-scheme: dark)" srcset="/static/img2/2021-Kachi-Clash-Banner-2-Dark.png">
+            <img src="{{hero_img_src}}" width="1877" height="799" alt="Kachi Clash — a Grand Sumo prediction game">
+        </picture>
+    </h1>
 
     {% match current_basho %}
     {% when Some with (basho) %}
@@ -36,9 +41,12 @@
         <section id="prev-winners">
             <h2>
                 <a href="{{basho.link_url()}}">
-                    <img src="/static/img2/2021-Basho-Champion.png"
-                        width="1801" height="448"
-                        alt="Congratulations to the previous basho champion">
+                    <picture>
+                        <source media="(prefers-color-scheme: dark)" srcset="/static/img2/2021-Basho-Champion-Dark.png">
+                        <img src="/static/img2/2021-Basho-Champion.png"
+                            width="1801" height="448"
+                            alt="Congratulations to the previous basho champion">
+                    </picture>
                 </a>
             </h2>
             <span class="winners">
