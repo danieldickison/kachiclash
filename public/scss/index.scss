@@ -75,11 +75,11 @@
         // engraved wood appearance
         text-shadow: var(--emboss-text-shadow);
         
-        background-image: url(/static/img2/2021-Player-Rankings3.webp);
+        background-image: url(/static/img2/player-ranking/light-bg.webp);
         background-size: contain;
         background-repeat: no-repeat;
         @media (prefers-color-scheme: dark) {
-            background-image: url(/static/img2/2021-Player-Rankings3-dark.webp);
+            background-image: url(/static/img2/player-ranking/dark-bg.webp);
         }
 
         &::before {
@@ -91,11 +91,11 @@
             left: 0;
             top: 29.63%;
             height: 4.545%;
-            background-image: url(/static/img2/2021-Player-Rankings3-mask.png);
+            background-image: url(/static/img2/player-ranking/light-mask.webp);
             background-size: contain;
             background-repeat: no-repeat;
             @media (prefers-color-scheme: dark) {
-                background-image: url(/static/img2/2021-Player-Rankings3-mask-dark.webp);
+                background-image: url(/static/img2/player-ranking/dark-mask.webp);
             }
         }
 

@@ -5,7 +5,6 @@
 /run-dev-server
 /public/css
 /.idea/workspace.xml
-/art
 /node_modules/
 /public/js/*.js
 /public/js/*.map
