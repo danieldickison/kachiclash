@@ -1,27 +1,30 @@
-const banzukeSection = document.getElementById('banzuke')
+const banzukeSection = document.getElementById('banzuke') as HTMLElement
 const pickForm = document.getElementById('banzuke-select-rikishi-form') as HTMLFormElement
 
-for (const radio of document.querySelectorAll('.select-radio') as NodeListOf<HTMLInputElement>) {
+for (const el of document.querySelectorAll('.select-radio')) {
+  const radio = el as HTMLInputElement
   radio.addEventListener('change', _event => {
     for (const otherRadio of document.getElementsByName(radio.name)) {
-      const label = pickForm.querySelector(`label.click-target[for="${otherRadio.id}"]`)
+      const label = pickForm.querySelector(`label.click-target[for="${otherRadio.id}"]`) as HTMLElement
       label.classList.toggle('is-player-pick', otherRadio === radio)
     }
     // savePicks();
   })
 }
 
-pickForm.addEventListener('submit', async (event) => {
+pickForm.addEventListener('submit', event => {
   event.preventDefault()
   const formData = new FormData(pickForm)
   const url = pickForm.action
   setSelectable(false)
-  const success = await savePicks(formData, url)
-  if (success) {
-    location.reload()
-  } else {
-    setSelectable(true)
-  }
+  void (async function () {
+    const success = await savePicks(formData, url)
+    if (success) {
+      location.reload()
+    } else {
+      setSelectable(true)
+    }
+  })()
 })
 for (const button of document.querySelectorAll('.change-picks-button')) {
   button.addEventListener('click', event => {
@@ -30,15 +33,16 @@ for (const button of document.querySelectorAll('.change-picks-button')) {
   })
 }
 
-function setSelectable(selectable) {
+function setSelectable (selectable: boolean): void {
   banzukeSection.classList.toggle('selectable', selectable)
-  for (const button of document.querySelectorAll('.select-radio') as NodeListOf<HTMLInputElement>) {
+  for (const el of document.querySelectorAll('.select-radio')) {
+    const button = el as HTMLInputElement
     button.disabled = !selectable
   }
 }
 
-async function savePicks(formData, url) {
-  const data = new URLSearchParams(formData)
+async function savePicks (formData: FormData, url: string): Promise<boolean> {
+  const data = new URLSearchParams(formData as unknown as any) // https://github.com/microsoft/TypeScript-DOM-lib-generator/pull/880
   const response = await fetch(url, {
     method: 'POST',
     body: data,

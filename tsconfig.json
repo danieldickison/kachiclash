@@ -2,7 +2,8 @@
   "compilerOptions": {
     "outDir": "public/js",
     "target": "ES2021",
-    "sourceMap": true
+    "sourceMap": true,
+    "strict": true
   },
   "include": ["public/**/*.ts"],
   "exclude": ["node_modules", "**/*.spec.ts"]

@@ -9,7 +9,12 @@
   "author": "Daniel Dickison",
   "license": "ISC",
   "devDependencies": {
-    "ts-standard": "^12.0.2",
+    "@typescript-eslint/eslint-plugin": "^5.60.1",
+    "eslint": "^8.43.0",
+    "eslint-config-standard-with-typescript": "^35.0.0",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-n": "^15.7.0",
+    "eslint-plugin-promise": "^6.1.1",
     "typescript": "^5.1.6",
     "web-push": "^3.6.3"
   },

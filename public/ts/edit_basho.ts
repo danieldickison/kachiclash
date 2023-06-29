@@ -1,5 +1,6 @@
 const bashoForm = document.getElementById('make-basho-form') as HTMLFormElement
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface HTMLFormControlsCollection extends HTMLCollectionBase {
   // [item: string]: HTMLElement | RadioNodeList
   banzuke: HTMLInputElement
@@ -8,12 +9,12 @@ interface HTMLFormControlsCollection extends HTMLCollectionBase {
   notify_kyujyo: HTMLInputElement
 }
 
-let parsedBanzuke
+let parsedBanzuke: Rikishi[]
 bashoForm.elements.banzuke.addEventListener('input', bashoFormInput)
 
-function bashoFormInput(event) {
+function bashoFormInput (): void {
   parsedBanzuke = parseBanzuke(bashoForm.elements.banzuke.value)
-  const tbody = bashoForm.querySelector('.parsed-banzuke tbody')
+  const tbody = bashoForm.querySelector('.parsed-banzuke tbody') as HTMLTableSectionElement
   tbody.innerHTML = ''
   parsedBanzuke.forEach(rikishi => {
     const tr = document.createElement('tr')
@@ -36,14 +37,20 @@ function bashoFormInput(event) {
 // Maches rank and name
 const BANZUKE_REGEX = /^ *(\w{1,2}\d{1,3}[ew]) *(\w+).*?( x)?$/gm
 
-function parseBanzuke(str) {
-  const rikishi = []
-  let match
-  while ((match = BANZUKE_REGEX.exec(str))) {
+interface Rikishi {
+  rank: string
+  name: string
+  is_kyujyo: boolean
+}
+
+function parseBanzuke (str: string): Rikishi[] {
+  const rikishi: Rikishi[] = []
+  let match: any[] | null
+  while (((match = BANZUKE_REGEX.exec(str)) !== null)) {
     rikishi.push({
-      rank: match[1],
-      name: match[2],
-      is_kyujyo: !!match[3]
+      rank: match[1] as string,
+      name: match[2] as string,
+      is_kyujyo: match[3] !== undefined
     })
   }
   return rikishi
@@ -58,7 +65,7 @@ bashoForm.addEventListener('submit', event => {
     notify_kyujyo: bashoForm.elements.notify_kyujyo.checked
   }
   const url = location.href
-  return fetch(url, {
+  fetch(url, {
     method: 'POST',
     body: JSON.stringify(data),
     headers: new Headers({
@@ -66,18 +73,18 @@ bashoForm.addEventListener('submit', event => {
     }),
     credentials: 'same-origin'
   })
-    .then(response => {
+    .then(async response => {
       if (response.ok) {
-        return response.json()
+        return await response.json()
       } else {
-        return response.text().then(msg => { throw msg })
+        return await response.text().then(msg => { throw new Error(msg) })
       }
     })
     .then(json => {
       console.log('json:', json)
       window.location = json.basho_url
     })
-    .catch(err => alert('error saving basho: ' + err))
+    .catch((err: Error) => { alert(`error saving basho: ${err.toString()}`) })
 })
 
-bashoFormInput(null)
+bashoFormInput()

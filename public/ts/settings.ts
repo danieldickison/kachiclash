@@ -1,24 +1,31 @@
-import { sendTestNotification } from "./push.js"
+import { sendTestNotification } from './push.js'
 import {
-  pushPermissionState, pushSubscriptionState, subscribeToPushNotifications, SubscriptionState
-} from "./service-client.js"
+  pushPermissionState, pushSubscriptionState, subscribeToPushNotifications, type SubscriptionState
+} from './service-client.js'
+
+interface FormControls extends HTMLCollectionBase {
+  // [item: string]: HTMLElement | RadioNodeList
+  name: HTMLInputElement
+  notifications: HTMLFieldSetElement
+  'test-notification': HTMLButtonElement
+}
 
 const form = document.getElementById('settings-form') as HTMLFormElement
 const messages = form.querySelector('.messages') as HTMLElement
 const saveButton = form.querySelector('.save-button') as HTMLButtonElement
-const nameField = form.elements['name'] as HTMLInputElement
-const testNotificationButton = form.elements['test-notification'] as HTMLButtonElement
-const notifications = form.elements['notifications'] as HTMLFieldSetElement
-const typeCheckboxes = notifications.querySelectorAll('input[type="checkbox"]') as NodeListOf<HTMLInputElement>
+const nameField = (form.elements as unknown as FormControls).name
+const testNotificationButton = (form.elements as unknown as FormControls)['test-notification']
+const notifications = (form.elements as unknown as FormControls).notifications
+const typeCheckboxes: NodeListOf<HTMLInputElement> = notifications.querySelectorAll('input[type="checkbox"]')
 
 let subscriptionState: SubscriptionState | null = null
 let edited = false
 
 notifications.classList.toggle('ios', /iPhone|iPad/.test(navigator.userAgent))
 
-form.addEventListener('submit', async event => {
+form.addEventListener('submit', event => {
   event.preventDefault()
-  await save()
+  void save()
 })
 form.addEventListener('input', _event => {
   showMessage(false, '')
@@ -26,35 +33,35 @@ form.addEventListener('input', _event => {
   refreshBusyState(false)
 })
 
-testNotificationButton.addEventListener('click', async event => {
+testNotificationButton.addEventListener('click', event => {
   event.preventDefault()
-  await sendTestNotification()
+  void sendTestNotification()
 })
 
-async function refreshState() {
+async function refreshState (): Promise<void> {
   refreshBusyState(true)
   const permission = await pushPermissionState()
   notifications.dataset.permissionState = permission
   subscriptionState = permission === 'granted' ? await pushSubscriptionState() : null
   for (const checkbox of typeCheckboxes) {
-    checkbox.checked = subscriptionState && subscriptionState.opt_in.includes(checkbox.value)
+    checkbox.checked = subscriptionState?.opt_in.includes(checkbox.value) ?? false
   }
   refreshBusyState(false)
 }
 
-function refreshBusyState(busy: boolean) {
+function refreshBusyState (busy: boolean): void {
   form.classList.toggle('busy', busy)
   saveButton.disabled = busy || !edited
   notifications.disabled = busy
   nameField.disabled = busy
-  testNotificationButton.disabled = busy || !subscriptionState
+  testNotificationButton.disabled = busy || (subscriptionState == null)
 }
 
-async function save() {
+async function save (): Promise<void> {
   refreshBusyState(true)
   showMessage(false, '')
   try {
-    let pushSubscription = null
+    let pushSubscription: PushSubscription | null = null
     const optIn = getOptInTypes()
     if (optIn.length > 0) {
       pushSubscription = await subscribeToPushNotifications()
@@ -79,7 +86,7 @@ async function save() {
       const body = await resp.text()
       throw new Error(body)
     }
-  } catch (error) {
+  } catch (error: any) {
     showMessage(true, error.toString())
   } finally {
     edited = false
@@ -88,14 +95,14 @@ async function save() {
   }
 }
 
-function showMessage(isError: boolean, message: string) {
-  messages.style.display = message ? 'block' : 'none'
+function showMessage (isError: boolean, message: string): void {
+  messages.style.display = message !== '' ? 'block' : 'none'
   messages.classList.toggle('error', isError)
   messages.innerText = message
   messages.scrollIntoView()
 }
 
-function getOptInTypes() {
+function getOptInTypes (): string[] {
   const types: string[] = []
   for (const checkbox of typeCheckboxes) {
     if (checkbox.checked) {
@@ -105,4 +112,4 @@ function getOptInTypes() {
   return types
 }
 
-refreshState()
+void refreshState()

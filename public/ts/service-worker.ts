@@ -7,7 +7,7 @@
 // export default null
 //
 // Workaround by doing iife:
-(function(self: any) {
+(function (self: any) {
   const VERSION = 2
 
   self.addEventListener('install', (e: any) => {
@@ -36,11 +36,11 @@
     e.waitUntil(openOrFocusClient(notification.data.url))
   })
 
-  async function openOrFocusClient(url: string) {
+  async function openOrFocusClient (url: string): Promise<void> {
     const client = (await self.clients.matchAll())[0]
     // todo: maybe match client url with deets from notification
 
-    if (client) {
+    if (client !== undefined) {
       console.debug(`opening ${url} in existing client`, client)
       await client.focus()
       await client.navigate(url)
@@ -50,7 +50,7 @@
     }
 
     // close all notifications indiscriminately; probably no reason to keep any notifications around
-    const oldNotifications = await self.registration.getNotifications()
+    const oldNotifications: any[] = await self.registration.getNotifications()
     console.debug(`closing ${oldNotifications.length} old notifications`, oldNotifications)
     for (const notification of oldNotifications) {
       notification.close()
