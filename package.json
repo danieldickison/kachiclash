@@ -9,9 +9,9 @@
   "author": "Daniel Dickison",
   "license": "ISC",
   "devDependencies": {
-    "standardts": "^1.0.0",
-    "typescript": "^4.9.5",
-    "web-push": "^3.5.0"
+    "ts-standard": "^12.0.2",
+    "typescript": "^5.1.6",
+    "web-push": "^3.6.3"
   },
   "standard": {
     "envs": [
