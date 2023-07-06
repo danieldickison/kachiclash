@@ -236,7 +236,7 @@ impl SendStats {
                 ) => stats.invalid += 1,
                 Err(_) => stats.fail += 1,
             };
-            if players.insert(sub_to_player.get(&id).unwrap()) {
+            if players.insert(sub_to_player.get(id).unwrap()) {
                 stats.players += 1;
             }
         }
