@@ -55,8 +55,15 @@ export async function sendTestNotification (): Promise<void> {
   })
 }
 
+interface SendStats {
+  success: number
+  invalid: number
+  fail: number
+  players: number
+}
+
 export async function adminTrigger (pushType: PushType): Promise<void> {
-  await fetch('/push/trigger', {
+  const res = await fetch('/push/trigger', {
     method: 'POST',
     credentials: 'same-origin',
     headers: {
@@ -64,4 +71,10 @@ export async function adminTrigger (pushType: PushType): Promise<void> {
     },
     body: JSON.stringify(pushType)
   })
+  const stats = await res.json() as SendStats
+  console.debug('push send stats', stats)
+  alert(`Notified ${stats.players} players with devices:
+    ${stats.success} success
+    ${stats.invalid} invalid (unsusbscribed)
+    ${stats.fail} fail`)
 }

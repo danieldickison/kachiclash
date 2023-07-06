@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use super::{BashoId, BashoInfo, DataError, Day, DbConn, PlayerId, Rank, Result, RikishiId};
 use chrono::{Duration, Utc};
@@ -7,7 +7,7 @@ use rusqlite::{types::FromSqlResult, Connection, Row, RowIndex};
 use url::Url;
 use web_push::{
     ContentEncoding, PartialVapidSignatureBuilder, SubscriptionInfo, VapidSignatureBuilder,
-    WebPushClient, WebPushMessageBuilder, URL_SAFE_NO_PAD,
+    WebPushClient, WebPushError, WebPushMessageBuilder, URL_SAFE_NO_PAD,
 };
 
 // Keep types in sync with push.ts
@@ -148,7 +148,8 @@ impl PushBuilder {
         ttl: Duration,
         subscriptions: &[Subscription],
         db: &DbConn,
-    ) -> Result<()> {
+    ) -> Result<HashMap<usize, std::result::Result<(), WebPushError>>> {
+        let mut results = HashMap::new();
         let mut invalid_subscriptions = vec![];
         for sub in subscriptions {
             {
@@ -176,15 +177,21 @@ impl PushBuilder {
             sig.add_claim("sub", "https://kachiclash.com");
             msg.set_vapid_signature(sig.build()?);
 
-            match self.client.send(msg.build()?).await {
+            let res = self.client.send(msg.build()?).await;
+            match res {
                 Ok(_) => (),
                 Err(
                     web_push::WebPushError::EndpointNotValid
                     | web_push::WebPushError::EndpointNotFound,
                 ) => invalid_subscriptions.push(sub.id),
-                Err(e) => warn!("push error {:?}", e),
-                // TODO: remove subscriptions after n consecutive errors?
+                Err(ref e) => {
+                    warn!(
+                        "push error for player {} subscription {}: {:?}",
+                        sub.player_id, sub.id, e
+                    );
+                } // TODO: remove subscriptions after n consecutive errors?
             }
+            results.insert(sub.id, res);
         }
 
         if !invalid_subscriptions.is_empty() {
@@ -196,7 +203,45 @@ impl PushBuilder {
             Subscription::delete(&db.lock().unwrap(), &invalid_subscriptions)?;
         }
 
-        Ok(())
+        Ok(results)
+    }
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Default)]
+pub struct SendStats {
+    players: usize,
+    success: usize,
+    invalid: usize,
+    fail: usize,
+}
+
+impl SendStats {
+    pub fn from_results(
+        results: &HashMap<usize, std::result::Result<(), WebPushError>>,
+        subscriptions: &[Subscription],
+    ) -> Self {
+        let mut stats = Self::default();
+
+        let mut players = HashSet::new();
+        let sub_to_player: HashMap<usize, PlayerId> = subscriptions
+            .iter()
+            .map(|sub| (sub.id, sub.player_id))
+            .collect();
+        for (id, res) in results {
+            match res {
+                Ok(_) => stats.success += 1,
+                Err(
+                    web_push::WebPushError::EndpointNotValid
+                    | web_push::WebPushError::EndpointNotFound,
+                ) => stats.invalid += 1,
+                Err(_) => stats.fail += 1,
+            };
+            if players.insert(sub_to_player.get(&id).unwrap()) {
+                stats.players += 1;
+            }
+        }
+
+        stats
     }
 }
 
@@ -483,10 +528,12 @@ pub async fn mass_notify_kyujyo(
             subscriptions.len(),
             rikishi_name
         );
-        push_builder
+        let results = push_builder
             .clone()
             .send(payload, ttl, &subscriptions, db_conn)
             .await?;
+        let stats = SendStats::from_results(&results, &subscriptions);
+        info!("{:?}", stats);
     }
 
     Ok(())
@@ -540,10 +587,12 @@ pub async fn mass_notify_day_result(
             subscriptions.len(),
             payload.body
         );
-        push_builder
+        let results = push_builder
             .clone()
             .send(payload, ttl, &subscriptions, db_conn)
             .await?;
+        let stats = SendStats::from_results(&results, &subscriptions);
+        info!("{:?}", stats);
     }
     Ok(())
 }

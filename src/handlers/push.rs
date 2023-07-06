@@ -1,10 +1,9 @@
-use crate::data::push::{PushType, Subscription};
+use crate::data::push::{PushType, SendStats, Subscription};
 use crate::data::{BashoInfo, Player};
 use crate::handlers::HandlerError;
 use crate::AppState;
 use actix_identity::Identity;
 use actix_web::{post, web, HttpResponse, Responder};
-// use serde::{Deserialize, Deserializer};
 use web_push::SubscriptionInfo;
 
 use super::{IdentityExt, Result};
@@ -57,7 +56,7 @@ pub async fn trigger(
     state: web::Data<AppState>,
     identity: Identity,
     data: web::Json<PushType>,
-) -> Result<HttpResponse> {
+) -> Result<impl Responder> {
     let player_id = identity.player_id()?;
     let payload;
     let subscriptions;
@@ -74,11 +73,12 @@ pub async fn trigger(
         ttl = data.ttl();
     }
 
-    state
+    let results = state
         .push
         .clone()
         .send(payload, ttl, &subscriptions, &state.db)
         .await?;
-
-    Ok(HttpResponse::Created().finish())
+    let stats = SendStats::from_results(&results, &subscriptions);
+    info!("{:?}", stats);
+    Ok(web::Json(stats))
 }
