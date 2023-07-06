@@ -43,10 +43,18 @@ export async function pushPermissionState (): Promise<PushPermissionState> {
   if (registration.pushManager === undefined) {
     return 'unavailable'
   } else {
-    return await registration.pushManager.permissionState({
+    // It seems that in Safari, these three methods of getting the permission state are sometimes divergent, so we'll take all three and return 'granted' if any of them say so; otherwise use navigator.permissions as the source of truth. https://developer.apple.com/forums/thread/731412
+    const pushPerm = await registration.pushManager.permissionState({
       userVisibleOnly: true,
       applicationServerKey: base64ToUint8Array(appKey)
     })
+    const notifPerm = Notification.permission
+    const queryPerm = (await navigator.permissions.query({ name: 'notifications' })).state
+    if (pushPerm === 'granted' || queryPerm === 'granted' || notifPerm === 'granted') {
+      return 'granted'
+    } else {
+      return queryPerm
+    }
   }
 }
 
