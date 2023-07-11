@@ -43,7 +43,7 @@
             <thead>
                 <tr>
                     <th>Basho</th>
-                    <th class="numeric">Rank</th>
+                    <th>Rank</th>
                     <th colspan="5" class="pick">Picks</th>
                     <th class="numeric">Score</th>
                     <th><!-- basho ranking --></th>
@@ -53,7 +53,7 @@
             <tbody>
                 {% for basho in basho_scores -%}
                 <tr {% if basho.basho_id.month == 1 %} class="first-of-year" {% endif %}>
-                    <td><a href="{{basho.basho_id.url_path()}}">{{basho.basho_id}}</a></td>
+                    <td><a href="{{basho.basho_id.url_path()}}">{{basho.basho_id|fmt("{:#}")}}</a></td>
                     
                     <td>
                         {%- match basho.rank -%}

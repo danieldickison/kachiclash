@@ -546,12 +546,12 @@ impl PushType {
                         format!("Basho Results")
                     },
                     body: if basho_rank == 1 {
-                        format!("You won the {basho_id} Kachi Clash with a score of {score}! {awards} {has_have} been bestowed upon {name} and your new rank is {next_rank}.",
+                        format!("You won the {basho_id} Kachi Clash with a score of {score}! {awards} {has_have} been bestowed upon {name} and your new rank is {next_rank:#}.",
                             awards = awards.iter().join(""),
                             has_have = if awards.len() == 1 { "has" } else {"have"}
                         )
                     } else {
-                        format!("{name} finished {basho_id} ranked #{basho_rank} with a score of {score}. You have been {promoted} to {next_rank}.")
+                        format!("{name} finished {basho_id} ranked #{basho_rank} with a score of {score}. You have been {promoted} to {next_rank:#}.")
                     },
                     url,
                     data: PayloadData::BashoResult {

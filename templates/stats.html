@@ -21,7 +21,7 @@
                 {% for basho in basho_list -%}
                     {% if !basho.winners.is_empty() %}
                         <tr>
-                            <td class="basho"><a href="{{basho.link_url()}}">{{basho.id}}</a></td>
+                            <td class="basho"><a href="{{basho.link_url()}}">{{basho.id|fmt("{:#}")}}</a></td>
                             <td>{{basho.player_count}}</td>
                             <td class="winner">
                                 {% for player in basho.winners -%}

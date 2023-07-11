@@ -247,7 +247,7 @@ impl Rank {
 impl fmt::Display for Rank {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if f.alternate() {
-            write!(f, "{:#} {} ({:#})", self.name, self.number, self.side)
+            write!(f, "{:#} {} {:#}", self.name, self.number, self.side)
         } else {
             write!(f, "{}{}{}", self.name, self.number, self.side)
         }
@@ -336,6 +336,50 @@ mod tests {
     }
 
     #[test]
+    fn serialize() {
+        assert_eq!("Y1e", Rank::from_str("Y1e").unwrap().to_string());
+        assert_eq!("Y1w", Rank::from_str("Y1w").unwrap().to_string());
+        assert_eq!("O2e", Rank::from_str("O2e").unwrap().to_string());
+        assert_eq!("M11w", Rank::from_str("M11w").unwrap().to_string());
+    }
+
+    #[test]
+    fn display_alt() {
+        assert_eq!(
+            "Yokozuna 1 East",
+            format!("{:#}", Rank::from_str("Y1e").unwrap())
+        );
+        assert_eq!(
+            "Yokozuna 1 West",
+            format!("{:#}", Rank::from_str("Y1w").unwrap())
+        );
+        assert_eq!(
+            "Ozeki 2 East",
+            format!("{:#}", Rank::from_str("O2e").unwrap())
+        );
+        assert_eq!(
+            "Sekiwake 1 West",
+            format!("{:#}", Rank::from_str("S1w").unwrap())
+        );
+        assert_eq!(
+            "Komusubi 1 East",
+            format!("{:#}", Rank::from_str("K1e").unwrap())
+        );
+        assert_eq!(
+            "Maegashira 1 East",
+            format!("{:#}", Rank::from_str("M1e").unwrap())
+        );
+        assert_eq!(
+            "Maegashira 11 West",
+            format!("{:#}", Rank::from_str("M11w").unwrap())
+        );
+        assert_eq!(
+            "Juryo 11 West",
+            format!("{:#}", Rank::from_str("J11w").unwrap())
+        );
+    }
+
+    #[test]
     #[should_panic]
     fn reject_lowercase_name() {
         Rank::from_str("o1e").unwrap();
@@ -363,5 +407,6 @@ mod tests {
         assert!(Rank::from_str("M3e").unwrap() < Rank::from_str("M3w").unwrap());
         assert!(Rank::from_str("M1e").unwrap() < Rank::from_str("M15e").unwrap());
         assert!(Rank::from_str("O1e").unwrap() < Rank::from_str("M15e").unwrap());
+        assert!(Rank::from_str("M15w").unwrap() < Rank::from_str("J1e").unwrap());
     }
 }

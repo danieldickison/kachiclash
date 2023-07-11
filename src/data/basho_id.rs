@@ -68,13 +68,17 @@ impl BashoId {
 
 impl fmt::Display for BashoId {
     fn fmt(&self, f: &mut fmt::Formatter) -> StdResult<(), fmt::Error> {
-        write!(
-            f,
-            "{} – {} {:04}",
-            self.season(),
-            self.month_name(),
-            self.year
-        )
+        if f.alternate() {
+            write!(f, "{} {:04}", self.month_name(), self.year)
+        } else {
+            write!(
+                f,
+                "{} Basho {} {:04}",
+                self.season(),
+                self.month_name(),
+                self.year
+            )
+        }
     }
 }
 
