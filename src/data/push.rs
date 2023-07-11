@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use super::{BashoId, BashoInfo, DataError, Day, DbConn, PlayerId, Rank, Result, RikishiId};
+use super::{Award, BashoId, BashoInfo, DataError, Day, DbConn, PlayerId, Rank, Result, RikishiId};
 use chrono::{Duration, Utc};
 use itertools::Itertools;
 use rusqlite::{types::FromSqlResult, Connection, Row, RowIndex};
@@ -243,6 +243,13 @@ impl SendStats {
 
         stats
     }
+
+    pub fn merge(&mut self, stats: &SendStats) {
+        self.players += stats.players;
+        self.success += stats.success;
+        self.invalid += stats.invalid;
+        self.fail += stats.fail;
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -323,11 +330,12 @@ impl PushType {
                     .filter(|s| players.contains(&s.player_id))
                     .collect())
             }
-            PushType::DayResult(_, player_id, _) => Ok(Subscription::for_player(db, *player_id)?
-                .into_iter()
-                .filter(|s| s.opt_in.contains(&PushTypeKey::DayResult))
-                .collect()),
-            PushType::BashoResult(_, _) => todo!(),
+            PushType::DayResult(_, player_id, _) | PushType::BashoResult(_, player_id) => {
+                Ok(Subscription::for_player(db, *player_id)?
+                    .into_iter()
+                    .filter(|s| s.opt_in.contains(&self.key()))
+                    .collect())
+            }
         }
     }
 
@@ -479,11 +487,86 @@ impl PushType {
                     },
                 }
             }
-            PushType::BashoResult(_basho_id, _player_id) => {
-                todo!()
+            PushType::BashoResult(basho_id, player_id) => {
+                let next_basho_id = basho_id.next();
+                let (name, score, basho_rank, current_rank, next_rank, awards, leader_score) = db
+                    .query_row(
+                    "
+                    SELECT
+                        player.name,
+                        br.wins,
+                        br.rank AS basho_rank,
+                        pr1.rank AS current_rank,
+                        pr2.rank AS next_rank,
+                        (
+                            SELECT GROUP_CONCAT(type)
+                            FROM award
+                            WHERE player_id = :player_id AND basho_id = :basho_id
+                        ) AS awards,
+                        (
+                            SELECT MAX(wins)
+                            FROM basho_result
+                            WHERE basho_id = :basho_id
+                        ) AS leader_score
+                    FROM player
+                    JOIN basho_result AS br ON br.player_id = player.id
+                    LEFT JOIN player_rank AS pr1
+                        ON pr1.player_id = player.id AND pr1.before_basho_id = br.basho_id
+                    JOIN player_rank AS pr2 ON pr2.player_id = player.id
+                    WHERE player.id = :player_id
+                        AND br.basho_id = :basho_id
+                        AND pr2.before_basho_id = :next_basho_id
+                ",
+                    named_params! {
+                        ":basho_id": basho_id,
+                        ":next_basho_id": next_basho_id,
+                        ":player_id": player_id,
+                    },
+                    |row| {
+                        Ok((
+                            row.get(0)?,
+                            row.get(1)?,
+                            row.get(2)?,
+                            row.get::<_, Option<Rank>>(3)?,
+                            row.get(4)?,
+                            Award::parse_list(row.get(5)?),
+                            row.get(6)?,
+                        ))
+                    },
+                )?;
+                let promoted = if current_rank.map_or(true, |c| next_rank <= c) {
+                    "promoted"
+                } else {
+                    "demoted"
+                };
+                Payload {
+                    title: if basho_rank == 1 {
+                        format!("Congrats!")
+                    } else {
+                        format!("Basho Results")
+                    },
+                    body: if basho_rank == 1 {
+                        format!("You won the {basho_id} Kachi Clash with a score of {score}! {awards} {has_have} been bestowed upon {name} and your new rank is {next_rank}.",
+                            awards = awards.iter().join(""),
+                            has_have = if awards.len() == 1 { "has" } else {"have"}
+                        )
+                    } else {
+                        format!("{name} finished {basho_id} ranked #{basho_rank} with a score of {score}. You have been {promoted} to {next_rank}.")
+                    },
+                    url,
+                    data: PayloadData::BashoResult {
+                        basho_id: *basho_id,
+                        name,
+                        basho_rank,
+                        score,
+                        leader_score,
+                        awards,
+                        current_rank,
+                        next_rank,
+                    },
+                }
             }
         };
-
         Ok(payload)
     }
 }
@@ -597,6 +680,65 @@ pub async fn mass_notify_day_result(
     Ok(())
 }
 
+pub async fn mass_notify_basho_result(
+    db_conn: &DbConn,
+    push_builder: &PushBuilder,
+    url: &Url,
+    basho_id: BashoId,
+) -> Result<SendStats> {
+    let mut total_stats = SendStats::default();
+    let player_ids;
+    {
+        let db = db_conn.lock().unwrap();
+        player_ids = db
+            .prepare(
+                "
+            SELECT player_id
+            FROM basho_result
+            WHERE basho_id = ?
+        ",
+            )?
+            .query_map(params![basho_id], |row| row.get::<_, PlayerId>(0))?
+            .collect::<rusqlite::Result<Vec<PlayerId>>>()?;
+    }
+    info!(
+        "Sending {} basho results to {} possible players",
+        basho_id,
+        player_ids.len()
+    );
+    for (i, player_id) in player_ids.iter().enumerate() {
+        let payload;
+        let subscriptions;
+        let ttl;
+        {
+            let db = db_conn.lock().unwrap();
+            let push_type = PushType::BashoResult(basho_id, *player_id);
+            subscriptions = push_type.subscriptions(&db)?;
+            if subscriptions.is_empty() {
+                continue;
+            }
+            payload = push_type.build_payload(url, &db)?;
+            ttl = push_type.ttl();
+        }
+        trace!(
+            "Notifying player {}/{} id {} with {} subscriptions: {}",
+            i + 1,
+            player_ids.len(),
+            player_id,
+            subscriptions.len(),
+            payload.body
+        );
+        let results = push_builder
+            .clone()
+            .send(payload, ttl, &subscriptions, db_conn)
+            .await?;
+        let stats = SendStats::from_results(&results, &subscriptions);
+        total_stats.merge(&stats);
+        info!("{:?}", stats);
+    }
+    Ok(total_stats)
+}
+
 // Keep in sync with service-worker.ts
 
 #[derive(Debug, Serialize)]
@@ -631,6 +773,17 @@ enum PayloadData {
         rank: u16,
         score: u8,
         leader_score: u8,
+    },
+
+    BashoResult {
+        basho_id: BashoId,
+        name: String,
+        basho_rank: u16,
+        score: u8,
+        leader_score: u8,
+        awards: Vec<Award>,
+        current_rank: Option<Rank>,
+        next_rank: Rank,
     },
 }
 

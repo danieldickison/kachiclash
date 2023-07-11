@@ -1,6 +1,6 @@
 use super::{BaseTemplate, HandlerError, Result};
 use crate::data::basho::backfill_past_player_ranks;
-use crate::data::push::{mass_notify_day_result, mass_notify_kyujyo};
+use crate::data::push::{mass_notify_basho_result, mass_notify_day_result, mass_notify_kyujyo};
 use crate::data::{self, basho, BashoId, DataError, Player, PlayerId, Rank};
 use crate::external::discord::DiscordAuthProvider;
 use crate::external::google::GoogleAuthProvider;
@@ -259,12 +259,14 @@ pub async fn finalize_basho(
     state: web::Data<AppState>,
     identity: Identity,
 ) -> Result<impl Responder> {
-    let mut db = state.db.lock().unwrap();
-    admin_base(&db, &identity, &state)?;
-    basho::finalize_basho(&mut db, *path)?;
-    Ok(HttpResponse::SeeOther()
-        .insert_header((http::header::LOCATION, &*path.url_path()))
-        .finish())
+    {
+        let mut db = state.db.lock().unwrap();
+        admin_base(&db, &identity, &state)?;
+        basho::finalize_basho(&mut db, *path)?;
+    }
+    let stats =
+        mass_notify_basho_result(&state.db, &state.push, &state.config.url(), *path).await?;
+    Ok(web::Json(stats))
 }
 
 #[post("/backfill_player_ranks")]

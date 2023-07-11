@@ -1,4 +1,4 @@
-import { adminTrigger } from './push.js'
+import { adminTrigger, alertSendStats } from './push.js'
 
 document.querySelectorAll('.bestow-emperors-cup-button').forEach(button => {
   button.addEventListener('click', () => { void postCup(button, true) })
@@ -34,18 +34,35 @@ async function postCup (button: Element, bestow: boolean): Promise<void> {
 const bashoId = (document.querySelector('meta[name="basho_id"]') as HTMLMetaElement).content
 
 document.querySelector('.trigger-announcement')?.addEventListener('click', event => {
+  (event.target as HTMLButtonElement).disabled = true
   event.preventDefault()
   const msg = prompt('Message:')
   if (msg === null || msg === '') return
   void adminTrigger({ Announcement: msg })
 })
 document.querySelector('.trigger-entries-open')?.addEventListener('click', event => {
+  (event.target as HTMLButtonElement).disabled = true
   event.preventDefault()
   void adminTrigger({ EntriesOpen: bashoId })
 })
 document.querySelector('.trigger-countdown')?.addEventListener('click', event => {
+  (event.target as HTMLButtonElement).disabled = true
   event.preventDefault()
   void adminTrigger({ BashoStartCountdown: bashoId })
 })
+
+document.querySelector('.finalize-basho')?.addEventListener('click', event => {
+  (event.target as HTMLButtonElement).disabled = true
+  event.preventDefault()
+  void finalizeBasho()
+})
+async function finalizeBasho (): Promise<void> {
+  const res = await fetch(`/basho/${bashoId}/finalize`, {
+    method: 'POST',
+    credentials: 'same-origin'
+  })
+  alertSendStats(await res.json())
+  location.reload()
+}
 
 export default {}

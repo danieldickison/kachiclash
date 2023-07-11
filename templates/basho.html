@@ -35,7 +35,7 @@
                 {% if next_day <= 15 %}
                     <li><a href="{{basho.id.url_path()}}/day/{{next_day}}">enter day {{next_day}} torikumi</a></li>
                 {% else %}
-                    <li><form method="post" action="{{basho.id.url_path()}}/finalize"><button>finalize basho</button></form></li>
+                    <li><button class="finalize-basho">finalize basho</button></li>
                 {% endif %}
                 <!-- <li><form method="post" action="{{basho.id.url_path()}}/backfill_player_ranks">
                     <button>backfill player ranks</button>

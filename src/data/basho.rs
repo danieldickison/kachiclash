@@ -751,7 +751,7 @@ fn upsert_basho_results(txn: &Transaction, basho_id: BashoId, bestow_awards: boo
 }
 
 fn upsert_player_ranks(txn: &Transaction, last_basho: BashoId) -> Result<()> {
-    let before_basho_id = last_basho.incr(1);
+    let before_basho_id = last_basho.next();
     let basho_range = before_basho_id.incr(-6)..before_basho_id;
     let leaders = HistoricLeader::with_basho_range(txn, basho_range, u32::MAX)?;
     info!(

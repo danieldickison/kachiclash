@@ -1,6 +1,7 @@
 use super::{BashoId, DataError, PlayerId};
 use rusqlite::types::{FromSql, FromSqlError, FromSqlResult, ToSqlOutput, ValueRef};
 use rusqlite::{Connection, ToSql};
+use std::fmt::Display;
 use std::str::FromStr;
 
 #[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Copy, Clone, serde::Serialize)]
@@ -52,20 +53,31 @@ impl Award {
         .map_err(|e| e.into())
     }
 
-    pub fn parse_list(string: String) -> Vec<Self> {
-        if string.is_empty() {
-            return vec![];
+    pub fn parse_list(opt_string: Option<String>) -> Vec<Self> {
+        if let Some(string) = opt_string {
+            if string.is_empty() {
+                vec![]
+            } else {
+                string
+                    .split(',')
+                    .filter_map(|a| match a.parse() {
+                        Err(e) => {
+                            warn!("failed to parse award type {}: {}", a, e);
+                            None
+                        }
+                        Ok(award) => Some(award),
+                    })
+                    .collect()
+            }
+        } else {
+            vec![]
         }
-        string
-            .split(',')
-            .filter_map(|a| match a.parse() {
-                Err(e) => {
-                    warn!("failed to parse award type {}: {}", a, e);
-                    None
-                }
-                Ok(award) => Some(award),
-            })
-            .collect()
+    }
+}
+
+impl Display for Award {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.emoji())
     }
 }
 

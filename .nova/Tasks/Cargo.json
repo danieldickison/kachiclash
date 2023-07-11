@@ -2,7 +2,7 @@
   "actions" : {
     "build" : {
       "enabled" : true,
-      "script" : "#!\/bin\/sh\ncargo build\ncargo doc"
+      "script" : "#!\/bin\/sh\ncargo build\ncargo test\ncargo doc"
     },
     "clean" : {
       "enabled" : true,

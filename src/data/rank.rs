@@ -1,5 +1,5 @@
 use rusqlite::types::{FromSql, FromSqlError, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
-use serde::{Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::convert::TryFrom;
 use std::error::Error;
 use std::fmt;
@@ -177,6 +177,9 @@ impl fmt::Display for RankGroup {
     }
 }
 
+/// A banzuke rank, composed of, in decreasing order of importance: name, number, and side.
+///
+/// **Note:** "less than" means a higher rank. While this might be unintuitive, we generally want to order things from high rank to low rank, so this is more convenient than the intuitive ordering.
 #[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Copy, Clone)]
 pub struct Rank {
     pub name: RankName,
@@ -287,5 +290,78 @@ impl<'de> Deserialize<'de> for Rank {
     {
         let s = String::deserialize(deserializer)?;
         s.parse().map_err(serde::de::Error::custom)
+    }
+}
+
+impl Serialize for Rank {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        self.to_string().serialize(serializer)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::str::FromStr;
+
+    #[test]
+    fn parse() {
+        assert_eq!(
+            Rank {
+                name: RankName::Yokozuna,
+                number: 1,
+                side: RankSide::East
+            },
+            Rank::from_str("Y1e").unwrap()
+        );
+        assert_eq!(
+            Rank {
+                name: RankName::Maegashira,
+                number: 1,
+                side: RankSide::East
+            },
+            Rank::from_str("M1e").unwrap()
+        );
+        assert_eq!(
+            Rank {
+                name: RankName::Maegashira,
+                number: 15,
+                side: RankSide::West
+            },
+            Rank::from_str("M15w").unwrap()
+        );
+    }
+
+    #[test]
+    #[should_panic]
+    fn reject_lowercase_name() {
+        Rank::from_str("o1e").unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn reject_invalid_name() {
+        Rank::from_str("X1e").unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn reject_invalid_side() {
+        Rank::from_str("M1n").unwrap();
+    }
+
+    #[test]
+    fn ordering() {
+        // Note: "less than" means a higher rank. While this might be unintuitive, we generally want to order things from high rank to low rank, so this is more convenient than the intuitive ordering.
+        assert!(Rank::top() < Rank::top().next_lower());
+        assert!(Rank::from_str("Y1e").unwrap() < Rank::from_str("M1e").unwrap());
+        assert!(Rank::from_str("S2w").unwrap() < Rank::from_str("K1e").unwrap());
+        assert!(Rank::from_str("O1e").unwrap() < Rank::from_str("O1w").unwrap());
+        assert!(Rank::from_str("M3e").unwrap() < Rank::from_str("M3w").unwrap());
+        assert!(Rank::from_str("M1e").unwrap() < Rank::from_str("M15e").unwrap());
+        assert!(Rank::from_str("O1e").unwrap() < Rank::from_str("M15e").unwrap());
     }
 }
