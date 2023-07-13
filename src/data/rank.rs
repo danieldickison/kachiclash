@@ -28,6 +28,32 @@ impl From<RankError> for FromSqlError {
 }
 
 #[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Copy, Clone)]
+pub enum RankDivision {
+    Makuuchi,
+    Juryo,
+    Makushita,
+    Sandanme,
+    Jonidan,
+    Jonokuchi,
+    Maezumo,
+}
+
+impl fmt::Display for RankDivision {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let str = match self {
+            Self::Makuuchi => "Makuuchi",
+            Self::Juryo => "Juryo",
+            Self::Makushita => "Makushita",
+            Self::Sandanme => "Sandanme",
+            Self::Jonidan => "Jonidan",
+            Self::Jonokuchi => "Jonokuchi",
+            Self::Maezumo => "Maezumo",
+        };
+        f.write_str(str)
+    }
+}
+
+#[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Copy, Clone)]
 pub enum RankName {
     Yokozuna,
     Ozeki,

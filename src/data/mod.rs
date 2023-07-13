@@ -4,7 +4,7 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 mod rank;
-pub use rank::{Rank, RankGroup, RankName, RankSide};
+pub use rank::{Rank, RankDivision, RankGroup, RankName, RankSide};
 
 pub mod player;
 pub use player::{Player, PlayerId};
