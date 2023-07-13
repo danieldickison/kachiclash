@@ -9,7 +9,7 @@ use std::str::FromStr;
 
 #[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Copy, Clone, Hash)]
 pub struct BashoId {
-    pub year: i32,
+    pub year: u16,
     pub month: u8,
 }
 
@@ -35,7 +35,7 @@ impl BashoId {
     }
 
     fn month_name(self) -> String {
-        let date = NaiveDate::from_ymd_opt(self.year, self.month.into(), 1)
+        let date = NaiveDate::from_ymd_opt(self.year.into(), self.month.into(), 1)
             .expect("invalid basho month date");
         format!("{}", date.format("%B"))
     }
@@ -93,8 +93,17 @@ impl FromStr for BashoId {
 impl From<NaiveDate> for BashoId {
     fn from(date: NaiveDate) -> Self {
         Self {
-            year: date.year(),
+            year: date.year() as u16,
             month: date.month() as u8,
+        }
+    }
+}
+
+impl From<i64> for BashoId {
+    fn from(value: i64) -> Self {
+        Self {
+            year: (value / 100) as u16,
+            month: (value % 100) as u8,
         }
     }
 }
@@ -120,10 +129,7 @@ impl<'de> Deserialize<'de> for BashoId {
 
 impl FromSql for BashoId {
     fn column_result(value: ValueRef) -> FromSqlResult<Self> {
-        value.as_i64().map(|num| Self {
-            year: (num / 100) as i32,
-            month: (num % 100) as u8,
-        })
+        value.as_i64().map(|num| num.into())
     }
 }
 
