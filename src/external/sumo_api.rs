@@ -1,34 +1,34 @@
 use std::time::Duration;
 
-use crate::data::{BashoId, Rank, RankDivision};
+use crate::data::{basho::TorikumiMatchUpdateData, BashoId, Rank, RankDivision};
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct BanzukeResponse {
-    basho_id: BashoId,
-    division: RankDivision,
-    east: Vec<RikishiResponse>,
-    west: Vec<RikishiResponse>,
+pub struct BanzukeResponse {
+    pub basho_id: BashoId,
+    pub division: RankDivision,
+    pub east: Vec<RikishiResponse>,
+    pub west: Vec<RikishiResponse>,
 }
 
 #[derive(Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
-struct RikishiResponse {
-    shikona_en: String,
-    rank: Rank,
-    record: Vec<BoutResponse>,
+pub struct RikishiResponse {
+    pub shikona_en: String,
+    pub rank: Rank,
+    pub record: Vec<BoutResponse>,
 }
 
 #[derive(Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
-struct BoutResponse {
-    result: BoutResult,
-    opponent_shikona_en: String,
+pub struct BoutResponse {
+    pub result: BoutResult,
+    pub opponent_shikona_en: String,
 }
 
 #[derive(Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
-enum BoutResult {
+pub enum BoutResult {
     Win,
     Loss,
     Absent,
@@ -60,6 +60,32 @@ impl BanzukeResponse {
             .json::<BanzukeResponse>()
             .await
     }
+
+    pub fn day_complete(&self, day: u8) -> bool {
+        let day_idx = day as usize - 1;
+        assert!(day_idx < 15);
+        self.all_rikishi()
+            .all(|rikishi| rikishi.record[day_idx].result != BoutResult::None)
+    }
+
+    pub fn torikumi_update_data(&self, day: u8) -> Vec<TorikumiMatchUpdateData> {
+        let day_idx = day as usize - 1;
+        assert!(day_idx < 15);
+        self.all_rikishi()
+            .filter(|rikishi| match rikishi.record[day_idx].result {
+                BoutResult::Win | BoutResult::FusenWin => true,
+                _ => false,
+            })
+            .map(|rikishi| TorikumiMatchUpdateData {
+                winner: rikishi.shikona_en.to_owned(),
+                loser: rikishi.record[day_idx].opponent_shikona_en.to_owned(),
+            })
+            .collect()
+    }
+
+    fn all_rikishi(&self) -> impl Iterator<Item = &RikishiResponse> {
+        self.east.iter().chain(self.west.iter())
+    }
 }
 
 fn make_client() -> reqwest::Result<reqwest::Client> {
@@ -72,8 +98,10 @@ fn make_client() -> reqwest::Result<reqwest::Client> {
 
 #[cfg(test)]
 mod tests {
+    use itertools::Itertools;
+
     use super::{BanzukeResponse, BoutResponse, BoutResult};
-    use crate::data::{BashoId, Rank, RankDivision};
+    use crate::data::{basho::TorikumiMatchUpdateData, BashoId, Rank, RankDivision};
 
     fn init_logger() {
         let _ = pretty_env_logger::env_logger::builder()
@@ -81,13 +109,32 @@ mod tests {
             .try_init();
     }
 
+    const BANZUKE_202307: &'static str = include_str!("sumo-api-banzuke-202307-makuuchi.json");
+
     #[tokio::test]
-    async fn response_parsing() {
+    async fn call_api() {
         init_logger();
 
         let resp = BanzukeResponse::fetch(202307.into(), RankDivision::Makuuchi)
             .await
             .expect("sumo-api call failed");
+
+        // Spot check a few properties in the response
+        assert_eq!(BashoId::from(202307), resp.basho_id);
+        assert_eq!(RankDivision::Makuuchi, resp.division);
+        assert_eq!(21, resp.east.len());
+        assert_eq!(21, resp.west.len());
+        let terunofuji = &resp.east[0];
+        assert_eq!("Terunofuji", terunofuji.shikona_en);
+        assert_eq!("Y1e".parse::<Rank>().unwrap(), terunofuji.rank);
+    }
+
+    #[test]
+    fn response_parsing() {
+        init_logger();
+
+        let resp: BanzukeResponse =
+            serde_json::from_str(BANZUKE_202307).expect("parse API response fixture");
 
         assert_eq!(BashoId::from(202307), resp.basho_id);
         assert_eq!(RankDivision::Makuuchi, resp.division);
@@ -161,6 +208,32 @@ mod tests {
             },
             kirishima.record[3]
         );
+    }
+
+    #[test]
+    fn generate_update_torikumi_data() {
+        init_logger();
+
+        let resp: BanzukeResponse =
+            serde_json::from_str(BANZUKE_202307).expect("parse API response fixture");
+        let mut data = resp.torikumi_update_data(4);
+        data.sort_by(|a, b| a.winner.cmp(&b.winner));
+
+        // Takakeisho and Wakatakakage were kyujo on this day resulting in one less than the max possible 21 bouts. Terunofuji had a fusen loss, and Kiriyama came back from kyujo.
+        assert_eq!(20, data.len());
+
+        assert_eq!(
+            TorikumiMatchUpdateData {
+                winner: "Abi".to_owned(),
+                loser: "Tobizaru".to_owned(),
+            },
+            data[0]
+        );
+
+        assert!(data
+            .iter()
+            .flat_map(|d| vec![&d.winner, &d.loser])
+            .all_unique());
     }
 }
 

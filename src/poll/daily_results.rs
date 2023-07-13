@@ -1,12 +1,65 @@
+use crate::data::basho::update_torikumi;
+use crate::data::BashoId;
+use crate::data::RankDivision;
+use crate::external::sumo_api;
 use crate::AppState;
 use tokio::time::interval;
 use tokio::time::Duration;
 
-pub async fn daily_results(_app_state: AppState) {
+pub async fn daily_results(app_state: AppState) {
     let mut interval = interval(Duration::from_secs(3600));
     loop {
         interval.tick().await;
-        // TODO: do work
-        trace!("todo: daily_results poll tick");
+        match do_tick(&app_state).await {
+            Ok(_) => trace!("daily_results do_tick succeeded"),
+            Err(e) => error!("daily_results do_tick failed: {}", e),
+        }
     }
+}
+
+async fn do_tick(app_state: &AppState) -> anyhow::Result<()> {
+    trace!("daily_results tick starting");
+    let basho_id: BashoId;
+    let last_day: u8;
+    {
+        // Find the last completed day of the currently active basho. The current basho should be the only one in the db without any associated awards.
+        let db = app_state.db.lock().unwrap();
+        (basho_id, last_day) = db.query_row(
+            "
+            SELECT
+                basho.id,
+                COALESCE((SELECT MAX(day) FROM torikumi WHERE torikumi.basho_id = basho.id), 0)
+            FROM basho
+            WHERE
+                NOT EXISTS (SELECT 1 FROM award WHERE award.basho_id = basho.id)
+                AND EXISTS (SELECT 1 FROM pick WHERE pick.basho_id = basho.id)
+            ", // This will error if multiple rows are returned
+            (),
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )?;
+    }
+
+    let day = last_day + 1;
+    trace!(
+        "daily_results querying sumo-api for basho {} day {}",
+        basho_id.id(),
+        day
+    );
+    let resp = sumo_api::BanzukeResponse::fetch(basho_id, RankDivision::Makuuchi).await?;
+    if resp.day_complete(day) {
+        let update_data = resp.torikumi_update_data(day);
+        info!(
+            "daily_results got complete day {} results; updating db with {} bouts",
+            day,
+            update_data.len()
+        );
+        {
+            let mut db = app_state.db.lock().unwrap();
+            update_torikumi(&mut db, basho_id, day, &update_data)?;
+        }
+    } else {
+        debug!("daily_results day {day} is not yet complete; sleeping");
+    }
+
+    Ok(())
 }

@@ -387,10 +387,10 @@ pub fn update_basho(
     Ok(())
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, PartialEq, Eq)]
 pub struct TorikumiMatchUpdateData {
-    winner: String,
-    loser: String,
+    pub winner: String,
+    pub loser: String,
 }
 
 pub fn update_torikumi(
@@ -417,7 +417,7 @@ pub fn update_torikumi(
         let id: i64 = row.get("rikishi_id")?;
         let family_name: String = row.get("family_name")?;
         let rank: Rank = row.get("rank")?;
-        debug!("found mapping {} to rikishi id {}", family_name, id);
+        trace!("found mapping {} to rikishi id {}", family_name, id);
         if rikishi_ids.get(&family_name).is_some() {
             ambiguous_shikona.push(family_name.to_owned());
         }
@@ -737,9 +737,12 @@ fn upsert_basho_results(txn: &Transaction, basho_id: BashoId, bestow_awards: boo
         ",
     )?;
     for p in scores {
-        debug!(
+        trace!(
             "- rank {} player {} ({}) with {} wins",
-            p.rank, p.name, p.id, p.wins
+            p.rank,
+            p.name,
+            p.id,
+            p.wins
         );
         insert_result_stmt.execute(params![basho_id, p.id, p.wins, p.rank as u32])?;
         if bestow_awards && p.rank == 1 {
@@ -769,7 +772,7 @@ fn upsert_player_ranks(txn: &Transaction, last_basho: BashoId) -> Result<()> {
         ",
     )?;
     for l in leaders {
-        debug!(
+        trace!(
             "- player {} ({}) ranked {} with {} wins",
             l.player.id,
             l.player.name,
