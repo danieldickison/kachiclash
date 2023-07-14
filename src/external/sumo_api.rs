@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{collections::HashSet, time::Duration};
 
 use crate::data::{basho::TorikumiMatchUpdateData, BashoId, Rank, RankDivision};
 
@@ -71,16 +71,48 @@ impl BanzukeResponse {
     pub fn torikumi_update_data(&self, day: u8) -> Vec<TorikumiMatchUpdateData> {
         let day_idx = day as usize - 1;
         assert!(day_idx < 15);
-        self.all_rikishi()
-            .filter(|rikishi| match rikishi.record[day_idx].result {
-                BoutResult::Win | BoutResult::FusenWin => true,
-                _ => false,
-            })
-            .map(|rikishi| TorikumiMatchUpdateData {
-                winner: rikishi.shikona_en.to_owned(),
-                loser: rikishi.record[day_idx].opponent_shikona_en.to_owned(),
-            })
-            .collect()
+        let mut seen_rikishi = HashSet::new();
+        let mut out = vec![];
+        for rikishi in self.all_rikishi() {
+            if seen_rikishi.contains(&rikishi.shikona_en) {
+                continue;
+            }
+
+            let torikumi = &rikishi.record[day_idx];
+            assert!(seen_rikishi.insert(&rikishi.shikona_en));
+            if torikumi.opponent_shikona_en != "" {
+                assert!(seen_rikishi.insert(&torikumi.opponent_shikona_en));
+            }
+
+            match torikumi {
+                BoutResponse {
+                    result: BoutResult::Win | BoutResult::FusenWin,
+                    opponent_shikona_en,
+                } => out.push(TorikumiMatchUpdateData {
+                    winner: rikishi.shikona_en.to_owned(),
+                    loser: opponent_shikona_en.to_owned(),
+                }),
+                BoutResponse {
+                    result: BoutResult::Loss | BoutResult::FusenLoss,
+                    opponent_shikona_en,
+                } => out.push(TorikumiMatchUpdateData {
+                    winner: opponent_shikona_en.to_owned(),
+                    loser: rikishi.shikona_en.to_owned(),
+                }),
+                BoutResponse {
+                    result: BoutResult::Absent,
+                    ..
+                } => (), // expected and normal
+                BoutResponse {
+                    result: BoutResult::None,
+                    ..
+                } => warn!(
+                    "Unexpected missing result for {} day {}",
+                    rikishi.shikona_en, day
+                ),
+            }
+        }
+        out
     }
 
     fn all_rikishi(&self) -> impl Iterator<Item = &RikishiResponse> {
@@ -211,7 +243,7 @@ mod tests {
     }
 
     #[test]
-    fn generate_update_torikumi_data() {
+    fn update_torikumi_data() {
         init_logger();
 
         let resp: BanzukeResponse =
@@ -234,6 +266,26 @@ mod tests {
             .iter()
             .flat_map(|d| vec![&d.winner, &d.loser])
             .all_unique());
+    }
+
+    #[test]
+    fn update_torikumi_data_with_juryo() {
+        init_logger();
+
+        let resp: BanzukeResponse =
+            serde_json::from_str(BANZUKE_202307).expect("parse API response fixture");
+        let mut data = resp.torikumi_update_data(5);
+        data.sort_by(|a, b| a.winner.cmp(&b.winner));
+
+        // Terunofuji, Takakeisho, and Wakatakakage were kyujo on this day resulting in one less than the max possible 21 bouts. Bushozan lost against Roga from Juryo, which should be included.
+        assert_eq!(20, data.len());
+        assert_eq!(
+            TorikumiMatchUpdateData {
+                winner: "Roga".to_owned(),
+                loser: "Bushozan".to_owned(),
+            },
+            data[13]
+        );
     }
 }
 
