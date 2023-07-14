@@ -576,7 +576,7 @@ pub async fn mass_notify_kyujyo(
     push_builder: &PushBuilder,
     url: &Url,
     basho_id: BashoId,
-) -> Result<()> {
+) -> Result<SendStats> {
     let rikishi;
     {
         let db = db_conn.lock().unwrap();
@@ -591,6 +591,7 @@ pub async fn mass_notify_kyujyo(
             .query_map(params![basho_id], |row| Ok((row.get(0)?, row.get(1)?)))?
             .collect::<rusqlite::Result<Vec<(RikishiId, String)>>>()?;
     }
+    let mut total_stats = SendStats::default();
     for (rikishi_id, rikishi_name) in rikishi {
         info!(
             "Building kyujyo notice for {} (id {})",
@@ -615,11 +616,10 @@ pub async fn mass_notify_kyujyo(
             .clone()
             .send(payload, ttl, &subscriptions, db_conn)
             .await?;
-        let stats = SendStats::from_results(&results, &subscriptions);
-        info!("{:?}", stats);
+        total_stats.merge(&SendStats::from_results(&results, &subscriptions));
     }
-
-    Ok(())
+    info!("kyujyo notification stats: {:?}", total_stats);
+    Ok(total_stats)
 }
 
 pub async fn mass_notify_day_result(
@@ -628,7 +628,7 @@ pub async fn mass_notify_day_result(
     url: &Url,
     basho_id: BashoId,
     day: u8,
-) -> Result<()> {
+) -> Result<SendStats> {
     let player_ids;
     {
         let db = db_conn.lock().unwrap();
@@ -678,7 +678,7 @@ pub async fn mass_notify_day_result(
         total_stats.merge(&SendStats::from_results(&results, &subscriptions));
     }
     info!("day results notification stats: {:?}", total_stats);
-    Ok(())
+    Ok(total_stats)
 }
 
 pub async fn mass_notify_basho_result(

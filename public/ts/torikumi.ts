@@ -1,10 +1,13 @@
+import { alertSendStats } from './push.js'
+
 const torikumiForm = document.getElementById('torikumi-form') as HTMLFormElement
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-interface HTMLFormControlsCollection extends HTMLCollectionBase {
+declare global {
+  interface HTMLFormControlsCollection extends HTMLCollectionBase {
   // [item: string]: HTMLElement | RadioNodeList
-  torikumi: HTMLInputElement
-  notify: HTMLInputElement
+    torikumi: HTMLInputElement
+    notify: HTMLInputElement
+  }
 }
 
 let parsedTorikumi: Torikumi[]
@@ -67,6 +70,7 @@ torikumiForm.addEventListener('submit', event => {
   })
     .then(async response => {
       if (response.ok) {
+        alertSendStats(await response.json())
         window.location.href = bashoURL
       } else {
         return await response.text().then(msg => { throw new Error(msg) })

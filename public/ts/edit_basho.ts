@@ -1,12 +1,15 @@
+import { alertSendStats } from './push.js'
+
 const bashoForm = document.getElementById('make-basho-form') as HTMLFormElement
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-interface HTMLFormControlsCollection extends HTMLCollectionBase {
+declare global {
+  interface HTMLFormControlsCollection extends HTMLCollectionBase {
   // [item: string]: HTMLElement | RadioNodeList
-  banzuke: HTMLInputElement
-  venue: HTMLInputElement
-  start_date: HTMLInputElement
-  notify_kyujyo: HTMLInputElement
+    banzuke: HTMLInputElement
+    venue: HTMLInputElement
+    start_date: HTMLInputElement
+    notify_kyujyo: HTMLInputElement
+  }
 }
 
 let parsedBanzuke: Rikishi[]
@@ -82,6 +85,7 @@ bashoForm.addEventListener('submit', event => {
     })
     .then(json => {
       console.log('json:', json)
+      alertSendStats(json.notification_stats)
       window.location = json.basho_url
     })
     .catch((err: Error) => { alert(`error saving basho: ${err.toString()}`) })

@@ -1,6 +1,8 @@
 use super::{BaseTemplate, HandlerError, Result};
 use crate::data::basho::backfill_past_player_ranks;
-use crate::data::push::{mass_notify_basho_result, mass_notify_day_result, mass_notify_kyujyo};
+use crate::data::push::{
+    mass_notify_basho_result, mass_notify_day_result, mass_notify_kyujyo, SendStats,
+};
 use crate::data::{self, basho, BashoId, DataError, Player, PlayerId, Rank};
 use crate::external::discord::DiscordAuthProvider;
 use crate::external::google::GoogleAuthProvider;
@@ -114,6 +116,7 @@ struct BanzukeRikishi {
 #[derive(Debug, Serialize)]
 pub struct BanzukeResponseData {
     basho_url: String,
+    notification_stats: SendStats,
 }
 
 #[post("/edit")]
@@ -139,11 +142,14 @@ pub async fn edit_basho_post(
                 .collect::<Vec<_>>(),
         )?;
     }
-    if basho.notify_kyujyo {
-        mass_notify_kyujyo(&state.db, &state.push, &state.config.url(), basho_id).await?;
-    }
+    let notification_stats = if basho.notify_kyujyo {
+        mass_notify_kyujyo(&state.db, &state.push, &state.config.url(), basho_id).await?
+    } else {
+        SendStats::default()
+    };
     Ok(web::Json(BanzukeResponseData {
         basho_url: basho_id.url_path(),
+        notification_stats,
     }))
 }
 
@@ -240,17 +246,18 @@ pub async fn torikumi_post(
     torikumi: web::Json<TorikumiData>,
     state: web::Data<AppState>,
     identity: Identity,
-) -> Result<HttpResponse> {
+) -> Result<impl Responder> {
     {
         let mut db = state.db.lock().unwrap();
         admin_base(&db, &identity, &state)?;
         data::basho::update_torikumi(&mut db, path.0, path.1, &torikumi.torikumi)?;
     }
-    if torikumi.notify {
-        let url = state.config.url();
-        mass_notify_day_result(&state.db, &state.push, &url, path.0, path.1).await?;
-    }
-    Ok(HttpResponse::Ok().finish())
+    let stats = if torikumi.notify {
+        mass_notify_day_result(&state.db, &state.push, &state.config.url(), path.0, path.1).await?
+    } else {
+        SendStats::default()
+    };
+    Ok(web::Json(stats))
 }
 
 #[post("/finalize")]
