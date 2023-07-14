@@ -6,13 +6,21 @@ use crate::AppState;
 use tokio::time::interval;
 use tokio::time::Duration;
 
-pub async fn daily_results(app_state: AppState) {
-    let mut interval = interval(Duration::from_secs(3600));
+const INTERVAL_DEV: u64 = 600;
+const INTERVAL_PROD: u64 = 3600;
+
+pub async fn daily_results(app_state: AppState) -> ! {
+    let mut interval = interval(Duration::from_secs(if app_state.config.is_dev() {
+        INTERVAL_DEV
+    } else {
+        INTERVAL_PROD
+    }));
+    interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
     loop {
         interval.tick().await;
         match do_tick(&app_state).await {
-            Ok(_) => trace!("daily_results do_tick succeeded"),
-            Err(e) => error!("daily_results do_tick failed: {}", e),
+            Ok(_) => trace!("do_tick succeeded"),
+            Err(e) => error!("do_tick failed: {}", e),
         }
     }
 }
@@ -40,16 +48,12 @@ async fn do_tick(app_state: &AppState) -> anyhow::Result<()> {
     }
 
     let day = last_day + 1;
-    trace!(
-        "daily_results querying sumo-api for basho {} day {}",
-        basho_id.id(),
-        day
-    );
+    trace!("querying sumo-api for basho {} day {}", basho_id.id(), day);
     let resp = sumo_api::BanzukeResponse::fetch(basho_id, RankDivision::Makuuchi).await?;
     if resp.day_complete(day) {
         let update_data = resp.torikumi_update_data(day);
         info!(
-            "daily_results got complete day {} results; updating db with {} bouts",
+            "got complete day {} results; updating db with {} bouts",
             day,
             update_data.len()
         );
@@ -58,7 +62,7 @@ async fn do_tick(app_state: &AppState) -> anyhow::Result<()> {
             update_torikumi(&mut db, basho_id, day, &update_data)?;
         }
     } else {
-        debug!("daily_results day {day} is not yet complete; sleeping");
+        debug!("day {day} is not yet complete; sleeping");
     }
 
     Ok(())
