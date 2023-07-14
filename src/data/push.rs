@@ -541,9 +541,9 @@ impl PushType {
                 };
                 Payload {
                     title: if basho_rank == 1 {
-                        format!("Congrats!")
+                        "Congrats!".to_string()
                     } else {
-                        format!("Basho Results")
+                        "Basho Results".to_string()
                     },
                     body: if basho_rank == 1 {
                         format!("You won the {basho_id} Kachi Clash with a score of {score}! {awards} {has_have} been bestowed upon {name} and your new rank is {next_rank:#}.",

@@ -80,7 +80,7 @@ impl BanzukeResponse {
 
             let torikumi = &rikishi.record[day_idx];
             assert!(seen_rikishi.insert(&rikishi.shikona_en));
-            if torikumi.opponent_shikona_en != "" {
+            if !torikumi.opponent_shikona_en.is_empty() {
                 assert!(seen_rikishi.insert(&torikumi.opponent_shikona_en));
             }
 
@@ -141,7 +141,7 @@ mod tests {
             .try_init();
     }
 
-    const BANZUKE_202307: &'static str = include_str!("sumo-api-banzuke-202307-makuuchi.json");
+    const BANZUKE_202307: &str = include_str!("sumo-api-banzuke-202307-makuuchi.json");
 
     #[tokio::test]
     async fn call_api() {
