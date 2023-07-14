@@ -434,6 +434,14 @@ pub fn update_torikumi(
         });
     }
 
+    txn.execute(
+        "
+            DELETE FROM torikumi
+            WHERE basho_id = ? AND day = ?
+        ",
+        params![basho_id, day],
+    )?;
+
     for (seq, TorikumiMatchUpdateData { winner, loser }) in torikumi.iter().enumerate() {
         let winner_id = rikishi_ids
             .get(winner)
@@ -453,9 +461,6 @@ pub fn update_torikumi(
                 "
                     INSERT INTO torikumi (basho_id, day, seq, side, rikishi_id, win)
                     VALUES (?, ?, ?, ?, ?, ?)
-                    ON CONFLICT (basho_id, day, seq, side) DO UPDATE SET
-                        rikishi_id = excluded.rikishi_id,
-                        win = excluded.win
                 ",
                 params![basho_id, day, seq as u32, side, rikishi_id, win],
             )
