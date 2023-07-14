@@ -30,14 +30,27 @@ pub type Day = u8;
 pub type DbConn = Arc<Mutex<Connection>>;
 
 pub fn make_conn(path: &Path) -> DbConn {
-    let conn = Connection::open_with_flags(
+    let mut conn = Connection::open_with_flags(
         path,
         OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_NO_MUTEX,
     )
     .expect("sqlite db");
     conn.set_db_config(SQLITE_DBCONFIG_ENABLE_FKEY, true)
         .expect("set foreign key enformance to on");
+
+    #[cfg(debug_assertions)]
+    conn.trace(Some(db_trace));
+
     Arc::new(Mutex::new(conn))
+}
+
+#[cfg(debug_assertions)]
+fn db_trace(out: &str) {
+    use regex::Regex;
+    lazy_static! {
+        static ref RE: Regex = Regex::new(r#"\s+"#).unwrap();
+    }
+    trace!("sqlite: {}", RE.replace_all(out, " "));
 }
 
 type Result<T> = std::result::Result<T, DataError>;

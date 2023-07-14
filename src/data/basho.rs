@@ -689,9 +689,6 @@ pub fn backfill_past_player_ranks(db: &mut Connection, to_basho: BashoId) -> Res
         first_basho, to_basho
     );
 
-    #[cfg(debug_assertions)]
-    db.trace(Some(|out| trace!("sqlite: {}", out)));
-
     let txn = db.transaction()?;
     let mut basho_id = first_basho;
     while basho_id <= to_basho {
