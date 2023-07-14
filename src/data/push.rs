@@ -648,6 +648,7 @@ pub async fn mass_notify_day_result(
         day,
         player_ids.len()
     );
+    let mut total_stats = SendStats::default();
     for (i, player_id) in player_ids.iter().enumerate() {
         let payload;
         let subscriptions;
@@ -674,9 +675,9 @@ pub async fn mass_notify_day_result(
             .clone()
             .send(payload, ttl, &subscriptions, db_conn)
             .await?;
-        let stats = SendStats::from_results(&results, &subscriptions);
-        info!("{:?}", stats);
+        total_stats.merge(&SendStats::from_results(&results, &subscriptions));
     }
+    info!("day results notification stats: {:?}", total_stats);
     Ok(())
 }
 

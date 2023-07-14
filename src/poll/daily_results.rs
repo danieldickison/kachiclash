@@ -1,4 +1,5 @@
 use crate::data::basho::update_torikumi;
+use crate::data::push::mass_notify_day_result;
 use crate::data::BashoId;
 use crate::data::RankDivision;
 use crate::external::sumo_api;
@@ -61,6 +62,15 @@ async fn do_tick(app_state: &AppState) -> anyhow::Result<()> {
             let mut db = app_state.db.lock().unwrap();
             update_torikumi(&mut db, basho_id, day, &update_data)?;
         }
+
+        mass_notify_day_result(
+            &app_state.db,
+            &app_state.push,
+            &app_state.config.url(),
+            basho_id,
+            day,
+        )
+        .await?;
     } else {
         debug!("day {day} is not yet complete; sleeping");
     }
