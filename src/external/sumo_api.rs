@@ -44,21 +44,13 @@ pub enum BoutResult {
 }
 
 impl BanzukeResponse {
-    pub async fn fetch(
-        basho_id: BashoId,
-        division: RankDivision,
-    ) -> Result<BanzukeResponse, reqwest::Error> {
+    pub async fn fetch(basho_id: BashoId, division: RankDivision) -> Result<Self, reqwest::Error> {
         let url = format!(
             "https://www.sumo-api.com/api/basho/{basho}/banzuke/{division}",
             basho = basho_id.id()
         );
         debug!("sending request to {}", url);
-        make_client()?
-            .get(&url)
-            .send()
-            .await?
-            .json::<BanzukeResponse>()
-            .await
+        make_client()?.get(&url).send().await?.json().await
     }
 
     pub fn day_complete(&self, day: u8) -> bool {
