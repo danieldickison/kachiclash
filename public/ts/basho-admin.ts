@@ -51,6 +51,30 @@ document.querySelector('.trigger-countdown')?.addEventListener('click', event =>
   void adminTrigger({ BashoStartCountdown: bashoId })
 })
 
+document.querySelector('.update-torikumi')?.addEventListener('click', event => {
+  event.preventDefault()
+  const button = event.target as HTMLButtonElement
+  button.disabled = true
+  updateTorikumi(button.dataset.day ?? '1').finally(() => { button.disabled = false })
+})
+async function updateTorikumi (defaultDay: string): Promise<void> {
+  const day = parseInt(prompt('Day:', defaultDay) ?? 'NaN')
+  if (isNaN(day)) return
+
+  const notify = confirm('Send push notifications?')
+
+  const res = await fetch(`/basho/${bashoId}/day/${day}`, {
+    method: 'POST',
+    credentials: 'same-origin',
+    body: JSON.stringify({ notify }),
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+  alertSendStats(await res.json())
+  location.reload()
+}
+
 document.querySelector('.finalize-basho')?.addEventListener('click', event => {
   (event.target as HTMLButtonElement).disabled = true
   event.preventDefault()

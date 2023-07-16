@@ -33,7 +33,12 @@
                     </menu>
                 </li>
                 {% if next_day <= 15 %}
-                    <li><a href="{{basho.id.url_path()}}/day/{{next_day}}">enter day {{next_day}} torikumi</a></li>
+                    <li>Torikumi:
+                        <menu>
+                            <li><a href="{{basho.id.url_path()}}/day/{{next_day}}">edit day {{next_day}}</a></li>
+                            <li><button class="update-torikumi" data-day="{{next_day}}">update from sumo-api</button></li>
+                        </menu>
+                    </li>
                 {% else %}
                     <li><button class="finalize-basho">finalize basho</button></li>
                 {% endif %}

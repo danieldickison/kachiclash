@@ -236,7 +236,7 @@ async fn fetch_sumo_db_torikumi(basho_id: BashoId, day: u8) -> Result<String> {
 
 #[derive(Debug, Deserialize)]
 pub struct TorikumiData {
-    torikumi: Vec<data::basho::TorikumiMatchUpdateData>,
+    torikumi: Option<Vec<data::basho::TorikumiMatchUpdateData>>,
     notify: bool,
 }
 
@@ -247,12 +247,16 @@ pub async fn torikumi_post(
     state: web::Data<AppState>,
     identity: Identity,
 ) -> Result<impl Responder> {
-    {
+    admin_base(&state.db.lock().unwrap(), &identity, &state)?;
+    let mut notify = torikumi.notify;
+    if let Some(torikumi) = &torikumi.torikumi {
         let mut db = state.db.lock().unwrap();
-        admin_base(&db, &identity, &state)?;
-        data::basho::update_torikumi(&mut db, path.0, path.1, &torikumi.torikumi)?;
+        data::basho::update_torikumi(&mut db, path.0, path.1, torikumi)?;
+    } else if !crate::poll::daily_results::query_and_update(path.0, path.1, &state, false).await? {
+        notify = false;
     }
-    let stats = if torikumi.notify {
+
+    let stats = if notify {
         mass_notify_day_result(&state.db, &state.push, &state.config.url(), path.0, path.1).await?
     } else {
         SendStats::default()

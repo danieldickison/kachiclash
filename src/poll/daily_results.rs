@@ -95,9 +95,35 @@ async fn do_tick(app_state: &AppState) -> anyhow::Result<DateTime<Utc>> {
     }
 
     let day = last_day + 1;
+    let dry_run = matches!(std::env::var("SUMO_API_DRY_RUN"), Ok(val) if val == "1");
+    if query_and_update(basho_id, day, app_state, dry_run).await? {
+        if !dry_run {
+            mass_notify_day_result(
+                &app_state.db,
+                &app_state.push,
+                &app_state.config.url(),
+                basho_id,
+                day,
+            )
+            .await?;
+        }
+        Ok(next_poll_date(basho_start_date, day + 1))
+    } else {
+        debug!("Day {} results incomplete; going to sleep", day);
+        Ok(next_poll_date(basho_start_date, day))
+    }
+}
+
+pub async fn query_and_update(
+    basho_id: BashoId,
+    day: u8,
+    app_state: &AppState,
+    dry_run: bool,
+) -> anyhow::Result<bool> {
     debug!("Querying sumo-api for basho {} day {}", basho_id.id(), day);
     let resp = sumo_api::BanzukeResponse::fetch(basho_id, RankDivision::Makuuchi).await?;
-    if resp.day_complete(day) {
+    let complete = resp.day_complete(day);
+    if complete {
         let update_data = resp.torikumi_update_data(day);
         info!(
             "Got complete day {} results; updating db with {} bouts",
@@ -105,32 +131,14 @@ async fn do_tick(app_state: &AppState) -> anyhow::Result<DateTime<Utc>> {
             update_data.len()
         );
 
-        if let Ok(val) = std::env::var("SUMO_API_DRY_RUN") {
-            if val == "1" {
-                info!("SUMO_API_DRY_RUN is set; not actually updating db");
-                return Ok(next_poll_date(basho_start_date, day + 1));
-            }
-        }
-
-        {
+        if dry_run {
+            debug!("dry run; not updating db or sending push notifications");
+        } else {
             let mut db = app_state.db.lock().unwrap();
             update_torikumi(&mut db, basho_id, day, &update_data)?;
         }
-
-        mass_notify_day_result(
-            &app_state.db,
-            &app_state.push,
-            &app_state.config.url(),
-            basho_id,
-            day,
-        )
-        .await?;
-
-        Ok(next_poll_date(basho_start_date, day + 1))
-    } else {
-        debug!("Day {} results incomplete; going to sleep", day);
-        Ok(next_poll_date(basho_start_date, day))
     }
+    Ok(complete)
 }
 
 fn next_poll_date(basho_start_date: DateTime<Utc>, day: u8) -> DateTime<Utc> {
