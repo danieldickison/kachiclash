@@ -2,6 +2,9 @@ use std::{collections::HashSet, time::Duration};
 
 use crate::data::{basho::TorikumiMatchUpdateData, BashoId, Rank, RankDivision};
 
+const CONNECTION_TIMEOUT: u64 = 10;
+const RESPONSE_TIMEOUT: u64 = 20;
+
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BanzukeResponse {
@@ -114,8 +117,8 @@ impl BanzukeResponse {
 
 fn make_client() -> reqwest::Result<reqwest::Client> {
     reqwest::Client::builder()
-        .connect_timeout(Duration::from_secs(5))
-        .timeout(Duration::from_secs(10))
+        .connect_timeout(Duration::from_secs(CONNECTION_TIMEOUT))
+        .timeout(Duration::from_secs(RESPONSE_TIMEOUT))
         .user_agent("kachiclash.com")
         .build()
 }
