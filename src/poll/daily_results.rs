@@ -104,6 +104,14 @@ async fn do_tick(app_state: &AppState) -> anyhow::Result<DateTime<Utc>> {
             day,
             update_data.len()
         );
+
+        if let Ok(val) = std::env::var("SUMO_API_DRY_RUN") {
+            if val == "1" {
+                info!("SUMO_API_DRY_RUN is set; not actually updating db");
+                return Ok(next_poll_date(basho_start_date, day + 1));
+            }
+        }
+
         {
             let mut db = app_state.db.lock().unwrap();
             update_torikumi(&mut db, basho_id, day, &update_data)?;
