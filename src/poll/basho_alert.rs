@@ -5,6 +5,7 @@ use tokio::time::Duration;
 
 pub async fn basho_alert(app_state: AppState) {
     let mut interval = interval(Duration::from_secs(3600));
+    interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
     loop {
         interval.tick().await;
         match do_tick(&app_state) {

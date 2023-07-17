@@ -14,6 +14,7 @@ Environment=KACHI_STATIC_PATH=/home/kachiclash/public
 Environment=KACHI_HERO=/static/img2/2021-Kachi-Clash-Banner-2.png
 Environment=KACHI_PORT=8001
 Environment=RUST_BACKTRACE=1
+Environment=SUMO_API_DRY_RUN=1
 EnvironmentFile=/home/kachiclash/prod_secrets
 ExecStart=/home/kachiclash/server
 Restart=always

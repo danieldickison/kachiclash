@@ -14,6 +14,8 @@ pub mod discord;
 pub mod google;
 pub mod reddit;
 
+pub mod sumo_api;
+
 pub enum ImageSize {
     Tiny = 64,
     // SMALL   = 128,

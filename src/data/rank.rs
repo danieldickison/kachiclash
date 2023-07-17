@@ -1,6 +1,5 @@
 use rusqlite::types::{FromSql, FromSqlError, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::convert::TryFrom;
 use std::error::Error;
 use std::fmt;
 use std::ops::Deref;
@@ -8,8 +7,9 @@ use std::str::FromStr;
 
 #[derive(Debug)]
 pub enum RankError {
-    UnknownChar(char),
-    MissingChar,
+    UnknownRankName(String),
+    UnknownRankSide(String),
+    MissingPart(&'static str),
     ParseIntError(std::num::ParseIntError),
 }
 
@@ -21,9 +21,41 @@ impl fmt::Display for RankError {
 
 impl Error for RankError {}
 
+impl From<std::num::ParseIntError> for RankError {
+    fn from(e: std::num::ParseIntError) -> Self {
+        Self::ParseIntError(e)
+    }
+}
+
 impl From<RankError> for FromSqlError {
     fn from(e: RankError) -> Self {
         Self::Other(Box::new(e))
+    }
+}
+
+#[derive(Debug, Deserialize, PartialEq, PartialOrd, Eq, Ord, Copy, Clone)]
+pub enum RankDivision {
+    Makuuchi,
+    Juryo,
+    Makushita,
+    Sandanme,
+    Jonidan,
+    Jonokuchi,
+    Maezumo,
+}
+
+impl fmt::Display for RankDivision {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let str = match self {
+            Self::Makuuchi => "Makuuchi",
+            Self::Juryo => "Juryo",
+            Self::Makushita => "Makushita",
+            Self::Sandanme => "Sandanme",
+            Self::Jonidan => "Jonidan",
+            Self::Jonokuchi => "Jonokuchi",
+            Self::Maezumo => "Maezumo",
+        };
+        f.write_str(str)
     }
 }
 
@@ -74,17 +106,18 @@ impl fmt::Display for RankName {
     }
 }
 
-impl TryFrom<char> for RankName {
-    type Error = RankError;
-    fn try_from(c: char) -> Result<Self, RankError> {
-        match c {
-            'Y' => Ok(RankName::Yokozuna),
-            'O' => Ok(RankName::Ozeki),
-            'S' => Ok(RankName::Sekiwake),
-            'K' => Ok(RankName::Komusubi),
-            'M' => Ok(RankName::Maegashira),
-            'J' => Ok(RankName::Juryo),
-            _ => Err(RankError::UnknownChar(c)),
+impl FromStr for RankName {
+    type Err = RankError;
+
+    fn from_str(s: &str) -> Result<Self, RankError> {
+        match s {
+            "Y" | "Yokozuna" => Ok(RankName::Yokozuna),
+            "O" | "Ozeki" => Ok(RankName::Ozeki),
+            "S" | "Sekiwake" => Ok(RankName::Sekiwake),
+            "K" | "Komusubi" => Ok(RankName::Komusubi),
+            "M" | "Maegashira" => Ok(RankName::Maegashira),
+            "J" | "Juryo" => Ok(RankName::Juryo),
+            _ => Err(RankError::UnknownRankName(s.to_owned())),
         }
     }
 }
@@ -120,13 +153,14 @@ impl fmt::Display for RankSide {
     }
 }
 
-impl TryFrom<char> for RankSide {
-    type Error = RankError;
-    fn try_from(c: char) -> Result<Self, RankError> {
-        match c {
-            'E' | 'e' => Ok(RankSide::East),
-            'W' | 'w' => Ok(RankSide::West),
-            _ => Err(RankError::UnknownChar(c)),
+impl FromStr for RankSide {
+    type Err = RankError;
+
+    fn from_str(s: &str) -> Result<Self, RankError> {
+        match s {
+            "E" | "e" | "East" | "east" => Ok(RankSide::East),
+            "W" | "w" | "West" | "west" => Ok(RankSide::West),
+            _ => Err(RankError::UnknownRankSide(s.to_owned())),
         }
     }
 }
@@ -270,16 +304,48 @@ impl ToSql for Rank {
 impl FromStr for Rank {
     type Err = RankError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut chars = s.chars();
-        let name_char = chars.next().ok_or(RankError::MissingChar)?;
-        let side_char = chars.next_back().ok_or(RankError::MissingChar)?;
-        let num_str = chars.as_str();
-        //debug!("parsing rank got name char {} side char {} with remaining {}", name_char, side_char, num_str);
-        Ok(Rank {
-            name: RankName::try_from(name_char)?,
-            side: RankSide::try_from(side_char)?,
-            number: num_str.parse().map_err(RankError::ParseIntError)?,
-        })
+        if s.len() > 6 {
+            let mut parts = s.split_ascii_whitespace();
+            Ok(Rank {
+                name: parts
+                    .next()
+                    .ok_or(RankError::MissingPart("name"))?
+                    .parse()?,
+                number: parts
+                    .next()
+                    .ok_or(RankError::MissingPart("number"))?
+                    .parse()?,
+                side: parts
+                    .next()
+                    .ok_or(RankError::MissingPart("side"))?
+                    .parse()?,
+            })
+        } else {
+            // Short form, e.g. Y1e and M14w and Ms3e
+            let len = s.len();
+            if len < 3 {
+                return Err(RankError::MissingPart("too short"));
+            }
+
+            let name_str: &str;
+            let num_str: &str;
+            let side_str = &s[len - 1..];
+            if s.chars().nth(1).map_or(false, |c| c.is_ascii_lowercase()) {
+                // two-letter RankName
+                name_str = &s[..2];
+                num_str = &s[2..len - 1];
+            } else {
+                // one-letter RankName
+                name_str = &s[..1];
+                num_str = &s[1..len - 1];
+            }
+            //debug!("parsing rank got name char {} side char {} with remaining {}", name_char, side_char, num_str);
+            Ok(Rank {
+                name: name_str.parse()?,
+                number: num_str.parse()?,
+                side: side_str.parse()?,
+            })
+        }
     }
 }
 
