@@ -6,6 +6,7 @@ use crate::external::sumo_api;
 use crate::AppState;
 use chrono::Utc;
 use chrono::{DateTime, FixedOffset, NaiveTime};
+use rusqlite::OptionalExtension;
 use tokio::time::sleep;
 
 const POLL_INTERVAL_FAST: i64 = 300; // 5 min
@@ -78,8 +79,9 @@ async fn do_tick(app_state: &AppState) -> anyhow::Result<DateTime<Utc>> {
     {
         // Find the last completed day of the currently active basho. The current basho should be the only one in the db with picks but without any associated awards.
         let db = app_state.db.lock().unwrap();
-        (basho_id, basho_start_date, last_day) = db.query_row(
-            "
+        (basho_id, basho_start_date, last_day) = match db
+            .query_row(
+                "
             SELECT
                 basho.id,
                 basho.start_date,
@@ -89,12 +91,25 @@ async fn do_tick(app_state: &AppState) -> anyhow::Result<DateTime<Utc>> {
                 NOT EXISTS (SELECT 1 FROM award WHERE award.basho_id = basho.id)
                 AND EXISTS (SELECT 1 FROM pick WHERE pick.basho_id = basho.id)
             ", // This will error if multiple rows are returned
-            (),
-            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
-        )?;
+                (),
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+            )
+            .optional()?
+        {
+            None => {
+                info!("No current basho");
+                return Ok(Utc::now() + chrono::Duration::days(1));
+            }
+            Some(row) => row,
+        }
     }
 
     let day = last_day + 1;
+    if day > 15 {
+        warn!("Basho {:#} not finalized after day 15", basho_id);
+        return Ok(Utc::now() + chrono::Duration::days(1));
+    }
+
     let dry_run = matches!(std::env::var("SUMO_API_DRY_RUN"), Ok(val) if val == "1");
     if query_and_update(basho_id, day, app_state, dry_run).await? {
         if !dry_run {

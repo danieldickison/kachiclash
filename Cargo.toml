@@ -17,9 +17,9 @@ serde_json = "1.0"
 futures = "0.3"
 envconfig = "0.10"
 log = "0.4"
-pretty_env_logger = "0.4"
+pretty_env_logger = "0.5"
 chrono = "0.4"
-itertools = "0.10"
+itertools = "0.11"
 result = "1.0"
 regex = "1.4"
 lazy_static = "1.4"
@@ -27,7 +27,6 @@ rand = "0.8"
 oauth2 = "4.1"
 anyhow = "1.0"
 num_cpus = "1.13"
-web-push = "0.9.3"
 askama_actix = "0.14.0"
 
 [dependencies.tokio]
@@ -49,3 +48,8 @@ features = ["bundled", "chrono", "trace"]
 [dependencies.reqwest]
 version = "0.11"
 features = ["gzip", "json"]
+
+[dependencies.web-push]
+version = "0.10"
+default-features = false
+features = ["hyper-client"]

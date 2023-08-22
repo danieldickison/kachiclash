@@ -6,8 +6,8 @@ use itertools::Itertools;
 use rusqlite::{types::FromSqlResult, Connection, Row, RowIndex};
 use url::Url;
 use web_push::{
-    ContentEncoding, PartialVapidSignatureBuilder, SubscriptionInfo, VapidSignatureBuilder,
-    WebPushClient, WebPushError, WebPushMessageBuilder, URL_SAFE_NO_PAD,
+    ContentEncoding, HyperWebPushClient, PartialVapidSignatureBuilder, SubscriptionInfo,
+    VapidSignatureBuilder, WebPushClient, WebPushError, WebPushMessageBuilder, URL_SAFE_NO_PAD,
 };
 
 // Keep types in sync with push.ts
@@ -131,14 +131,14 @@ impl Subscription {
 #[derive(Clone)]
 pub struct PushBuilder {
     vapid: PartialVapidSignatureBuilder,
-    client: WebPushClient,
+    client: HyperWebPushClient,
 }
 
 impl PushBuilder {
     pub fn with_base64_private_key(base64: &str) -> Result<Self> {
         Ok(Self {
             vapid: VapidSignatureBuilder::from_base64_no_sub(base64, URL_SAFE_NO_PAD)?,
-            client: WebPushClient::new()?,
+            client: HyperWebPushClient::new(),
         })
     }
 
@@ -166,7 +166,7 @@ impl PushBuilder {
                 };
             }
 
-            let mut msg = WebPushMessageBuilder::new(&sub.info)?;
+            let mut msg = WebPushMessageBuilder::new(&sub.info);
             msg.set_ttl(ttl.num_seconds() as u32);
 
             let payload_json = serde_json::to_vec(&payload)?;
