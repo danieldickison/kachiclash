@@ -3,11 +3,11 @@ use crate::data::basho::backfill_past_player_ranks;
 use crate::data::push::{
     mass_notify_basho_result, mass_notify_day_result, mass_notify_kyujyo, SendStats,
 };
-use crate::data::{self, basho, BashoId, DataError, Player, PlayerId, Rank};
+use crate::data::{self, basho, BashoId, DbConn, Player, PlayerId, Rank};
 use crate::external::discord::DiscordAuthProvider;
 use crate::external::google::GoogleAuthProvider;
 use crate::external::reddit::RedditAuthProvider;
-use crate::external::AuthProvider;
+use crate::external::{sumo_api, AuthProvider};
 use crate::AppState;
 
 use actix_identity::Identity;
@@ -17,6 +17,7 @@ use anyhow::anyhow;
 use askama::Template;
 use chrono::NaiveDateTime;
 use futures::prelude::*;
+use itertools::Itertools;
 use regex::{Regex, RegexBuilder};
 use rusqlite::{Connection, OptionalExtension, Result as SqlResult};
 use serde::{Deserialize, Deserializer};
@@ -26,7 +27,7 @@ use std::time::Duration;
 #[template(path = "edit_basho.html")]
 pub struct EditBashoTemplate {
     base: BaseTemplate,
-    basho: Option<BashoData>,
+    basho: BashoData,
 }
 
 #[get("/edit")]
@@ -35,10 +36,13 @@ pub async fn edit_basho_page(
     state: web::Data<AppState>,
     identity: Identity,
 ) -> Result<EditBashoTemplate> {
-    let db = state.db.lock().unwrap();
+    let base = {
+        let db = state.db.lock().unwrap();
+        admin_base(&db, &identity, &state)?
+    };
     Ok(EditBashoTemplate {
-        base: admin_base(&db, &identity, &state)?,
-        basho: BashoData::with_id(&db, *path)?,
+        base,
+        basho: BashoData::with_id(&state.db, *path).await?,
     })
 }
 
@@ -52,31 +56,55 @@ pub struct BashoData {
 }
 
 impl BashoData {
-    fn with_id(db: &Connection, id: BashoId) -> Result<Option<Self>> {
-        db.query_row(
-            "
+    async fn with_id(conn: &DbConn, id: BashoId) -> Result<Self> {
+        let mut basho = {
+            let db = conn.lock().unwrap();
+            db.query_row(
+                "
             SELECT
                 basho.start_date,
                 basho.venue
             FROM basho
             WHERE basho.id = ?",
-            params![id],
-            |row| {
-                let start_date: NaiveDateTime = row.get("start_date")?;
-                debug!("got basho row start date {:?}", start_date);
-                Ok(Self {
-                    start_date,
-                    venue: row.get("venue")?,
-                    banzuke: Self::fetch_banzuke(db, id)?,
-                    notify_kyujyo: true,
-                })
-            },
-        )
-        .optional()
-        .map_err(|e| DataError::from(e).into())
+                params![id],
+                |row| {
+                    let start_date: NaiveDateTime = row.get("start_date")?;
+                    debug!("got basho row start date {:?}", start_date);
+                    Ok(Self {
+                        start_date,
+                        venue: row.get("venue")?,
+                        banzuke: Self::fetch_banzuke_from_db(&db, id)?,
+                        notify_kyujyo: true,
+                    })
+                },
+            )
+            .optional()?
+            .unwrap_or_else(|| Self::make_basho_stub(id))
+        };
+
+        if basho.banzuke.is_empty() {
+            basho.banzuke = match Self::fetch_banzuke_from_sumo_api(id).await {
+                Ok(val) => val,
+                Err(e) => {
+                    warn!("Failed to fetch {:#} banzuke from sumo-api: {}", id, e);
+                    vec![]
+                }
+            }
+        }
+
+        Ok(basho)
     }
 
-    fn fetch_banzuke(db: &Connection, id: BashoId) -> SqlResult<Vec<BanzukeRikishi>> {
+    fn make_basho_stub(id: BashoId) -> BashoData {
+        Self {
+            venue: id.expected_venue(),
+            start_date: id.expected_start_date().naive_local(),
+            banzuke: vec![],
+            notify_kyujyo: false,
+        }
+    }
+
+    fn fetch_banzuke_from_db(db: &Connection, id: BashoId) -> SqlResult<Vec<BanzukeRikishi>> {
         db.prepare(
             "
             SELECT family_name, rank, kyujyo
@@ -92,6 +120,22 @@ impl BashoData {
             })
         })?
         .collect::<SqlResult<Vec<BanzukeRikishi>>>()
+    }
+
+    async fn fetch_banzuke_from_sumo_api(id: BashoId) -> Result<Vec<BanzukeRikishi>> {
+        debug!("Fetching Makuuchi and Juryo banzuke from sumo-api");
+        let makuuchi = sumo_api::BanzukeResponse::fetch(id, data::RankDivision::Makuuchi).await?;
+        let juryo = sumo_api::BanzukeResponse::fetch(id, data::RankDivision::Juryo).await?;
+        Ok(makuuchi
+            .all_rikishi()
+            .chain(juryo.all_rikishi())
+            .map(|r| BanzukeRikishi {
+                name: r.shikona_en.to_owned(),
+                rank: r.rank,
+                is_kyujyo: false,
+            })
+            .sorted_by_key(|r| r.rank)
+            .collect())
     }
 }
 

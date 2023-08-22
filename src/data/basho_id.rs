@@ -1,5 +1,4 @@
-use chrono::naive::NaiveDate;
-use chrono::Datelike;
+use chrono::{DateTime, Datelike, FixedOffset, NaiveDate, Utc, Weekday};
 use rusqlite::types::{FromSql, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::convert::From;
@@ -13,6 +12,10 @@ pub struct BashoId {
     pub month: u8,
 }
 
+lazy_static! {
+    static ref JST: FixedOffset = FixedOffset::east_opt(9 * 60 * 60).unwrap();
+}
+
 impl BashoId {
     pub fn id(self) -> String {
         format!("{:04}{:02}", self.year, self.month)
@@ -20,6 +23,27 @@ impl BashoId {
 
     pub fn url_path(self) -> String {
         format!("/basho/{}", self.id())
+    }
+
+    pub fn expected_start_date(self) -> DateTime<Utc> {
+        NaiveDate::from_weekday_of_month_opt(self.year as i32, self.month as u32, Weekday::Sun, 2)
+            .unwrap()
+            .and_hms_opt(15, 0, 0)
+            .unwrap()
+            .and_local_timezone(*JST)
+            .unwrap()
+            .with_timezone(&Utc)
+    }
+
+    pub fn expected_venue(self) -> String {
+        match self.month {
+            1 | 5 | 9 => "Tokyo",
+            3 => "Osaka",
+            7 => "Nagoya",
+            11 => "Fukuoka",
+            _ => "?",
+        }
+        .to_string()
     }
 
     pub fn season(self) -> String {

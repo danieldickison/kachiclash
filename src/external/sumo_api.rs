@@ -110,7 +110,7 @@ impl BanzukeResponse {
         out
     }
 
-    fn all_rikishi(&self) -> impl Iterator<Item = &RikishiResponse> {
+    pub fn all_rikishi(&self) -> impl Iterator<Item = &RikishiResponse> {
         self.east.iter().chain(self.west.iter())
     }
 }
