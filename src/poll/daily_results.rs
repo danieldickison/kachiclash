@@ -95,6 +95,11 @@ async fn do_tick(app_state: &AppState) -> anyhow::Result<DateTime<Utc>> {
     }
 
     let day = last_day + 1;
+    if day > 15 {
+        warn!("Basho {:#} not finalized after day 15", basho_id);
+        return Ok(Utc::now() + chrono::Duration::days(1));
+    }
+
     let dry_run = matches!(std::env::var("SUMO_API_DRY_RUN"), Ok(val) if val == "1");
     if query_and_update(basho_id, day, app_state, dry_run).await? {
         if !dry_run {
