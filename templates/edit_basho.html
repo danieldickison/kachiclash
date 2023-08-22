@@ -14,35 +14,23 @@
         <h2>Create new basho</h2>
         <label>
             City:
-            <input name="venue"
-                {%- match basho -%}
-                {%- when Some with (b) -%} value="{{b.venue}}"
-                {%- when None -%}
-                {%- endmatch %}
-            >
+            <input name="venue" value="{{basho.venue}}">
         </label>
         <label>
             Start date:
             <span class="footnote">This is the precise time when entries will be closed, in UTC. (yyyy-mm-ddThh:mm)</span>
             <input name="start_date" type="datetime-local" placeholder="yyyy-mm-ddThh:mm"
-                {%- match basho -%}
-                {%- when Some with (b) -%} value="{{b.start_date.format("%Y-%m-%dT%H:%M")}}"
-                {%- when None -%}
-                {%- endmatch -%}
+                value="{{basho.start_date.format("%Y-%m-%dT%H:%M")}}"
             >
         </label>
         <label>
             Banzuke:
             <span class="footnote">Copy and paste the "text-only" banzuke from <a href="http://sumodb.sumogames.de/Banzuke_text.aspx?b=201907">sumodb.sumogames.de</a></span>
             <textarea name="banzuke">
-                {%- match basho -%}
-                {%- when Some with (b) -%}
-                    {%- for rikishi in b.banzuke -%}
-                        {{rikishi.rank}} {{rikishi.name}}
-                        {%- if rikishi.is_kyujyo %} x {%- endif %}
-                    {% endfor -%}
-                {%- when None -%}
-                {%- endmatch -%}
+                {%- for rikishi in basho.banzuke -%}
+                    {{rikishi.rank}} {{rikishi.name}}
+                    {%- if rikishi.is_kyujyo %} x {%- endif %}
+                {% endfor -%}
             </textarea>
         </label>
         
