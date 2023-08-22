@@ -1,6 +1,6 @@
 #!/bin/sh
 
-cargo build --bin=server --release || exit
+cargo build --bin=server --release --locked || exit
 
 sudo rsync -rv public /home/kachiclash/
 sudo chown -R kachiclash:nogroup /home/kachiclash/public
