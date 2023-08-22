@@ -122,7 +122,7 @@ impl BashoData {
         .collect::<SqlResult<Vec<BanzukeRikishi>>>()
     }
 
-    async fn fetch_banzuke_from_sumo_api(id: BashoId) -> Result<Vec<BanzukeRikishi>> {
+    async fn fetch_banzuke_from_sumo_api(id: BashoId) -> reqwest::Result<Vec<BanzukeRikishi>> {
         debug!("Fetching Makuuchi and Juryo banzuke from sumo-api");
         let makuuchi = sumo_api::BanzukeResponse::fetch(id, data::RankDivision::Makuuchi).await?;
         let juryo = sumo_api::BanzukeResponse::fetch(id, data::RankDivision::Juryo).await?;

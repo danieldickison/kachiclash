@@ -19,6 +19,7 @@ pub struct BanzukeResponse {
 pub struct RikishiResponse {
     pub shikona_en: String,
     pub rank: Rank,
+    #[serde(default)] // newly retired rikishi might be missing this field
     pub record: Vec<BoutResponse>,
 }
 
