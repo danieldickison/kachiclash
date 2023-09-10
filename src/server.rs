@@ -14,6 +14,7 @@ use actix_web::cookie::Key;
 use actix_web::dev::ServerHandle;
 use actix_web::rt::time::interval;
 use actix_web::{middleware, web, App, HttpResponse, HttpServer};
+use anyhow::anyhow;
 use std::cmp::max;
 use std::time::Duration;
 use tokio::task::spawn;
@@ -136,7 +137,8 @@ pub async fn run(app_state: &AppState) -> anyhow::Result<()> {
             .expect("run tsc");
     }
 
-    server.await.map_err(|e| e.into())
+    server.await?;
+    Err(anyhow!("Server exited"))
 }
 
 async fn default_not_found() -> Result<HttpResponse, handlers::HandlerError> {
