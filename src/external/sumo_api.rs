@@ -60,8 +60,12 @@ impl BanzukeResponse {
     pub fn day_complete(&self, day: u8) -> bool {
         let day_idx = day as usize - 1;
         assert!(day_idx < 15);
-        self.all_rikishi()
-            .all(|rikishi| rikishi.record[day_idx].result != BoutResult::None)
+        self.all_rikishi().all(|rikishi| {
+            rikishi
+                .record
+                .get(day_idx)
+                .map_or(false, |res| res.result != BoutResult::None)
+        })
     }
 
     pub fn torikumi_update_data(&self, day: u8) -> Vec<TorikumiMatchUpdateData> {
