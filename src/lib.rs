@@ -129,6 +129,6 @@ pub async fn run_server(app_state: &AppState) -> anyhow::Result<()> {
     server::run(app_state).await
 }
 
-pub fn start_poll(app_state: &AppState) -> anyhow::Result<()> {
-    poll::start(app_state)
+pub async fn start_poll(app_state: &AppState) -> anyhow::Result<()> {
+    poll::start(app_state).await
 }

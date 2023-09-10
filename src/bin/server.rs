@@ -1,8 +1,13 @@
 extern crate kachiclash;
 
+use tokio::try_join;
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let app_state = kachiclash::init_env()?;
-    kachiclash::start_poll(&app_state)?;
-    kachiclash::run_server(&app_state).await
+    try_join!(
+        kachiclash::start_poll(&app_state),
+        kachiclash::run_server(&app_state)
+    )
+    .map(|_| ())
 }

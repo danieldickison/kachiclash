@@ -20,7 +20,7 @@ lazy_static! {
     static ref POLL_START_TIME_JST: NaiveTime = NaiveTime::from_hms_opt(18, 0, 0).unwrap();
 }
 
-pub async fn daily_results(app_state: AppState) -> ! {
+pub async fn daily_results(app_state: AppState) {
     let mut retry_wait = chrono::Duration::seconds(ERROR_RETRY_WAIT);
     loop {
         let next_poll_datetime = match do_tick(&app_state).await {
