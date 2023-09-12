@@ -1,10 +1,11 @@
 const appKey = (document.head.querySelector('meta[name="vapid-public-key"]') as HTMLMetaElement).content
 
-const registrationPromise = navigator.serviceWorker.register('/static/js/service-worker.js', {
-  scope: '/'
-  // this is not supported in FireFox yet, as of v111
-  // type: 'module'
-})
+const registrationPromise: Promise<ServiceWorkerRegistration | undefined> =
+  navigator.serviceWorker?.register('/static/js/service-worker.js', {
+    scope: '/'
+    // this is not supported in FireFox yet, as of v111
+    // type: 'module'
+  }) ?? Promise.resolve(undefined)
 
 function base64ToUint8Array (base64: string): Uint8Array {
   const bin = atob(base64.replaceAll('-', '+').replaceAll('_', '/'))
@@ -17,7 +18,7 @@ function base64ToUint8Array (base64: string): Uint8Array {
 
 export async function subscribeToPushNotifications (): Promise<PushSubscription> {
   const registration = await registrationPromise
-  if (registration.pushManager === undefined) {
+  if (registration?.pushManager === undefined) {
     throw new Error('Push notifications are not supported in this browser.')
   }
 
@@ -40,7 +41,7 @@ export type PushPermissionState = PermissionState | 'unavailable'
 
 export async function pushPermissionState (): Promise<PushPermissionState> {
   const registration = await registrationPromise
-  if (registration.pushManager === undefined) {
+  if (registration?.pushManager === undefined) {
     return 'unavailable'
   } else {
     // It seems that in Safari, these three methods of getting the permission state are sometimes divergent, so we'll take all three and return 'granted' if any of them say so; otherwise use navigator.permissions as the source of truth. https://developer.apple.com/forums/thread/731412
@@ -64,8 +65,8 @@ export interface SubscriptionState {
 
 export async function pushSubscriptionState (): Promise<null | SubscriptionState> {
   const registration = await registrationPromise
-  const subscription = await registration.pushManager.getSubscription()
-  if (subscription == null) {
+  const subscription = await registration?.pushManager.getSubscription()
+  if (subscription === null || subscription === undefined) {
     return null
   }
 
