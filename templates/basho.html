@@ -45,7 +45,28 @@
                 <!-- <li><form method="post" action="{{basho.id.url_path()}}/backfill_player_ranks">
                     <button>backfill player ranks</button>
                 </form></li> -->
+                <li><button class="hide-admin">hide</button></li>
             </menu>
+        </section>
+    {% endif %}
+    
+    {# TODO: put sponsorship data in the db #}
+    {% if basho.id.id()[..] >= "202311" %}
+        <section id="sponsors">
+            <h2>Rewards</h2>
+            <div class="sponsor-grid">
+                <a class="logo" href="https://tegatastore.com" target="_blank">
+                    <img src="/static/img/tegatastore.png" alt="Tegata Store logo">
+                </a>
+                <div>
+                    <p>
+                        <a href="https://tegatastore.com" target="_blank"><strong>The Tegata Store</strong></a> will ship any one <a href="https://tegatastore.com/collections/authentic-torikumi-sheets" target="_blank">authentic torikumi sheet</a> to the winner of this basho!
+                    </p>
+                    
+                    <p class="fine-print">
+                        In the case of a tie, the player with the highest rank at the start of the basho will win the reward.
+                    </p>
+                </div>
         </section>
     {% endif %}
 

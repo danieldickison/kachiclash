@@ -9,7 +9,7 @@
         text-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
     }
     
-    #entries, #leaderboard, #admin {
+    #entries, #leaderboard, #admin, #sponsors {
         background: var(--color-light-yellow-bg);
         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
         -webkit-backdrop-filter: blur(3px);
@@ -17,6 +17,12 @@
         
         @media (hover: none) {
             background: var(--color-light-yellow-bg-opaque);
+        }
+        
+        > h2 {
+            border-bottom: solid 1px var(--color-border);
+            padding-bottom: var(--section-padding);
+            margin: 0 0 var(--section-padding) 0;
         }
     }
     
@@ -27,6 +33,31 @@
         padding: 0;
         list-style: none;
         gap: 2rem;
+    }
+    
+    #sponsors {
+        .sponsor-grid {
+            display: grid;
+            grid-auto-flow: row;
+            grid-template-columns: 100px 1fr;
+            gap: 1em;
+            
+            > .logo > * {
+                width: 100%;
+            }
+            
+            p {
+                margin: 0;
+                & + p {
+                    margin-top: 1ex;
+                }
+            }
+            
+            .fine-print {
+                color: var(--color-fg-sub);
+                font-size: smaller;
+            }
+        }
     }
     
     #entries > ul {

@@ -89,4 +89,9 @@ async function finalizeBasho (): Promise<void> {
   location.reload()
 }
 
+document.querySelector('.hide-admin')?.addEventListener('click', event => {
+  event.preventDefault()
+  document.getElementById('admin')?.remove()
+})
+
 export default {}
