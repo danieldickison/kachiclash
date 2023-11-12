@@ -30,6 +30,7 @@ pub type Day = u8;
 pub type DbConn = Arc<Mutex<Connection>>;
 
 pub fn make_conn(path: &Path) -> DbConn {
+    #[allow(unused_mut)]
     let mut conn = Connection::open_with_flags(
         path,
         OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_NO_MUTEX,
@@ -48,7 +49,7 @@ pub fn make_conn(path: &Path) -> DbConn {
 fn db_trace(out: &str) {
     use regex::Regex;
     lazy_static! {
-        static ref RE: Regex = Regex::new(r#"\s+"#).unwrap();
+        static ref RE: Regex = Regex::new(r"\s+").unwrap();
     }
     trace!("sqlite: {}", RE.replace_all(out, " "));
 }
