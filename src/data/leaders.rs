@@ -29,10 +29,10 @@ impl BashoPlayerResults {
             .collect()
     }
 
-    fn rank_sort_key(&self) -> impl Ord {
+    fn sort_key_during_basho(&self) -> impl Ord {
         match &self.player {
-            ResultPlayer::RankedPlayer(_, rank) => (
-                if *rank == 0 { 1 } else { *rank },
+            ResultPlayer::RankedPlayer(_, basho_rank) => (
+                if *basho_rank == 0 { 1 } else { *basho_rank },
                 self.picks()
                     .iter()
                     .map(|rikishi| rikishi.map_or("".to_string(), |r| r.name.clone()))
@@ -42,13 +42,13 @@ impl BashoPlayerResults {
             ResultPlayer::Min => (usize::max_value(), vec![]),
         }
     }
-    fn name_sort_key(&self) -> impl Ord {
+    fn sort_key_before_basho(&self) -> impl Ord {
         match &self.player {
             ResultPlayer::RankedPlayer(player, _) => (
-                if player.has_emperors_cup() { 0 } else { 1 },
+                player.rank.unwrap_or(Rank::bottom()),
                 player.name.to_lowercase(),
             ),
-            _ => (0, "".to_string()),
+            _ => (Rank::bottom(), "".to_string()),
         }
     }
 
@@ -131,10 +131,10 @@ impl BashoPlayerResults {
             let (min, max) = make_min_max_results(rikishi);
             leaders.push(min);
             leaders.push(max);
-            // Sort to put self player at the bottom. (It's always first from the db query to ensure it doesn't get bumped off by the LIMIT clause.)
-            leaders.sort_by_cached_key(|p| p.rank_sort_key());
+            // Sort to put self player in correct place. (It's always first from the db query to ensure it doesn't get bumped off by the LIMIT clause.)
+            leaders.sort_by_cached_key(|p| p.sort_key_during_basho());
         } else {
-            leaders.sort_by_cached_key(|p| p.name_sort_key());
+            leaders.sort_by_cached_key(|p| p.sort_key_before_basho())
         }
 
         Ok(leaders)
@@ -409,6 +409,7 @@ impl RankPlayerCounts {
                 minimum: 4,
                 preferred: 4,
             },
+            _ => todo!("player_rank below Juryo not yet implemented"),
         }
     }
 }

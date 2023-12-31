@@ -67,6 +67,11 @@ pub enum RankName {
     Komusubi,
     Maegashira,
     Juryo,
+    Makushita,
+    Sandanme,
+    Jonidan,
+    Jonokuchi,
+    BanzukeGai,
 }
 
 impl RankName {
@@ -77,7 +82,12 @@ impl RankName {
             RankName::Sekiwake => Some(Self::Komusubi),
             RankName::Komusubi => Some(Self::Maegashira),
             RankName::Maegashira => Some(Self::Juryo),
-            RankName::Juryo => None,
+            RankName::Juryo => Some(Self::Makushita),
+            RankName::Makushita => Some(Self::Sandanme),
+            RankName::Sandanme => Some(Self::Jonidan),
+            RankName::Jonidan => Some(Self::Jonokuchi),
+            RankName::Jonokuchi => Some(Self::BanzukeGai),
+            RankName::BanzukeGai => None,
         }
     }
 }
@@ -92,6 +102,11 @@ impl fmt::Display for RankName {
                 RankName::Komusubi => "Komusubi",
                 RankName::Maegashira => "Maegashira",
                 RankName::Juryo => "Juryo",
+                RankName::Makushita => "Makushita",
+                RankName::Sandanme => "Sandanme",
+                RankName::Jonidan => "Jonidan",
+                RankName::Jonokuchi => "Jonokuchi",
+                RankName::BanzukeGai => "Banzuke-Gai",
             }
         } else {
             match self {
@@ -101,6 +116,11 @@ impl fmt::Display for RankName {
                 RankName::Komusubi => "K",
                 RankName::Maegashira => "M",
                 RankName::Juryo => "J",
+                RankName::Makushita => "Ms",
+                RankName::Sandanme => "Sd",
+                RankName::Jonidan => "Jd",
+                RankName::Jonokuchi => "Jk",
+                RankName::BanzukeGai => "X",
             }
         })
     }
@@ -117,6 +137,11 @@ impl FromStr for RankName {
             "K" | "Komusubi" => Ok(RankName::Komusubi),
             "M" | "Maegashira" => Ok(RankName::Maegashira),
             "J" | "Juryo" => Ok(RankName::Juryo),
+            "Ms" | "Makushita" => Ok(RankName::Makushita),
+            "Sd" | "Sandanme" => Ok(RankName::Sandanme),
+            "Jd" | "Jonidan" => Ok(RankName::Jonidan),
+            "Jk" | "Jonokuchi" => Ok(RankName::Jonokuchi),
+            "X" | "Banzuke-Gai" => Ok(RankName::BanzukeGai),
             _ => Err(RankError::UnknownRankName(s.to_owned())),
         }
     }
@@ -185,6 +210,7 @@ impl RankGroup {
                 11..=std::u16::MAX => Self(5),
             },
             RankName::Juryo => Self(6),
+            _ => Self(7),
         }
     }
 
@@ -230,6 +256,14 @@ impl Rank {
         }
     }
 
+    pub fn bottom() -> Self {
+        Self {
+            name: RankName::BanzukeGai,
+            number: 999,
+            side: RankSide::West,
+        }
+    }
+
     pub fn group(self) -> RankGroup {
         RankGroup::for_rank(self.name, self.number)
     }
@@ -269,6 +303,7 @@ impl Rank {
                 number: self.number,
             },
 
+            // TODO: continue past Juryo
             _ => Self {
                 name: self.name,
                 side: RankSide::East,
