@@ -100,6 +100,12 @@ impl From<actix_web::Error> for HandlerError {
     }
 }
 
+impl From<actix_identity::error::LoginError> for HandlerError {
+    fn from(value: actix_identity::error::LoginError) -> Self {
+        Self::ActixError(value.to_string())
+    }
+}
+
 struct BaseTemplate {
     player: Option<Player>,
     current_or_next_basho_id: BashoId,
