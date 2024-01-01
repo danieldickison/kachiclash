@@ -39,7 +39,7 @@ pub struct QueryParams {
 }
 
 const LEADER_BASHO_COUNT_OPTIONS: [usize; 3] = [6, 3, 2];
-const LEADERS_LIMIT: u32 = 2000;
+const LEADERS_LIMIT: u32 = 5000;
 
 #[get("/stats")]
 pub async fn stats_page(

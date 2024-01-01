@@ -274,26 +274,7 @@ impl Rank {
 
     pub fn next_lower(self) -> Self {
         match self {
-            Self {
-                name: RankName::Yokozuna | RankName::Ozeki | RankName::Sekiwake | RankName::Komusubi,
-                side: RankSide::West,
-                ..
-            } => Self {
-                name: self.name.next().unwrap(),
-                side: RankSide::East,
-                number: 1,
-            },
-
-            Self {
-                name: RankName::Maegashira,
-                side: RankSide::West,
-                number: 17,
-            } => Self {
-                name: RankName::Juryo,
-                side: RankSide::East,
-                number: 1,
-            },
-
+            // East-to-west increment:
             Self {
                 side: RankSide::East,
                 ..
@@ -303,7 +284,42 @@ impl Rank {
                 number: self.number,
             },
 
-            // TODO: continue past Juryo
+            // Named rank increments:
+            Self {
+                name: RankName::Yokozuna | RankName::Ozeki | RankName::Sekiwake | RankName::Komusubi,
+                ..
+            }
+            | Self {
+                name: RankName::Maegashira,
+                number: 17,
+                ..
+            }
+            | Self {
+                name: RankName::Juryo,
+                number: 14,
+                ..
+            }
+            | Self {
+                name: RankName::Makushita,
+                number: 60,
+                ..
+            }
+            | Self {
+                name: RankName::Sandanme,
+                number: 90,
+                ..
+            }
+            | Self {
+                name: RankName::Jonidan,
+                number: 100,
+                ..
+            } => Self {
+                name: self.name.next().unwrap(),
+                side: RankSide::East,
+                number: 1,
+            },
+
+            // West-to-east and numeric increment; continues Jonokuchi infinitely
             _ => Self {
                 name: self.name,
                 side: RankSide::East,

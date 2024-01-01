@@ -337,20 +337,11 @@ impl HistoricLeader {
             side: RankSide::East,
             number: 1,
         };
-        let mut count = 0;
-        let mut iter = leaders.group_runs_mut(|a, b| a.ord == b.ord).peekable();
-        while let Some(group) = iter.next() {
+        for group in leaders.group_runs_mut(|a, b| a.ord == b.ord) {
             for leader in group.iter_mut() {
                 leader.rank = rank;
             }
-            count += group.len();
-
-            let next_len = iter.peek().map_or(0, |next| next.len());
-            let RankPlayerCounts { minimum, preferred } = RankPlayerCounts::for_rank(rank);
-            if count >= preferred || (count >= minimum && count + next_len > preferred) {
-                rank = rank.next_lower();
-                count = 0;
-            }
+            rank = rank.next_lower();
         }
     }
 }
@@ -374,42 +365,5 @@ where
             ord = i + 1;
         }
         r.set_rank(ord);
-    }
-}
-
-struct RankPlayerCounts {
-    minimum: usize,
-    preferred: usize,
-}
-
-impl RankPlayerCounts {
-    fn for_rank(rank: Rank) -> Self {
-        match rank.name {
-            RankName::Yokozuna => Self {
-                minimum: 1,
-                preferred: 1,
-            },
-            RankName::Ozeki => Self {
-                minimum: 1,
-                preferred: 2,
-            },
-            RankName::Sekiwake => Self {
-                minimum: 1,
-                preferred: 4,
-            },
-            RankName::Komusubi => Self {
-                minimum: 1,
-                preferred: 4,
-            },
-            RankName::Maegashira => Self {
-                minimum: 3,
-                preferred: 4,
-            },
-            RankName::Juryo => Self {
-                minimum: 4,
-                preferred: 4,
-            },
-            _ => todo!("player_rank below Juryo not yet implemented"),
-        }
     }
 }
