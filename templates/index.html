@@ -75,23 +75,18 @@
             </p>
             {% endif %}
             <div class="grid">
-            {% for (rank, players) in self.leaders_by_rank() %}
+            {% for (rank, ord, wins, players) in self.leaders_by_rank() %}
                 <div id="leaderboard-rank-{{rank}}"
                     class="group side-{{rank.side}} rank-name-{{rank.name|lower}}"
                 >
-                    <h3>{{"{:#}"|format(rank)}}</h3>
+                    <h3>
+                        {{"{:#}"|format(rank)}}
+                        <span class="hover">#{{ord}} ({{wins}} wins)</span>
+                    </h3>
                     <ol class="players">
                     {% for player in players %}
                         <li {% if self.is_self(player) %}class="self"{% endif %}>
-                            <span class="ord">
-                                {{-player.ord-}}
-                            </span>
-                            <span class="player">
-                                {{player.player.render().unwrap()|safe}}
-                            </span>
-                            <span class="wins">
-                                {{-player.wins-}}
-                            </span>
+                            {{player.player.render().unwrap()|safe}}
                         </li>
                     {% endfor %}
                     </ol>

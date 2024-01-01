@@ -21,10 +21,13 @@ pub struct IndexTemplate {
 }
 
 impl IndexTemplate {
-    fn leaders_by_rank(&self) -> Vec<(Rank, &[PlayerRanking])> {
+    fn leaders_by_rank(&self) -> Vec<(Rank, usize, u32, &[PlayerRanking])> {
         self.leaders
             .group_runs(|a, b| a.rank == b.rank)
-            .map(|group| (group.first().unwrap().rank, group))
+            .map(|group| {
+                let first = group.first().unwrap();
+                (first.rank, first.ord, first.wins, group)
+            })
             .collect()
     }
 

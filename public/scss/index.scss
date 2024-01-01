@@ -145,10 +145,23 @@
                 }
 
                 &.rank-name-y {
-                    font-size: larger;
+                    font-size: x-large;
+                }
+                &.rank-name-o,
+                &.rank-name-s,
+                &.rank-name-k, {
+                    font-size: large;
                 }
                 &.rank-name-j {
-                    font-size: smaller;
+                    font-size: small;
+                }
+                &.rank-name-ms {
+                    font-size: x-small;
+                }
+                &.rank-name-sd,
+                &.rank-name-jd,
+                &.rank-name-jk {
+                    font-size: xx-small;
                 }
 
                 a {
@@ -156,13 +169,27 @@
                 }
 
                 h3 {
-                    text-align: center;
+                    text-align: left;
                     margin: 1.5em 0 0.25em;
+                    
+                    > .hover {
+                        font-size: x-small;
+                        color: var(--color-fg-sub);
+                        opacity: 0;
+                    }
+                }
+                &:hover h3 > .hover {
+                    opacity: 1;
                 }
 
                 .players {
                     margin: 0;
                     padding: 0;
+                    display: flex;
+                    flex-flow: row wrap;
+                    align-items: baseline;
+                    column-gap: 1em;
+                    
                     > li {
                         list-style: none;
 
@@ -170,27 +197,6 @@
                             background: var(--color-table-highlight-bg);
                             box-shadow: var(--table-highlight-shadow);
                         }
-                    }
-                }
-
-                .wins {
-                    font-size: smaller;
-                    
-                    &::before {
-                        content: '(';
-                    }
-                    &::after {
-                        content: ')';
-                    }
-                }
-
-                .ord {
-                    font-size: smaller;
-                    display: inline-block;
-                    min-width: 3ex;
-
-                    &::before {
-                        content: '#';
                     }
                 }
             }
