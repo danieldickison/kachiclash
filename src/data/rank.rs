@@ -458,6 +458,11 @@ mod tests {
         assert_eq!("Y1w", Rank::from_str("Y1w").unwrap().to_string());
         assert_eq!("O2e", Rank::from_str("O2e").unwrap().to_string());
         assert_eq!("M11w", Rank::from_str("M11w").unwrap().to_string());
+        assert_eq!("J12w", Rank::from_str("J12w").unwrap().to_string());
+        assert_eq!("Ms12w", Rank::from_str("Ms12w").unwrap().to_string());
+        assert_eq!("Sd42w", Rank::from_str("Sd42w").unwrap().to_string());
+        assert_eq!("Jd51e", Rank::from_str("Jd51e").unwrap().to_string());
+        assert_eq!("Jk111w", Rank::from_str("Jk111w").unwrap().to_string());
     }
 
     #[test]
@@ -494,6 +499,22 @@ mod tests {
             "Juryo 11 West",
             format!("{:#}", Rank::from_str("J11w").unwrap())
         );
+        assert_eq!(
+            "Makushita 42 West",
+            format!("{:#}", Rank::from_str("Ms42w").unwrap())
+        );
+        assert_eq!(
+            "Sandanme 50 East",
+            format!("{:#}", Rank::from_str("Sd50e").unwrap())
+        );
+        assert_eq!(
+            "Jonidan 80 East",
+            format!("{:#}", Rank::from_str("Jd80e").unwrap())
+        );
+        assert_eq!(
+            "Jonokuchi 123 East",
+            format!("{:#}", Rank::from_str("Jk123e").unwrap())
+        );
     }
 
     #[test]
@@ -505,7 +526,9 @@ mod tests {
     #[test]
     #[should_panic]
     fn reject_invalid_name() {
-        Rank::from_str("X1e").unwrap();
+        Rank::from_str("Z1e").unwrap();
+        Rank::from_str("MS1e").unwrap();
+        Rank::from_str("Mx1e").unwrap();
     }
 
     #[test]
@@ -525,5 +548,10 @@ mod tests {
         assert!(Rank::from_str("M1e").unwrap() < Rank::from_str("M15e").unwrap());
         assert!(Rank::from_str("O1e").unwrap() < Rank::from_str("M15e").unwrap());
         assert!(Rank::from_str("M15w").unwrap() < Rank::from_str("J1e").unwrap());
+        assert!(Rank::from_str("J1e").unwrap() < Rank::from_str("Ms1e").unwrap());
+        assert!(Rank::from_str("J1e").unwrap() < Rank::from_str("Sd1e").unwrap());
+        assert!(Rank::from_str("J1e").unwrap() < Rank::from_str("Jd1e").unwrap());
+        assert!(Rank::from_str("J1e").unwrap() < Rank::from_str("Jk1e").unwrap());
+        assert!(Rank::from_str("J1e").unwrap() < Rank::from_str("X1e").unwrap());
     }
 }
