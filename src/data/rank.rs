@@ -525,10 +525,18 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn reject_invalid_name() {
+    fn reject_invalid_name_1() {
         Rank::from_str("Z1e").unwrap();
-        Rank::from_str("MS1e").unwrap();
+    }
+    #[test]
+    #[should_panic]
+    fn reject_invalid_name_2() {
         Rank::from_str("Mx1e").unwrap();
+    }
+    #[test]
+    #[should_panic]
+    fn reject_invalid_name_capitalization() {
+        Rank::from_str("MS1e").unwrap();
     }
 
     #[test]
