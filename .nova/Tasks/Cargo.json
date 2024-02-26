@@ -2,7 +2,7 @@
   "actions" : {
     "build" : {
       "enabled" : true,
-      "script" : "#!\/bin\/sh\n\nset -e\n\n# export RUST_BACKTRACE=1\nexport RUST_LOG=info,kachiclash=trace,rusqlite=trace\n\ncargo test\ncargo build\ncargo doc\n"
+      "script" : "#!\/bin\/sh\n\nset -e\n\n# export RUST_BACKTRACE=1\n\ncargo test\ncargo build\ncargo doc\n"
     },
     "clean" : {
       "enabled" : true,
@@ -12,6 +12,9 @@
       "enabled" : true,
       "path" : "run-dev-server"
     }
+  },
+  "environment" : {
+    "RUST_LOG" : "info,kachiclash=trace,rusqlite=trace"
   },
   "openLogOnRun" : "start"
 }
