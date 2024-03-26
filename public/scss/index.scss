@@ -172,14 +172,10 @@
                     text-align: left;
                     margin: 1.5em 0 0.25em;
                     
-                    > .hover {
+                    > .sub {
                         font-size: x-small;
                         color: var(--color-fg-sub);
-                        opacity: 0;
                     }
-                }
-                &:hover h3 > .hover {
-                    opacity: 1;
                 }
 
                 .players {
@@ -203,11 +199,9 @@
         }
 
         .all-stats {
-            display: block;
-            text-align: right;
-            font-size: larger;
             font-weight: bolder;
             color: var(--color-mauve);
+            white-space: nowrap;
 
             &::after {
                 content: ' ➡';

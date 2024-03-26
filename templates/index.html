@@ -74,6 +74,12 @@
                 {% endmatch %}
             </p>
             {% endif %}
+
+            <p>
+                Rankings are based on total wins over the past 6 basho (one year).
+                <a class="all-stats" href="/stats">All player stats</a>
+            </p>
+
             <div class="grid">
             {% for (rank, ord, wins, players) in self.leaders_by_rank() %}
                 <div id="leaderboard-rank-{{rank}}"
@@ -81,7 +87,7 @@
                 >
                     <h3>
                         {{"{:#}"|format(rank)}}
-                        <span class="hover">#{{ord}} ({{wins}} wins)</span>
+                        <div class="sub">#{{ord}} ({{wins}} wins)</div>
                     </h3>
                     <ol class="players">
                     {% for player in players %}
@@ -93,12 +99,6 @@
                 </div>
             {% endfor %}
             </div>
-
-            <p>
-                Rankings are based on total wins over the past 6 basho (one year).
-            </p>
-
-            <a class="all-stats" href="/stats">All player stats</a>
         </div>
     </section>
 {% endblock %}
