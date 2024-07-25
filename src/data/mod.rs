@@ -24,6 +24,8 @@ pub mod leaders;
 
 pub mod push;
 
+pub mod heya;
+
 pub type RikishiId = u32;
 pub type Day = u8;
 
