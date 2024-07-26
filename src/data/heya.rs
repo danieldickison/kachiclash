@@ -1,4 +1,5 @@
 use rusqlite::{Connection, OptionalExtension};
+use slug::slugify;
 
 use super::{Player, PlayerId, Result};
 
@@ -42,12 +43,6 @@ impl Heya {
         }
     }
 
-    pub fn owner(&self) -> Option<&Player> {
-        self.members
-            .as_ref()
-            .and_then(|m| m.iter().find(|p| p.id == self.owner_player_id))
-    }
-
     pub fn for_player(db: &Connection, player_id: PlayerId) -> Result<Vec<Self>> {
         db.prepare(
             "
@@ -84,5 +79,33 @@ impl Heya {
             .query_map(params![heya_id], Player::from_row)?
             .map(|r| r.unwrap())
             .collect())
+    }
+
+    pub fn owner(&self) -> Option<&Player> {
+        self.members
+            .as_ref()
+            .and_then(|m| m.iter().find(|p| p.id == self.owner_player_id))
+    }
+
+    pub fn create(db: &mut Connection, name: &str, owner: PlayerId) -> Result<HeyaId> {
+        let slug = slugify(name);
+        let txn = db.transaction()?;
+        txn.prepare(
+            "
+                    INSERT INTO heya (name, slug, owner_player_id)
+                    VALUES (?, ?, ?)
+                ",
+        )?
+        .execute(params![name, slug, owner])?;
+        let heya_id = txn.last_insert_rowid();
+        txn.prepare(
+            "
+                    INSERT INTO heya_player (heya_id, player_id)
+                    VALUES (?, ?)
+                ",
+        )?
+        .execute(params![heya_id, owner])?;
+        txn.commit()?;
+        Ok(heya_id)
     }
 }
