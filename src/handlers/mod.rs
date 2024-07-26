@@ -24,6 +24,7 @@ mod user_agent;
 type Result<T> = std::result::Result<T, HandlerError>;
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum HandlerError {
     NotFound(String),
     MustBeLoggedIn,

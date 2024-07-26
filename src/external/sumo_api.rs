@@ -8,7 +8,9 @@ const RESPONSE_TIMEOUT: u64 = 20;
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BanzukeResponse {
+    #[allow(dead_code)]
     pub basho_id: BashoId,
+    #[allow(dead_code)]
     pub division: RankDivision,
     pub east: Vec<RikishiResponse>,
     pub west: Vec<RikishiResponse>,

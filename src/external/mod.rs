@@ -50,6 +50,7 @@ pub trait AuthProvider: Send + Sync + Debug {
     fn logged_in_user_info_url(&self) -> &'static str;
     fn oauth_scopes(&self) -> &'static [&'static str];
     fn make_oauth_client(&self, config: &Config) -> BasicClient;
+    #[allow(dead_code)]
     fn make_user_info_url(&self, user_id: &str) -> String;
     async fn parse_user_info_response(
         &self,
@@ -122,6 +123,7 @@ pub trait AuthProvider: Send + Sync + Debug {
         }
     }
 
+    #[allow(dead_code)]
     async fn get_user_info(
         &self,
         access_token: &AccessToken,
