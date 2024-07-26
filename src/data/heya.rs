@@ -108,4 +108,15 @@ impl Heya {
         txn.commit()?;
         Ok(heya_id)
     }
+
+    pub fn add_member(db: &Connection, heya: HeyaId, player: PlayerId) -> Result<()> {
+        db.prepare(
+            "
+                INSERT INTO heya_player (heya_id, player_id)
+                VALUES (?, ?)
+            ",
+        )?
+        .execute(params![heya, player])?;
+        Ok(())
+    }
 }
