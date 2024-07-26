@@ -35,6 +35,17 @@
             <li class="join-date">
                 Joined: {{player.join_date.format("%Y-%m-%d")}} via {{player.login_service_name()}}
             </li>
+
+            {% if let Some(heyas) = player.heyas %}
+              {% if heyas.len() > 0 %}
+                <li class="heyas">
+                  Heya:
+                  {% for heya in heyas %}
+                    <a href="{{heya.url_path()}}">{{heya.name}}</a>
+                  {% endfor %}
+                </li>
+              {% endif %}
+            {% endif %}
         </ul>
     </section>
 
@@ -54,7 +65,7 @@
                 {% for basho in basho_scores -%}
                 <tr {% if basho.basho_id.month == 1 %} class="first-of-year" {% endif %}>
                     <td><a href="{{basho.basho_id.url_path()}}">{{basho.basho_id|fmt("{:#}")}}</a></td>
-                    
+
                     <td>
                         {%- match basho.rank -%}
                         {%- when Some with (rank) -%} {{rank}}

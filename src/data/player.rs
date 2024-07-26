@@ -4,7 +4,7 @@ use rusqlite::{
     Transaction,
 };
 
-use super::{Award, BashoId, Rank, Result};
+use super::{Award, BashoId, Heya, Rank, Result};
 use crate::data::DataError;
 use crate::external::discord::DiscordAuthProvider;
 use crate::external::google::GoogleAuthProvider;
@@ -37,6 +37,7 @@ pub struct Player {
     discord_discriminator: Option<String>,
     google_picture: Option<String>,
     reddit_icon: Option<String>,
+    pub heyas: Option<Vec<Heya>>, // only populated for own player
 }
 
 impl Player {
@@ -69,7 +70,7 @@ impl Player {
                 WHERE p.id = ?
             ",
             params![rank_for_basho, player_id],
-            Player::from_row,
+            |row| Player::from_row_with_heyas(&db, &row),
         )
         .optional()
         .map_err(|e| e.into())
@@ -88,7 +89,7 @@ impl Player {
                 WHERE p.name = ?
             ",
             params![rank_for_basho, name],
-            Player::from_row,
+            |row| Player::from_row_with_heyas(&db, &row),
         )
         .optional()
         .map_err(|e| e.into())
@@ -108,6 +109,12 @@ impl Player {
         .map_err(|e| e.into())
     }
 
+    fn from_row_with_heyas(db: &Connection, row: &Row) -> SqlResult<Self> {
+        let mut player = Self::from_row(&row)?;
+        player.heyas = Some(Heya::for_player(&db, player.id)?);
+        Ok(player)
+    }
+
     pub fn from_row(row: &Row) -> SqlResult<Self> {
         Ok(Player {
             id: row.get("id")?,
@@ -125,6 +132,7 @@ impl Player {
             discord_discriminator: row.get("discord_discriminator")?,
             google_picture: row.get("google_picture")?,
             reddit_icon: row.get("reddit_icon")?,
+            heyas: None,
         })
     }
 

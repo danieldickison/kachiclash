@@ -27,7 +27,7 @@ rand = "0.8"
 oauth2 = "4.1"
 anyhow = "1.0"
 num_cpus = "1.13"
-askama_actix = "0.14.0"
+askama_actix = { git = "https://github.com/djc/askama.git" } #"0.14"
 slug = "0.1"
 
 [dependencies.tokio]
@@ -39,7 +39,8 @@ version = "0.8"
 features = ["cookie-session"]
 
 [dependencies.askama]
-version = "0.12"
+# version = "0.12"
+git = "https://github.com/djc/askama.git"
 features = ["with-actix-web"]
 
 [dependencies.rusqlite]

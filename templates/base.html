@@ -2,20 +2,20 @@
 <html lang="en">
 <head>
     <title>Kachi Clash · {% block subtitle %}main{% endblock %}</title>
-    
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#1c1c1c">
     <meta name="vapid-public-key" content="{{base.vapid_public_key}}">
-    
+
     <link rel="icon" type="image/png" href="/static/img2/2021-Site-Icon-200x200.png">
     <link rel="manifest" href="/static/app.webmanifest">
     <link rel="stylesheet" href="/static/fonts/stylesheet.css">
     <link rel="stylesheet" href="/static/css/base.css">
-    
+
     <script src="/static/js/base.js" type="module"></script>
     <script async defer data-domain="kachiclash.com" src="https://plausible.io/js/plausible.js"></script>
     <script defer src="https://donorbox.org/install-popup-button.js"></script>
-    
+
     {# Show standard placeholder for broken player avatar images #}
     <script>
         window.addEventListener(
@@ -28,7 +28,7 @@
             true
         )
     </script>
-    
+
     {% block head %}{% endblock %}
 </head>
 <body>
@@ -41,7 +41,18 @@
                     <li><a href="{{player.url_path()}}">profile</a></li>
                     <li><a href="/settings">settings</a></li>
                     <li><a href="/logout">log out</a></li>
+
                     <li><hr /></li>
+
+                    <li><a href="/heya">heya directory</a></li>
+                    {% if let Some(heyas) = player.heyas %}
+                      {% for heya in heyas %}
+                        <li><a href="{{heya.url_path()}}">{{heya.name}}</a></li>
+                      {% endfor %}
+                    {% endif %}
+
+                    <li><hr /></li>
+
                     <li><a href="/stats">stats</a></li>
                     <li><a href="https://discordapp.com/invite/Wg4DsMt" target="_blank">discord</a></li>
                     <li><a class="dbox-donation-button" href="https://donorbox.org/kachi-clash-website-donations" target="_blank">donate</a></li>
@@ -61,15 +72,13 @@
                 <img src="/static/img2/2021-Top-Banner-Logo.png" alt="Kachi Clash">
             </picture>
         </a>
-        
-        {% match base.player %}
-        {%- when Some with (player) -%}
+
+        {% if let Some(player) = base.player -%}
             <div id="push-promo">
                 <p>You can now subscribe to push notifications in your settings.</p>
                 <button>Dismiss</button>
             </div>
-        {%- when None -%}
-        {%- endmatch -%}
+        {%- endif -%}
     </header>
 
     <main id="{% block main_id %}{% endblock %}">

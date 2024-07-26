@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block main_id %}p-heya-list{% endblock %}
+
+{% block subtitle %}
+  Heya Directory
+{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="/static/css/heya.css" />
+{% endblock %}
+
+{% block main %}
+<h1>Heya Directory</h1>
+<table>
+  <thead>
+    <tr>
+      <th>Heya</th>
+      <th>Oyakata</th>
+      <th>Members</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for heya in heyas %}
+    <tr>
+      <td>
+        <a href="{{heya.url_path()}}">
+          {{heya.name}}
+        </a>
+      </td>
+      <td>
+        {% match heya.oyakata() %}
+        {% when Some with (oyakata) %}
+          {{oyakata.render().unwrap()|safe}}
+        {% when None %}
+          (vacant)
+        {% endmatch %}
+      </td>
+      <td>
+        {{heya.member_count}}
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+
+</table>
+{% endblock %}

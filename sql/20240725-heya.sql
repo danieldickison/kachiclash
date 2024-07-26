@@ -1,8 +1,8 @@
 CREATE TABLE heya (
-    id              INTEGER PRIMARY KEY,
-    name            TEXT NOT NULL,
-    slug            TEXT NOT NULL UNIQUE,
-    owner_player_id INTEGER NOT NULL REFERENCES player(id) ON DELETE RESTRICT
+    id                  INTEGER PRIMARY KEY,
+    name                TEXT NOT NULL,
+    slug                TEXT NOT NULL UNIQUE,
+    oyakata_player_id   INTEGER NOT NULL REFERENCES player(id) ON DELETE RESTRICT
 );
 
 CREATE TABLE heya_player (

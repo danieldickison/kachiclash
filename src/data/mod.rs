@@ -25,6 +25,7 @@ pub mod leaders;
 pub mod push;
 
 pub mod heya;
+pub use heya::Heya;
 
 pub type RikishiId = u32;
 pub type Day = u8;

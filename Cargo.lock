@@ -29,7 +29,7 @@ dependencies = [
  "actix-service",
  "actix-utils",
  "actix-web",
- "askama_escape",
+ "askama_escape 0.10.3",
  "bitflags 1.3.2",
  "bytes",
  "derive_more",
@@ -353,12 +353,11 @@ checksum = "ca87830a3e3fb156dc96cfbd31cb620265dd053be734723f22b760d6cc3c3051"
 
 [[package]]
 name = "askama"
-version = "0.12.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b79091df18a97caea757e28cd2d5fda49c6cd4bd01ddffd7ff01ace0c0ad2c28"
+version = "0.13.0"
+source = "git+https://github.com/djc/askama.git#5a83872c28ba1b10116968b71ab1cb06434d850d"
 dependencies = [
  "askama_derive",
- "askama_escape",
+ "askama_escape 0.11.0",
  "humansize",
  "num-traits",
  "percent-encoding",
@@ -366,9 +365,8 @@ dependencies = [
 
 [[package]]
 name = "askama_actix"
-version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e4b0dd17cfe203b00ba3853a89fba459ecf24c759b738b244133330607c78e55"
+version = "0.15.0"
+source = "git+https://github.com/djc/askama.git#5a83872c28ba1b10116968b71ab1cb06434d850d"
 dependencies = [
  "actix-web",
  "askama",
@@ -376,9 +374,8 @@ dependencies = [
 
 [[package]]
 name = "askama_derive"
-version = "0.12.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2ccf09143e56923c12e027b83a9553210a3c58322ed8419a53461b14a4dccd85"
+version = "0.13.0"
+source = "git+https://github.com/djc/askama.git#5a83872c28ba1b10116968b71ab1cb06434d850d"
 dependencies = [
  "askama_parser",
  "basic-toml",
@@ -397,10 +394,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "619743e34b5ba4e9703bba34deac3427c72507c7159f5fd030aea8cac0cfe341"
 
 [[package]]
+name = "askama_escape"
+version = "0.11.0"
+source = "git+https://github.com/djc/askama.git#5a83872c28ba1b10116968b71ab1cb06434d850d"
+
+[[package]]
 name = "askama_parser"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "262eb9cf7be51269c5f2951eeda9ccd14d6934e437457f47b4f066bf55a6770d"
+version = "0.3.0"
+source = "git+https://github.com/djc/askama.git#5a83872c28ba1b10116968b71ab1cb06434d850d"
 dependencies = [
  "nom",
 ]
