@@ -17,9 +17,9 @@ pub struct Heya {
     pub id: HeyaId,
     pub name: String,
     pub slug: String,
-    pub oyakata_player_id: PlayerId,
-    pub members: Option<Vec<Player>>,
+    pub oyakata: Player,
     pub member_count: usize,
+    pub members: Option<Vec<Player>>, // might not be populated in all cases
 }
 
 impl Heya {
@@ -27,21 +27,26 @@ impl Heya {
         db.prepare(
             "
                 SELECT
-                    heya.*,
+                    heya.id AS heya_id,
+                    heya.name AS heya_name,
+                    heya.slug AS heya_slug,
+                    heya.oyakata_player_id,
                     (
                         SELECT COUNT(*) FROM heya_player AS hp2
                         WHERE hp2.heya_id = heya.id
-                    ) AS member_count
+                    ) AS member_count,
+                    oyakata.*
                 FROM heya
+                JOIN player_info AS oyakata ON oyakata.id = heya.oyakata_player_id
                 ORDER BY heya.name
             ",
         )?
         .query_and_then(params![], |row| {
             Ok(Self {
-                id: row.get("id")?,
-                name: row.get("name")?,
-                slug: row.get("slug")?,
-                oyakata_player_id: row.get("oyakata_player_id")?,
+                id: row.get("heya_id")?,
+                name: row.get("heya_name")?,
+                slug: row.get("heya_slug")?,
+                oyakata: Player::from_row(row)?,
                 members: None,
                 member_count: row.get("member_count")?,
             })
@@ -53,17 +58,22 @@ impl Heya {
         match db
             .query_row_and_then(
                 "
-                    SELECT *
+                    SELECT
+                        heya.id AS heya_id,
+                        heya.name AS heya_name,
+                        heya.slug AS heya_slug,
+                        oyakata.*
                     FROM heya
+                    JOIN player_info AS oyakata ON oyakata.id = heya.oyakata_player_id
                     WHERE slug = ?
                 ",
                 params![slug],
                 |row| {
                     Ok(Self {
-                        id: row.get("id")?,
-                        name: row.get("name")?,
-                        slug: row.get("slug")?,
-                        oyakata_player_id: row.get("oyakata_player_id")?,
+                        id: row.get("heya_id")?,
+                        name: row.get("heya_name")?,
+                        slug: row.get("heya_slug")?,
+                        oyakata: Player::from_row(row)?,
                         members: None,
                         member_count: 0,
                     })
@@ -85,22 +95,26 @@ impl Heya {
         db.prepare(
             "
                 SELECT
-                    heya.*,
+                    heya.id AS heya_id,
+                    heya.name AS heya_name,
+                    heya.slug AS heya_slug,
                     (
                         SELECT COUNT(*) FROM heya_player AS hp2
                         WHERE hp2.heya_id = heya.id
-                    ) AS member_count
+                    ) AS member_count,
+                    oyakata.*
                 FROM heya_player AS hp
                 JOIN heya ON heya.id = hp.heya_id
+                JOIN player_info AS oyakata ON oyakata.id = heya.oyakata_player_id
                 WHERE hp.player_id = ?
             ",
         )?
         .query_and_then(params![player_id], |row| {
             Ok(Self {
-                id: row.get("id")?,
-                name: row.get("name")?,
-                slug: row.get("slug")?,
-                oyakata_player_id: row.get("oyakata_player_id")?,
+                id: row.get("heya_id")?,
+                name: row.get("heya_name")?,
+                slug: row.get("heya_slug")?,
+                oyakata: Player::from_row(row)?,
                 members: None,
                 member_count: row.get("member_count")?,
             })
@@ -123,12 +137,6 @@ impl Heya {
             .query_map(params![heya_id], Player::from_row)?
             .map(|r| r.unwrap())
             .collect())
-    }
-
-    pub fn oyakata(&self) -> Option<&Player> {
-        self.members
-            .as_ref()
-            .and_then(|m| m.iter().find(|p| p.id == self.oyakata_player_id))
     }
 
     pub fn url_path(&self) -> String {
@@ -156,16 +164,12 @@ impl Heya {
         .execute(params![heya_id, oyakata])?;
 
         Self::validate_quota(&txn, oyakata)?;
-
+        let heya = Self::with_slug(&txn, &slug)?.ok_or(DataError::HeyaIntegrity {
+            what: "heya failed to insert".to_string(),
+        })?;
         txn.commit()?;
-        Ok(Self {
-            id: heya_id,
-            name: name.to_string(),
-            slug,
-            oyakata_player_id: oyakata,
-            members: None,
-            member_count: 1,
-        })
+
+        Ok(heya)
     }
 
     pub fn set_name(&mut self, db: &Connection, name: &str) -> Result<()> {
@@ -199,7 +203,7 @@ impl Heya {
     }
 
     pub fn delete_member(&mut self, db: &mut Connection, player: PlayerId) -> Result<()> {
-        if self.oyakata_player_id == player {
+        if self.oyakata.id == player {
             return Err(DataError::HeyaIntegrity {
                 what: "Oyakata can’t leave heya".to_string(),
             });
@@ -243,7 +247,7 @@ impl Heya {
 
         if player_heyas
             .iter()
-            .filter(|h| h.oyakata_player_id == player)
+            .filter(|h| h.oyakata.id == player)
             .count()
             > HOST_MAX
         {

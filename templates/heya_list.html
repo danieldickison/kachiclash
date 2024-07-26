@@ -29,12 +29,7 @@
         </a>
       </td>
       <td>
-        {% match heya.oyakata() %}
-        {% when Some with (oyakata) %}
-          {{oyakata.render().unwrap()|safe}}
-        {% when None %}
-          (vacant)
-        {% endmatch %}
+        {{heya.oyakata.render().unwrap()|safe}}
       </td>
       <td>
         {{heya.member_count}}

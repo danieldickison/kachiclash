@@ -24,9 +24,7 @@
     </form>
   {% endif %}
 
-  {% if let Some(oyakata) = heya.oyakata() %}
-    <h2>Oyakata: {{oyakata.render().unwrap()|safe}}</h2>
-  {% endif %}
+  <h2>Oyakata: {{heya.oyakata.render().unwrap()|safe}}</h2>
 
   <h2>Members</h2>
   <ul>

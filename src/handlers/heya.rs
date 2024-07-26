@@ -28,7 +28,7 @@ pub async fn page(
     let player_id = identity.and_then(|i| i.player_id().ok());
     match Heya::with_slug(&db, &path)? {
         Some(heya) => Ok(HeyaTemplate {
-            is_oyakata: player_id.map_or(false, |pid| pid == heya.oyakata_player_id),
+            is_oyakata: player_id.map_or(false, |pid| pid == heya.oyakata.id),
             base,
             heya,
         }),
@@ -71,7 +71,7 @@ fn apply_edit_actions(
         heya.set_name(&db, &name)?;
     }
     if let Some(player_id) = data.add_player_id {
-        if heya.oyakata_player_id == user {
+        if heya.oyakata.id == user {
             heya.add_member(db, player_id)?;
         } else {
             return Err(HandlerError::MustBeLoggedIn);
@@ -79,7 +79,7 @@ fn apply_edit_actions(
     }
     if let Some(player_id) = data.delete_player_id {
         // Member can choose to leave; oyakata can kick others out:
-        if heya.oyakata_player_id == user || player_id == user {
+        if heya.oyakata.id == user || player_id == user {
             heya.delete_member(db, player_id)?;
         } else {
             return Err(HandlerError::MustBeLoggedIn);
