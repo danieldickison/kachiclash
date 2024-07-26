@@ -1,6 +1,7 @@
 use actix_identity::Identity;
 use actix_web::{get, http, post, web, HttpResponse, Responder};
 use askama::Template;
+use rusqlite::Connection;
 
 use crate::data::{Heya, PlayerId};
 use crate::handlers::{HandlerError, IdentityExt};
@@ -36,29 +37,56 @@ pub async fn page(
 }
 
 #[derive(Debug, Deserialize)]
-pub struct AddMemberData {
-    player_id: PlayerId,
+pub struct EditData {
+    set_name: Option<String>,
+    add_player_id: Option<PlayerId>,
+    delete_player_id: Option<PlayerId>,
 }
 
-#[post("/member")]
-pub async fn add_member(
+#[post("")]
+pub async fn edit(
     path: web::Path<String>,
-    data: web::Json<AddMemberData>,
+    data: web::Form<EditData>,
     state: web::Data<AppState>,
     identity: Identity,
 ) -> Result<impl Responder> {
-    let db = state.db.lock().unwrap();
-    match Heya::with_slug(&db, &path)? {
-        Some(heya) => {
-            if heya.oyakata_player_id == identity.player_id()? {
-                heya.add_member(&db, data.0.player_id)?;
-                Ok(HttpResponse::Ok())
-            } else {
-                Err(HandlerError::MustBeLoggedIn)
-            }
-        }
-        None => Err(HandlerError::NotFound("heya".to_string())),
+    let mut db = state.db.lock().unwrap();
+    if let Some(mut heya) = Heya::with_slug(&db, &path)? {
+        apply_edit_actions(&mut heya, &mut db, data.0, identity.player_id()?)?;
+        Ok(HttpResponse::SeeOther()
+            .insert_header((http::header::LOCATION, heya.url_path()))
+            .finish())
+    } else {
+        Err(HandlerError::NotFound("heya".to_string()))
     }
+}
+
+fn apply_edit_actions(
+    heya: &mut Heya,
+    db: &mut Connection,
+    data: EditData,
+    user: PlayerId,
+) -> Result<()> {
+    if let Some(name) = data.set_name {
+        heya.set_name(&db, &name)?;
+    }
+    if let Some(player_id) = data.add_player_id {
+        if heya.oyakata_player_id == user {
+            heya.add_member(db, player_id)?;
+        } else {
+            return Err(HandlerError::MustBeLoggedIn);
+        }
+    }
+    if let Some(player_id) = data.delete_player_id {
+        // Member can choose to leave; oyakata can kick others out:
+        if heya.oyakata_player_id == user || player_id == user {
+            heya.delete_member(db, player_id)?;
+        } else {
+            return Err(HandlerError::MustBeLoggedIn);
+        }
+    }
+
+    Ok(())
 }
 
 #[derive(Template)]
@@ -87,7 +115,7 @@ pub struct CreateHeyaData {
 
 #[post("/heya")]
 pub async fn create(
-    data: web::Json<CreateHeyaData>,
+    data: web::Form<CreateHeyaData>,
     state: web::Data<AppState>,
     identity: Identity,
 ) -> Result<impl Responder> {

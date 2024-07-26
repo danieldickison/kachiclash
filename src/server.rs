@@ -110,7 +110,7 @@ pub async fn run(app_state: &AppState) -> anyhow::Result<()> {
             .service(
                 web::scope("/heya/{heya_id}")
                     .service(handlers::heya::page)
-                    .service(handlers::heya::add_member),
+                    .service(handlers::heya::edit),
             )
             .service(handlers::heya::create)
             .service(handlers::heya::list)

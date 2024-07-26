@@ -1,7 +1,14 @@
+use std::ops::RangeInclusive;
+
 use rusqlite::{Connection, OptionalExtension, Result as SqlResult};
 use slug::slugify;
 
-use super::{Player, PlayerId, Result};
+use super::{DataError, Player, PlayerId, Result};
+
+pub const MEMBER_MAX: usize = 50;
+pub const JOIN_MAX: usize = 5;
+pub const HOST_MAX: usize = 3;
+pub const NAME_LENGTH: RangeInclusive<usize> = 3..=30;
 
 pub type HeyaId = i64;
 
@@ -129,6 +136,7 @@ impl Heya {
     }
 
     pub fn new(db: &mut Connection, name: &str, oyakata: PlayerId) -> Result<Self> {
+        Self::validate_name(name)?;
         let slug = slugify(name);
         let txn = db.transaction()?;
         txn.prepare(
@@ -146,6 +154,9 @@ impl Heya {
             ",
         )?
         .execute(params![heya_id, oyakata])?;
+
+        Self::validate_quota(&txn, oyakata)?;
+
         txn.commit()?;
         Ok(Self {
             id: heya_id,
@@ -157,14 +168,99 @@ impl Heya {
         })
     }
 
-    pub fn add_member(&self, db: &Connection, player: PlayerId) -> Result<()> {
+    pub fn set_name(&mut self, db: &Connection, name: &str) -> Result<()> {
+        Self::validate_name(name)?;
         db.prepare(
+            "
+                UPDATE heya SET name = ? WHERE id = ?
+            ",
+        )?
+        .execute(params![name, self.id])?;
+        Ok(())
+    }
+
+    pub fn add_member(&mut self, db: &mut Connection, player: PlayerId) -> Result<()> {
+        let txn = db.transaction()?;
+        txn.prepare(
             "
                 INSERT INTO heya_player (heya_id, player_id)
                 VALUES (?, ?)
             ",
         )?
         .execute(params![self.id, player])?;
+
+        Self::validate_quota(&txn, player)?;
+
+        self.member_count += 1;
+        self.members = None;
+
+        txn.commit()?;
+        Ok(())
+    }
+
+    pub fn delete_member(&mut self, db: &mut Connection, player: PlayerId) -> Result<()> {
+        if self.oyakata_player_id == player {
+            return Err(DataError::HeyaIntegrity {
+                what: "Oyakata can’t leave heya".to_string(),
+            });
+        }
+
+        let txn = db.transaction()?;
+        txn.prepare(
+            "
+                DELETE FROM heya_player
+                WHERE player_id = ?
+            ",
+        )?
+        .execute(params![player])?;
+        self.member_count -= 1;
+        self.members = None;
+        txn.commit()?;
+        Ok(())
+    }
+
+    fn validate_name(name: &str) -> Result<()> {
+        if NAME_LENGTH.contains(&name.len()) {
+            Ok(())
+        } else {
+            Err(DataError::HeyaIntegrity {
+                what: format!(
+                    "Name must be {} to {} characters",
+                    NAME_LENGTH.start(),
+                    NAME_LENGTH.end()
+                ),
+            })
+        }
+    }
+
+    fn validate_quota(db: &Connection, player: PlayerId) -> Result<()> {
+        let player_heyas = Self::for_player(&db, player)?;
+        if player_heyas.len() > JOIN_MAX {
+            return Err(DataError::HeyaIntegrity {
+                what: format!("Player {} in too many heyas (max {})", player, JOIN_MAX),
+            });
+        }
+
+        if player_heyas
+            .iter()
+            .filter(|h| h.oyakata_player_id == player)
+            .count()
+            > HOST_MAX
+        {
+            return Err(DataError::HeyaIntegrity {
+                what: format!(
+                    "Player {} hosting too many heyas (max {})",
+                    player, HOST_MAX
+                ),
+            });
+        }
+
+        if let Some(heya) = player_heyas.iter().find(|h| h.member_count > MEMBER_MAX) {
+            return Err(DataError::HeyaIntegrity {
+                what: format!("Heya {} is full (max {} members)", heya.name, MEMBER_MAX),
+            });
+        }
+
         Ok(())
     }
 }

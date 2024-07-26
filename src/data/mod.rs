@@ -63,6 +63,7 @@ type Result<T> = std::result::Result<T, DataError>;
 pub enum DataError {
     BashoHasStarted,
     InvalidPicks,
+    HeyaIntegrity { what: String },
     RikishiNotFound { family_name: String },
     AmbiguousShikona { family_names: Vec<String> },
     DatabaseError(rusqlite::Error),
@@ -96,6 +97,7 @@ impl fmt::Display for DataError {
         match self {
             DataError::BashoHasStarted => write!(f, "Basho has already started"),
             DataError::InvalidPicks => write!(f, "Invalid picks"),
+            DataError::HeyaIntegrity { what } => write!(f, "Heya integrity error: {}", what),
             DataError::RikishiNotFound { family_name } => {
                 write!(f, "Rikishi not found: {}", family_name)
             }
