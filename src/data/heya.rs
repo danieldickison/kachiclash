@@ -1,6 +1,8 @@
 use std::ops::RangeInclusive;
 
-use rusqlite::{Connection, OptionalExtension, Result as SqlResult};
+use chrono::{DateTime, Utc};
+use itertools::Itertools;
+use rusqlite::{Connection, OptionalExtension, Result as SqlResult, Row};
 use slug::slugify;
 
 use super::{DataError, Player, PlayerId, Result};
@@ -18,8 +20,9 @@ pub struct Heya {
     pub name: String,
     pub slug: String,
     pub oyakata: Player,
+    pub create_date: DateTime<Utc>,
     pub member_count: usize,
-    pub members: Option<Vec<Player>>, // might not be populated in all cases
+    pub members: Option<Vec<Member>>, // might not be populated in all cases
 }
 
 impl Heya {
@@ -31,6 +34,7 @@ impl Heya {
                     heya.name AS heya_name,
                     heya.slug AS heya_slug,
                     heya.oyakata_player_id,
+                    heya.create_date,
                     (
                         SELECT COUNT(*) FROM heya_player AS hp2
                         WHERE hp2.heya_id = heya.id
@@ -46,6 +50,7 @@ impl Heya {
                 id: row.get("heya_id")?,
                 name: row.get("heya_name")?,
                 slug: row.get("heya_slug")?,
+                create_date: row.get("create_date")?,
                 oyakata: Player::from_row(row)?,
                 members: None,
                 member_count: row.get("member_count")?,
@@ -62,6 +67,7 @@ impl Heya {
                         heya.id AS heya_id,
                         heya.name AS heya_name,
                         heya.slug AS heya_slug,
+                        heya.create_date,
                         oyakata.*
                     FROM heya
                     JOIN player_info AS oyakata ON oyakata.id = heya.oyakata_player_id
@@ -73,6 +79,7 @@ impl Heya {
                         id: row.get("heya_id")?,
                         name: row.get("heya_name")?,
                         slug: row.get("heya_slug")?,
+                        create_date: row.get("create_date")?,
                         oyakata: Player::from_row(row)?,
                         members: None,
                         member_count: 0,
@@ -82,7 +89,7 @@ impl Heya {
             .optional()?
         {
             Some(mut heya) => {
-                let members = Self::fetch_members(&db, heya.id)?;
+                let members = Member::in_heya(&db, heya.id)?;
                 heya.member_count = members.len();
                 heya.members = Some(members);
                 Ok(Some(heya))
@@ -98,6 +105,7 @@ impl Heya {
                     heya.id AS heya_id,
                     heya.name AS heya_name,
                     heya.slug AS heya_slug,
+                    heya.create_date,
                     (
                         SELECT COUNT(*) FROM heya_player AS hp2
                         WHERE hp2.heya_id = heya.id
@@ -114,29 +122,13 @@ impl Heya {
                 id: row.get("heya_id")?,
                 name: row.get("heya_name")?,
                 slug: row.get("heya_slug")?,
+                create_date: row.get("create_date")?,
                 oyakata: Player::from_row(row)?,
                 members: None,
                 member_count: row.get("member_count")?,
             })
         })?
         .collect()
-    }
-
-    fn fetch_members(db: &Connection, heya_id: HeyaId) -> SqlResult<Vec<Player>> {
-        Ok(db
-            .prepare(
-                "
-                    SELECT p.*
-                    FROM heya_player AS hp
-                    JOIN player_info AS p ON p.id = hp.player_id
-                    WHERE hp.heya_id = ?
-                    ORDER BY p.name
-                ",
-            )
-            .unwrap()
-            .query_map(params![heya_id], Player::from_row)?
-            .map(|r| r.unwrap())
-            .collect())
     }
 
     pub fn url_path(&self) -> String {
@@ -146,22 +138,23 @@ impl Heya {
     pub fn new(db: &mut Connection, name: &str, oyakata: PlayerId) -> Result<Self> {
         Self::validate_name(name)?;
         let slug = slugify(name);
+        let now = Utc::now();
         let txn = db.transaction()?;
         txn.prepare(
             "
-                INSERT INTO heya (name, slug, oyakata_player_id)
-                VALUES (?, ?, ?)
+                INSERT INTO heya (name, slug, oyakata_player_id, create_date)
+                VALUES (?, ?, ?, ?)
             ",
         )?
-        .execute(params![name, slug, oyakata])?;
+        .execute(params![name, slug, oyakata, now])?;
         let heya_id = txn.last_insert_rowid();
         txn.prepare(
             "
-                INSERT INTO heya_player (heya_id, player_id)
-                VALUES (?, ?)
+                INSERT INTO heya_player (heya_id, player_id, recruit_date)
+                VALUES (?, ?, ?)
             ",
         )?
-        .execute(params![heya_id, oyakata])?;
+        .execute(params![heya_id, oyakata, now])?;
 
         Self::validate_quota(&txn, oyakata)?;
         let heya = Self::with_slug(&txn, &slug)?.ok_or(DataError::HeyaIntegrity {
@@ -187,11 +180,11 @@ impl Heya {
         let txn = db.transaction()?;
         txn.prepare(
             "
-                INSERT INTO heya_player (heya_id, player_id)
-                VALUES (?, ?)
+                INSERT INTO heya_player (heya_id, player_id, recruit_date)
+                VALUES (?, ?, ?)
             ",
         )?
-        .execute(params![self.id, player])?;
+        .execute(params![self.id, player, Utc::now()])?;
 
         Self::validate_quota(&txn, player)?;
 
@@ -266,5 +259,46 @@ impl Heya {
         }
 
         Ok(())
+    }
+}
+
+
+
+#[derive(Debug)]
+pub struct Member {
+    pub player: Player,
+    pub is_oyakata: bool,
+    pub recruit_date: DateTime<Utc>
+}
+
+impl Member {
+    fn from_row(row: &Row) -> SqlResult<Self> {
+        let player = Player::from_row(&row)?;
+        Ok(Self {
+            player,
+            recruit_date: row.get("recruit_date")?,
+            is_oyakata: row.get("is_oyakata")?,
+        })
+    }
+
+    fn in_heya(db: &Connection, heya_id: HeyaId) -> SqlResult<Vec<Self>> {
+        Ok(db
+            .prepare(
+                "
+                    SELECT
+                        p.*,
+                        hp.recruit_date,
+                        p.id = h.oyakata_player_id AS is_oyakata
+                    FROM heya AS h
+                    JOIN heya_player AS hp ON hp.heya_id = h.id
+                    JOIN player_info AS p ON p.id = hp.player_id
+                    WHERE h.id = ?
+                ",
+            )
+            .unwrap()
+            .query_map(params![heya_id], Self::from_row)?
+            .map(|r| r.unwrap())
+            .sorted_by_key(|m| m.player.rank)
+            .collect())
     }
 }
