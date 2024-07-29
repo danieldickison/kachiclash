@@ -34,7 +34,7 @@
 
         font-size: 14px;
     }
-    
+
     @media (prefers-color-scheme: dark) {
         --bg-img: url(/static/img2/2021-BG-dark.webp);
         --color-navy: #6caeed;
@@ -115,7 +115,7 @@ button.g-link-button {
     padding: 0;
     margin: 0;
     display: inline;
-    
+
     &:hover {
         text-decoration: underline;
     }
@@ -153,7 +153,7 @@ section {
     // border-bottom: solid 1px var(--color-border);
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
     z-index: 1;
-    
+
     @media (prefers-color-scheme: dark) {
         background-color: var(--color-bg);
         background-image: url(/static/img2/2021-Top-Banner-BG-dark.png);
@@ -164,7 +164,7 @@ section {
         color: inherit;
         font-weight: 400;
     }
-    
+
     a.logo {
         position: absolute;
         top: 0;
@@ -188,7 +188,7 @@ section {
         > * {
             margin: 0 0.5rem;
         }
-        
+
         > .g-player-listing {
             &::after {
                 content: '▾';
@@ -208,7 +208,7 @@ section {
                 }
             }
         }
-        
+
         > menu {
             display: none;
             position: absolute;
@@ -219,7 +219,7 @@ section {
             box-shadow: 0 5px 10px rgba(0, 0, 0, 0.25);
             list-style: none;
             padding: 0.5rem 0;
-            
+
             a {
                 padding: 0 2rem;
             }
@@ -243,7 +243,7 @@ section {
     box-shadow: 0 2px 6px #0003;
     font-size: 0.75rem;
     line-height: 1.5;
-    
+
     &::before {
         content: ' ';
         display: block;
@@ -255,11 +255,11 @@ section {
         width: 2rem;
         height: 1rem;
     }
-    
+
     p {
         margin: 0;
     }
-    
+
     button {
         float: right;
     }
@@ -318,7 +318,7 @@ hr {
         margin: 0;
         padding: 0;
         flex: 1 1;
-        
+
         > li {
             display: inline-block;
             margin-right: 10px;
@@ -357,7 +357,7 @@ button, a.g-small-button {
         background: var(--color-navy-highlight);
     }
 }
-    
+
 .g-big-button {
     font-size: 1.5rem;
     background: var(--color-bg-inv);
@@ -408,12 +408,12 @@ button, a.g-small-button {
         flex: none;
         line-height: 1.5rem;
     }
-    
+
     .rank {
         flex: none;
         font-weight: lighter;
         font-size: smaller;
-        
+
         &:before {
             content: '(';
         }
@@ -447,6 +447,10 @@ button, a.g-small-button {
             position: absolute;
             width: 100%;
             height: 100%;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
         }
     }
 }
