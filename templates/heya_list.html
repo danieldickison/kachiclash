@@ -18,6 +18,7 @@
       <tr>
         <th>Heya</th>
         <th>Oyakata</th>
+        <th>Inaugurated</th>
         <th>Members</th>
       </tr>
     </thead>
@@ -33,6 +34,9 @@
           {{heya.oyakata.render().unwrap()|safe}}
         </td>
         <td>
+          {{heya.create_date.format("%Y-%m-%d")}}
+        </td>
+        <td class="g-centered">
           {{heya.member_count}}
         </td>
       </tr>
