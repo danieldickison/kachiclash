@@ -36,15 +36,20 @@
                 Joined: {{player.join_date.format("%Y-%m-%d")}} via {{player.login_service_name()}}
             </li>
 
-            {% if let Some(heyas) = player.heyas %}
-              {% if heyas.len() > 0 %}
+            {% set heyas = player.heyas.as_ref().unwrap() %}
+            {% if heyas.len() > 0 || recruit_heyas.len() > 0 %}
                 <li class="heyas">
-                  Heya:
-                  {% for heya in heyas %}
-                    <a href="{{heya.url_path()}}">{{heya.name}}</a>
-                  {% endfor %}
+                    Heya:
+                    {% for heya in heyas %}
+                        <a href="{{heya.url_path()}}">{{heya.name}}</a>
+                    {% endfor %}
+                    {% for heya in recruit_heyas %}
+                        <form method="POST" action="{{heya.url_path()}}">
+                            <input type="hidden" name="add_player_id" value="{{player.id}}">
+                            <button>Recruit to {{heya.name}}</button>
+                        </form>
+                    {% endfor %}
                 </li>
-              {% endif %}
             {% endif %}
         </ul>
     </section>

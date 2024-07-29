@@ -56,6 +56,16 @@
             display: flex;
             flex-flow: row wrap;
         }
+
+        > .stats {
+            clear: both;
+            padding-top: 1rem;
+            line-height: 2.25;
+
+            form {
+                display: inline;
+            }
+        }
     }
 
     #history {
