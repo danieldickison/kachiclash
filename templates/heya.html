@@ -16,33 +16,38 @@
 
 {% block main %}
   <h1>{{heya.name}}</h1>
-
-  {% if is_oyakata %}
-    <form method="POST">
-      <input type="text" name="set_name" value="{{heya.name}}">
-      <button>Update</button>
-    </form>
-  {% endif %}
-
   <h2>Oyakata: {{heya.oyakata.render().unwrap()|safe}}</h2>
 
-  <h2>Members</h2>
-  <ul>
-    {% for member in heya.members.as_ref().unwrap() %}
-      <li>
-        {{member.render().unwrap()|safe}}
-        {% if is_oyakata %}
-          <form method="POST">
-            <input type="hidden" name="delete_player_id" value="{{member.id}}">
-            <button>Expel</button>
-          </form>
-        {% endif %}
-      </li>
-    {% endfor %}
-  </ul>
+  {% if is_oyakata %}
+    <section>
+      <form method="POST">
+        <input type="text" name="set_name" value="{{heya.name}}">
+        <button>Update</button>
+      </form>
+    </section>
+  {% endif %}
 
-  <form method="POST">
-    <label>player id: <input type="text" name="add_player_id"></label>
-    <button>Recruit</button>
-  </form>
+  <section>
+    <h2>Members</h2>
+    <ul class="members">
+      {% for member in heya.members.as_ref().unwrap() %}
+        <li>
+          {{member.render().unwrap()|safe}}
+          {% if is_oyakata %}
+            <form class="expel" method="POST">
+              <input type="hidden" name="delete_player_id" value="{{member.id}}">
+              <button>Expel</button>
+            </form>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <section>
+    <form method="POST">
+      <label>player id: <input type="text" name="add_player_id"></label>
+      <button>Recruit</button>
+    </form>
+  </section>
 {% endblock %}

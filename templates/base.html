@@ -38,13 +38,13 @@
             {%- when Some with (player) -%}
                 {{player.render().unwrap()|safe}}
                 <menu>
-                    <li><a href="{{player.url_path()}}">profile</a></li>
-                    <li><a href="/settings">settings</a></li>
-                    <li><a href="/logout">log out</a></li>
+                    <li><a href="{{player.url_path()}}">Profile</a></li>
+                    <li><a href="/settings">Settings</a></li>
+                    <li><a href="/logout">Log Out</a></li>
 
                     <li><hr /></li>
 
-                    <li><a href="/heya">heya directory</a></li>
+                    <li><a href="/heya">Heya Directory</a></li>
                     {% if let Some(heyas) = player.heyas %}
                       {% for heya in heyas %}
                         <li><a href="{{heya.url_path()}}">{{heya.name}}</a></li>
@@ -53,9 +53,9 @@
 
                     <li><hr /></li>
 
-                    <li><a href="/stats">stats</a></li>
-                    <li><a href="https://discordapp.com/invite/Wg4DsMt" target="_blank">discord</a></li>
-                    <li><a class="dbox-donation-button" href="https://donorbox.org/kachi-clash-website-donations" target="_blank">donate</a></li>
+                    <li><a href="/stats">Stats</a></li>
+                    <li><a href="https://discordapp.com/invite/Wg4DsMt" target="_blank">Discord</a></li>
+                    <li><a class="dbox-donation-button" href="https://donorbox.org/kachi-clash-website-donations" target="_blank">Donate</a></li>
                 </menu>
 
             {%- when None -%}
