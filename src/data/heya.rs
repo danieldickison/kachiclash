@@ -5,7 +5,7 @@ use itertools::Itertools;
 use rusqlite::{Connection, OptionalExtension, Result as SqlResult, Row};
 use slug::slugify;
 
-use super::{DataError, Player, PlayerId, Result};
+use super::{BashoId, BashoInfo, DataError, Player, PlayerId, Result};
 
 pub const MEMBER_MAX: usize = 50;
 pub const JOIN_MAX: usize = 5;
@@ -60,6 +60,7 @@ impl Heya {
     }
 
     pub fn with_slug(db: &Connection, slug: &str) -> SqlResult<Option<Self>> {
+        let rank_for_basho = BashoInfo::current_or_next_basho_id(&db)?;
         match db
             .query_row_and_then(
                 "
@@ -89,7 +90,7 @@ impl Heya {
             .optional()?
         {
             Some(mut heya) => {
-                let members = Member::in_heya(&db, heya.id)?;
+                let members = Member::in_heya(&db, heya.id, rank_for_basho)?;
                 heya.member_count = members.len();
                 heya.members = Some(members);
                 Ok(Some(heya))
@@ -281,22 +282,24 @@ impl Member {
         })
     }
 
-    fn in_heya(db: &Connection, heya_id: HeyaId) -> SqlResult<Vec<Self>> {
+    fn in_heya(db: &Connection, heya_id: HeyaId, rank_for_basho: BashoId) -> SqlResult<Vec<Self>> {
         Ok(db
             .prepare(
                 "
                     SELECT
                         p.*,
+                        pr.rank,
                         hp.recruit_date,
                         p.id = h.oyakata_player_id AS is_oyakata
                     FROM heya AS h
                     JOIN heya_player AS hp ON hp.heya_id = h.id
                     JOIN player_info AS p ON p.id = hp.player_id
+                    LEFT JOIN player_rank AS pr ON pr.player_id = p.id AND pr.before_basho_id = ?
                     WHERE h.id = ?
                 ",
             )
             .unwrap()
-            .query_map(params![heya_id], Self::from_row)?
+            .query_map(params![rank_for_basho, heya_id], Self::from_row)?
             .map(|r| r.unwrap())
             .sorted_by_key(|m| m.player.rank)
             .collect())

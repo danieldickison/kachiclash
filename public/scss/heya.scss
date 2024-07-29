@@ -1,8 +1,4 @@
-#p-heya {
-  > h2 {
-    text-align: left;
-  }
-
+#p-heya, #p-heya-list {
   section {
     background: var(--color-light-yellow-bg);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
@@ -13,8 +9,10 @@
   form.expel {
     display: inline;
   }
-}
 
-#p-heya-list {
-
+  p.error {
+    padding: 1ex;
+    font-style: italic;
+    border: solid 2px var(--color-border-error);
+  }
 }

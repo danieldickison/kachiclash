@@ -4,6 +4,7 @@ use askama::Template;
 use rusqlite::Connection;
 
 use crate::data::{Heya, PlayerId};
+use crate::data::heya::{HOST_MAX, JOIN_MAX};
 use crate::handlers::{HandlerError, IdentityExt};
 use crate::AppState;
 
@@ -94,6 +95,7 @@ fn apply_edit_actions(
 pub struct HeyaListTemplate {
     base: BaseTemplate,
     heyas: Vec<Heya>,
+    hosted: usize,
 }
 
 #[get("/heya")]
@@ -102,9 +104,12 @@ pub async fn list(
     identity: Option<Identity>,
 ) -> Result<impl Responder> {
     let db = state.db.lock().unwrap();
+    let heyas = Heya::list_all(&db)?;
+    let player_id = identity.as_ref().and_then(|i| i.player_id().ok());
     Ok(HeyaListTemplate {
         base: BaseTemplate::new(&db, identity.as_ref(), &state)?,
-        heyas: Heya::list_all(&db)?,
+        hosted: heyas.iter().filter(|h| h.oyakata.id == player_id.unwrap_or(-1)).count(),
+        heyas
     })
 }
 

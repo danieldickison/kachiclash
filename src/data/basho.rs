@@ -30,7 +30,7 @@ const VERY_FIRST_BASHO: &str = "201901";
 
 impl BashoInfo {
     /// Returns the current basho id if one is in session; otherwise returns the next basho after that last completed one.
-    pub fn current_or_next_basho_id(db: &Connection) -> Result<BashoId> {
+    pub fn current_or_next_basho_id(db: &Connection) -> SqlResult<BashoId> {
         let last_completed_basho: Option<BashoId> = db.query_row(
             "
             SELECT MAX(id)

@@ -12,37 +12,55 @@
 
 {% block main %}
 <h1>Heya Directory</h1>
-<table>
-  <thead>
-    <tr>
-      <th>Heya</th>
-      <th>Oyakata</th>
-      <th>Members</th>
-    </tr>
-  </thead>
-  <tbody>
-  {% for heya in heyas %}
-    <tr>
-      <td>
-        <a href="{{heya.url_path()}}">
-          {{heya.name}}
-        </a>
-      </td>
-      <td>
-        {{heya.oyakata.render().unwrap()|safe}}
-      </td>
-      <td>
-        {{heya.member_count}}
-      </td>
-    </tr>
-  {% endfor %}
-  </tbody>
+<section>
+  <table>
+    <thead>
+      <tr>
+        <th>Heya</th>
+        <th>Oyakata</th>
+        <th>Members</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for heya in heyas %}
+      <tr>
+        <td>
+          <a href="{{heya.url_path()}}">
+            {{heya.name}}
+          </a>
+        </td>
+        <td>
+          {{heya.oyakata.render().unwrap()|safe}}
+        </td>
+        <td>
+          {{heya.member_count}}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
 
-</table>
-
-<form method="POST">
-  <label>New Heya name: <input type="text" name="name"></label>
-  <button>Create</button>
-</form>
+{% if let Some(player) = base.player %}
+  <section>
+    <h2>Create Heya</h2>
+    <p>
+      You can start a <i>heya</i> (部屋 or stable) where you can invite your friends to see eachother’s relative rankings and progress during each basho. Great for IRL friend groups and sumo watch parties.
+    </p>
+    <p>
+      You can start up to 3 heyas, and be a member of up to 5 heyas. Each heya can have up to 50 members. To become a member of a heya, the oyakata (founder) has to recruit you.
+    </p>
+    {% if hosted >= HOST_MAX %}
+      <p class="error">You are already hosting the maximum {{HOST_MAX}} heyas.</p>
+    {% else if player.heyas.as_ref().unwrap().len() >= JOIN_MAX %}
+      <p class="error">You are already a member of the maximum {{JOIN_MAX}} heyas.</p>
+    {% else %}
+      <form method="POST">
+        <label>New heya name: <input type="text" name="name"></label>
+        <button>Create</button>
+      </form>
+    {% endif %}
+  </section>
+{% endif %}
 
 {% endblock %}

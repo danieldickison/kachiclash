@@ -38,6 +38,7 @@
       {% for member in heya.members.as_ref().unwrap() %}
         <li>
           {{member.player.render().unwrap()|safe}}
+          (recruited {{member.recruit_date.format("%Y-%m-%d")}})
           {% if is_oyakata && !member.is_oyakata %}
             <form class="expel" method="POST">
               <input type="hidden" name="delete_player_id" value="{{member.player.id}}">
