@@ -49,7 +49,7 @@
             </menu>
         </section>
     {% endif %}
-    
+
     {# TODO: put sponsorship data in the db #}
     {% if basho.id.id()[..] >= "202311" %}
         <section id="sponsors">
@@ -62,7 +62,7 @@
                     <p>
                         <a href="https://tegatastore.com" target="_blank"><strong>The Tegata Store</strong></a> will ship any one <a href="https://tegatastore.com/collections/authentic-torikumi-sheets" target="_blank">authentic torikumi sheet</a> to the winner of this basho!
                     </p>
-                    
+
                     <p class="fine-print">
                         In the case of a tie, the player with the highest rank at the start of the basho will win the reward.
                     </p>
@@ -95,7 +95,7 @@
                 <span class="js-basho-count-down" data-start-date="{{basho.start_date.timestamp_millis()}}"></span>
             </p>
         {%- endif %}
-        
+
         <form id="banzuke-select-rikishi-form" action="{{basho.id.url_path()}}/picks">
 
             <div class="buttons">
@@ -115,7 +115,7 @@
                 <div class="header rank">Rank</div>
                 <div class="header west rikishi">West</div>
                 <div class="header west pick-count">Picks</div>
-                
+
                 {% for rr in rikishi_by_rank -%}
                     {% let row_style = format!("grid-row: {}", _loop_item.index + 2) %}
                     {% if rr.rank == "boundary" %}
@@ -139,11 +139,15 @@
             </div>
         </form>
     </section>
-    
+
     {% if basho.has_started() %}
         <section id="leaderboard">
             <h2>Basho Leaderboard</h2>
-    
+
+            {% if let Some(heya) = heya %}
+                <h3><a href="{{heya.url_path()}}">{{heya.name}}</a></h3>
+            {% endif %}
+
             {% match self.self_rank() %}
             {% when Some with (rank) %}
             <p class="current-rank">
@@ -152,7 +156,7 @@
             </p>
             {% when None %}
             {% endmatch %}
-    
+
             <div class="leaderboard-table">
                 <div class="header day">Day</div>
                 <div class="header rank">#</div>
@@ -162,7 +166,7 @@
                     <div class="header score">{{day}}</div>
                 {% endfor -%}
                 <div class="header score total">Total</div>
-                
+
                 {% for leader in leaders -%}
                     {# inside of `let` we access the loop context as `_loop_item` and its index is 0-based #}
                     {% let row_style = format!("grid-row: {}", _loop_item.index + 3) %}
@@ -177,7 +181,7 @@
                     {%- when _ -%}
                         {% let row_classes = "" %}
                     {%- endmatch %}
-                    
+
                     {% match leader.player -%}
                     {%- when ResultPlayer::Max %}
                         <div style="{{row_style}}" class="{{row_classes}} name">Best Possible</div>
@@ -212,7 +216,7 @@
 
                     <div style="{{row_style}}" class="{{row_classes}} score total">{{leader.total}}</div>
                 {%- endfor %}
-                
+
                 {% match self_leader_index %}
                 {% when Some with (idx) %}
                     <div id="self-leader"

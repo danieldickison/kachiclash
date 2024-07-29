@@ -1,7 +1,10 @@
 use rusqlite::{Connection, Result as SqlResult};
 use std::{collections::HashMap, ops::Range};
 
-use super::{BashoId, BashoRikishi, Player, PlayerId, Rank, RankName, RankSide, Result, RikishiId};
+use super::{
+    heya::HeyaId, BashoId, BashoRikishi, Player, PlayerId, Rank, RankName, RankSide, Result,
+    RikishiId,
+};
 use crate::util::GroupRuns;
 use std::sync::Arc;
 
@@ -59,37 +62,59 @@ impl BashoPlayerResults {
         rikishi: HashMap<RikishiId, BashoRikishi>,
         include_best_worst: bool,
         limit: usize,
+        heya_id: Option<HeyaId>,
     ) -> Result<Vec<Self>> {
-        debug!("fetching {} leaders for basho {}", limit, basho_id);
+        debug!(
+            "fetching {} leaders for basho {} heya {:?}",
+            limit, basho_id, heya_id
+        );
 
         let rikishi = Arc::new(rikishi);
-        let mut leaders: Vec<BashoPlayerResults> = db
-            .prepare(
-                "
-                SELECT
-                    player.*,
-                    pr.rank,
-                    COALESCE(br.wins, 0) AS basho_wins,
-                    COALESCE(br.rank, 0) AS basho_rank,
-                    player.id = :player_id AS is_self,
-                    GROUP_CONCAT(pick.rikishi_id) AS pick_ids
-                FROM pick
-                JOIN player_info AS player ON player.id = pick.player_id
-                LEFT JOIN player_rank AS pr ON pr.player_id = player.id AND pr.before_basho_id = pick.basho_id
-                LEFT JOIN basho_result AS br USING (player_id, basho_id)
-                WHERE pick.basho_id = :basho_id
-                GROUP BY player.id
-                ORDER BY is_self DESC, basho_wins DESC, player.id ASC
-                LIMIT :limit
-            ",
-            )
-            .unwrap()
-            .query_map(
+        let (heya_join, params) = if heya_id.is_some() {
+            (
+                "JOIN heya_player AS hp ON hp.player_id = player.id AND hp.heya_id = :heya_id",
                 named_params! {
                     ":basho_id": basho_id,
                     ":player_id": player_id,
                     ":limit": limit as u32,
+                    ":heya_id": heya_id,
                 },
+            )
+        } else {
+            (
+                "",
+                named_params! {
+                    ":basho_id": basho_id,
+                    ":player_id": player_id,
+                    ":limit": limit as u32
+                },
+            )
+        };
+        let mut leaders: Vec<BashoPlayerResults> = db
+            .prepare(
+                &format!(
+                "
+                    SELECT
+                        player.*,
+                        pr.rank,
+                        COALESCE(br.wins, 0) AS basho_wins,
+                        COALESCE(br.rank, 0) AS basho_rank,
+                        player.id = :player_id AS is_self,
+                        GROUP_CONCAT(pick.rikishi_id) AS pick_ids
+                    FROM pick
+                    JOIN player_info AS player ON player.id = pick.player_id
+                    {heya_join}
+                    LEFT JOIN player_rank AS pr ON pr.player_id = player.id AND pr.before_basho_id = pick.basho_id
+                    LEFT JOIN basho_result AS br USING (player_id, basho_id)
+                    WHERE pick.basho_id = :basho_id
+                    GROUP BY player.id
+                    ORDER BY is_self DESC, basho_wins DESC, player.id ASC
+                    LIMIT :limit
+                ")
+            )
+            .unwrap()
+            .query_map(
+               params,
                 |row| -> SqlResult<(Player, u8, u32, String)> {
                     Ok((
                         Player::from_row(row)?,

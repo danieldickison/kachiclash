@@ -6,7 +6,7 @@ use std::collections::HashSet;
 use super::{BaseTemplate, HandlerError, IdentityExt, Result};
 use crate::data::leaders::{BashoPlayerResults, ResultPlayer};
 use crate::data::{
-    self, BashoId, BashoInfo, BashoRikishiByRank, DataError, FetchBashoRikishi, PlayerId,
+    self, BashoId, BashoInfo, BashoRikishiByRank, DataError, FetchBashoRikishi, Heya, PlayerId,
     RankGroup, RankSide, RikishiId,
 };
 use crate::AppState;
@@ -19,6 +19,7 @@ use askama::Template;
 pub struct BashoTemplate {
     base: BaseTemplate,
     basho: BashoInfo,
+    heya: Option<Heya>,
     leaders: Vec<BashoPlayerResults>,
     self_leader_index: Option<usize>,
     rikishi_by_rank: Vec<BashoRikishiByRank>,
@@ -42,6 +43,7 @@ impl BashoTemplate {
 #[derive(Deserialize)]
 pub struct BashoQuery {
     all: Option<bool>,
+    heya: Option<String>,
 }
 
 #[get("")]
@@ -77,6 +79,11 @@ pub async fn basho(
     } else {
         100
     };
+    let heya = query
+        .0
+        .heya
+        .and_then(|slug| Heya::with_slug(&db, &slug).transpose())
+        .transpose()?;
     let leaders = BashoPlayerResults::fetch(
         &db,
         basho_id,
@@ -84,11 +91,13 @@ pub async fn basho(
         rikishi_by_id,
         basho.has_started(),
         limit,
+        heya.as_ref().map(|h| h.id),
     )?;
     let self_leader_index = leaders.iter().position(|l| l.is_self);
     Ok(Either::Left(BashoTemplate {
         leaders,
         self_leader_index,
+        heya,
         next_day: rikishi_by_rank
             .iter()
             .map(|rr| rr.next_day())
