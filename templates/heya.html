@@ -50,10 +50,14 @@
     </ul>
   </section>
 
-  <section>
-    <form method="POST">
-      <label>player id: <input type="text" name="add_player_id"></label>
-      <button>Recruit</button>
-    </form>
-  </section>
+  {% if let Some(player) = base.player %}
+    {% if player.is_admin() %}
+      <section>
+        <form method="POST">
+          <label>player id: <input type="text" name="add_player_id"></label>
+          <button>Recruit</button>
+        </form>
+      </section>
+    {% endif %}
+  {% endif %}
 {% endblock %}
