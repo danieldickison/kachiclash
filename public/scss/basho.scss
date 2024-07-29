@@ -2,30 +2,23 @@
 @use 'media';
 
 #p-basho {
-    h1 {
-        margin: var(--section-padding);
-        text-align: center;
-        font-size: 2.5rem;
-        text-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
-    }
-    
     #entries, #leaderboard, #admin, #sponsors {
         background: var(--color-light-yellow-bg);
         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
         -webkit-backdrop-filter: blur(3px);
         backdrop-filter: blur(3px);
-        
+
         @media (hover: none) {
             background: var(--color-light-yellow-bg-opaque);
         }
-        
+
         > h2 {
             border-bottom: solid 1px var(--color-border);
             padding-bottom: var(--section-padding);
             margin: 0 0 var(--section-padding) 0;
         }
     }
-    
+
     #admin > menu {
         display: flex;
         flex-flow: row wrap;
@@ -34,32 +27,32 @@
         list-style: none;
         gap: 2rem;
     }
-    
+
     #sponsors {
         .sponsor-grid {
             display: grid;
             grid-auto-flow: row;
             grid-template-columns: 100px 1fr;
             gap: 1em;
-            
+
             > .logo > * {
                 width: 100%;
             }
-            
+
             p {
                 margin: 0;
                 & + p {
                     margin-top: 1ex;
                 }
             }
-            
+
             .fine-print {
                 color: var(--color-fg-sub);
                 font-size: smaller;
             }
         }
     }
-    
+
     #entries > ul {
         list-style: none;
         display: flex;
@@ -86,11 +79,11 @@
         max-width: 100%;
         width: fit-content;
         margin: 0 auto;
-        
+
         @media (max-width: media.$medium-width) {
             font-size: 0.75rem;
         }
-        
+
         @media (max-width: media.$narrow) {
             grid-template-columns:
                 [rank]      max-content
@@ -99,35 +92,35 @@
                 [total]     max-content
                 [end];
         }
-        
+
         > * {
             z-index: 2;
         }
-        
+
         > .header {
             font-weight: bold;
             color: var(--color-fg-sub);
             text-align: center;
-            
+
             &.day {
                 grid-column: days / total;
             }
-            
+
             &.pick {
                 grid-column: picks / days;
             }
         }
-            
+
         > .min-max {
             color: var(--color-fg-sub);
             font-weight: 300;
             font-style: italic;
-            
+
             > .name {
                 padding: 0.75rem 0;
             }
         }
-        
+
         #self-leader {
             grid-column: 1 / -1;
             z-index: 1;
@@ -139,25 +132,25 @@
                 white-space: pre;
             }
         }
-        
+
         > .top-leader {
             font-weight: 600;
             a {
                 font-weight: 600;
             }
         }
-        
+
         > .rank {
             grid-column: rank;
             text-align: right;
             padding: 0 0.25rem 0 0.125rem;
             font-weight: 300;
         }
-        
+
         > .name {
             grid-column: name;
         }
-        
+
         > .pick {
             padding: 0 0.125rem;
             overflow: hidden;
@@ -175,7 +168,7 @@
                 grid-column: calc($i + 2);
             }
         }
-        
+
         > .score {
             text-align: right;
             padding: 0 0.125rem;
@@ -188,7 +181,7 @@
                 }
             }
         }
-        
+
         > .total {
             grid-column: total;
             font-weight: bold;
@@ -318,7 +311,7 @@
                 }
             }
         }
-        
+
         .buttons {
             display: grid;
             grid-template: "l c r" / 1fr 3fr 1fr;
@@ -329,7 +322,7 @@
                 grid-area: c;
             }
         }
-        
+
         .save-picks-button {
             display: none;
         }
@@ -355,7 +348,7 @@
                 display: none;
             }
         }
-        
+
         &.hide-pick-counts .pick-count {
             display: none;
         }
@@ -383,7 +376,7 @@
             overflow: hidden;
             --group-boundary-color: transparent;
             --group-boundary-thickness: 10px;
-            
+
             @media (max-width: media.$narrow) {
                 grid-template-columns:
                     [east-radio]    max-content
@@ -395,12 +388,12 @@
                     [west-radio]    max-content
                     [end];
             }
-            
+
             > .header {
                 font-weight: bold;
                 grid-row: 1;
             }
-            
+
             > .boundary {
                 grid-column: 1 / -1;
                 height: 0.75rem;
@@ -411,14 +404,14 @@
                 text-align: center;
                 font-weight: bold;
             }
-            
+
             > .click-target {
                 align-self: stretch;
             }
-            
+
             > .east {
                 text-align: left;
-                
+
                 &.select-radio {
                     grid-column: east-radio;
                     margin-left: 0.5rem;
@@ -475,7 +468,7 @@
                 @media (min-width: media.$wide) {
                     font-size: 1.25rem;
                 }
-                
+
                 > .info-link {
                     font-size: 0.75rem;
                     vertical-align: middle;
@@ -555,14 +548,14 @@
                 align-self: center;
                 visibility: hidden;
             }
-            
+
             @media (max-width: media.$narrow) {
                 > .hoshi,
                 > .pick-count {
                     display: none;
                 }
             }
-            
+
             > .bg {
                 grid-column: 1 / -1;
                 align-self: stretch;
