@@ -207,10 +207,10 @@ impl Heya {
         txn.prepare(
             "
                 DELETE FROM heya_player
-                WHERE player_id = ?
+                WHERE heya_id = ? AND player_id = ?
             ",
         )?
-        .execute(params![player])?;
+        .execute(params![self.id, player])?;
         self.member_count -= 1;
         self.members = None;
         txn.commit()?;
