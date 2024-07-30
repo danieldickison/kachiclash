@@ -149,7 +149,7 @@
                 <form method="GET">
                   <label for="heya-select">Filter by heya:</label>
                   <select name="heya" id="heya-select">
-                    <option {% if heya.is_none() %} selected {% endif %}}>
+                    <option value="everybody" {% if heya.is_none() %} selected {% endif %}}>
                       Everybody
                     </option>
                     <hr>
@@ -245,11 +245,13 @@
                 {% endmatch %}
             </div>
 
-
-            {% if basho.player_count > leaders.len() - 2 %}
+            {% if let Some(heya) = heya.as_ref() %}
                 <p>
-                    Showing top {{leaders.len() - 2}} players out of {{basho.player_count}} total.
-                    <a href="?all=true">Show all</a>
+                    Showing {{leaders.len() - 2}} <a href="{{heya.url_path()}}">{{heya.name}}</a> members out of <a href="?all=true">{{basho.player_count}} total players</a> this basho.
+                </p>
+            {% else if basho.player_count > leaders.len() - 2 %}
+                <p>
+                    Showing top {{leaders.len() - 2}} players out of <a href="?all=true">{{basho.player_count}} total</a>.
                 </p>
             {% endif %}
         </section>

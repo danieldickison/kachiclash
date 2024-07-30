@@ -59,6 +59,13 @@ async function savePicks (formData: FormData, url: string): Promise<boolean> {
   }
 }
 
-heyaSelect?.addEventListener('change', () => heyaSelect?.form?.submit())
+heyaSelect?.addEventListener('change', () => {
+  // Remove heya from query params when selecting "everybody":
+  if (heyaSelect.value === 'everybody') {
+    heyaSelect.name = ''
+  }
+
+  heyaSelect.form?.submit()
+})
 
 export default {}
