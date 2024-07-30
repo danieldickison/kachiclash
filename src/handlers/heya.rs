@@ -3,8 +3,8 @@ use actix_web::{get, http, post, web, HttpResponse, Responder};
 use askama::Template;
 use rusqlite::Connection;
 
-use crate::data::{Heya, PlayerId};
 use crate::data::heya::{HOST_MAX, JOIN_MAX};
+use crate::data::{Heya, PlayerId};
 use crate::handlers::{HandlerError, IdentityExt};
 use crate::AppState;
 
@@ -27,14 +27,12 @@ pub async fn page(
     let db = state.db.lock().unwrap();
     let base = BaseTemplate::new(&db, identity.as_ref(), &state)?;
     let player_id = identity.and_then(|i| i.player_id().ok());
-    match Heya::with_slug(&db, &path, true)? {
-        Some(heya) => Ok(HeyaTemplate {
-            is_oyakata: player_id.map_or(false, |pid| pid == heya.oyakata.id),
-            base,
-            heya,
-        }),
-        None => Err(HandlerError::NotFound("heya".to_string())),
-    }
+    let heya = Heya::with_slug(&db, &path, true)?;
+    Ok(HeyaTemplate {
+        is_oyakata: player_id.map_or(false, |pid| pid == heya.oyakata.id),
+        base,
+        heya,
+    })
 }
 
 #[derive(Debug, Deserialize)]
@@ -52,14 +50,11 @@ pub async fn edit(
     identity: Identity,
 ) -> Result<impl Responder> {
     let mut db = state.db.lock().unwrap();
-    if let Some(mut heya) = Heya::with_slug(&db, &path, false)? {
-        apply_edit_actions(&mut heya, &mut db, data.0, identity.player_id()?)?;
-        Ok(HttpResponse::SeeOther()
-            .insert_header((http::header::LOCATION, heya.url_path()))
-            .finish())
-    } else {
-        Err(HandlerError::NotFound("heya".to_string()))
-    }
+    let mut heya = Heya::with_slug(&db, &path, false)?;
+    apply_edit_actions(&mut heya, &mut db, data.0, identity.player_id()?)?;
+    Ok(HttpResponse::SeeOther()
+        .insert_header((http::header::LOCATION, heya.url_path()))
+        .finish())
 }
 
 fn apply_edit_actions(
@@ -108,8 +103,11 @@ pub async fn list(
     let player_id = identity.as_ref().and_then(|i| i.player_id().ok());
     Ok(HeyaListTemplate {
         base: BaseTemplate::new(&db, identity.as_ref(), &state)?,
-        hosted: heyas.iter().filter(|h| h.oyakata.id == player_id.unwrap_or(-1)).count(),
-        heyas
+        hosted: heyas
+            .iter()
+            .filter(|h| h.oyakata.id == player_id.unwrap_or(-1))
+            .count(),
+        heyas,
     })
 }
 

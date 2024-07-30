@@ -59,11 +59,11 @@ impl Heya {
         .collect()
     }
 
-    pub fn with_id(db: &Connection, id: HeyaId, include_members: bool) -> SqlResult<Option<Self>> {
+    pub fn with_id(db: &Connection, id: HeyaId, include_members: bool) -> Result<Self> {
         Self::query_one(&db, Some(id), None, include_members)
     }
 
-    pub fn with_slug(db: &Connection, slug: &str, include_members: bool) -> SqlResult<Option<Self>> {
+    pub fn with_slug(db: &Connection, slug: &str, include_members: bool) -> Result<Self> {
         Self::query_one(&db, None, Some(slug), include_members)
     }
 
@@ -72,7 +72,7 @@ impl Heya {
         id: Option<HeyaId>,
         slug: Option<&str>,
         include_members: bool,
-    ) -> SqlResult<Option<Self>> {
+    ) -> Result<Self> {
         let rank_for_basho = BashoInfo::current_or_next_basho_id(&db)?;
         let (where_clause, params) = if id.is_some() {
             ("heya.id = ?", params![id])
@@ -81,9 +81,9 @@ impl Heya {
         } else {
             panic!("must specify id or slug for Heya::query_one");
         };
-        match db
-            .query_row_and_then(
-                &format!("
+        match db.query_row_and_then(
+            &format!(
+                "
                     SELECT
                         heya.id AS heya_id,
                         heya.name AS heya_name,
@@ -93,31 +93,30 @@ impl Heya {
                     FROM heya
                     JOIN player_info AS oyakata ON oyakata.id = heya.oyakata_player_id
                     WHERE {where_clause}
-                "),
-                params,
-                |row| {
-                    Ok(Self {
-                        id: row.get("heya_id")?,
-                        name: row.get("heya_name")?,
-                        slug: row.get("heya_slug")?,
-                        create_date: row.get("create_date")?,
-                        oyakata: Player::from_row(row)?,
-                        members: None,
-                        member_count: 0,
-                    })
-                },
-            )
-            .optional()?
-        {
+                "
+            ),
+            params,
+            |row| -> SqlResult<Heya> {
+                Ok(Self {
+                    id: row.get("heya_id")?,
+                    name: row.get("heya_name")?,
+                    slug: row.get("heya_slug")?,
+                    create_date: row.get("create_date")?,
+                    oyakata: Player::from_row(row)?,
+                    members: None,
+                    member_count: 0,
+                })
+            },
+        ).optional()? {
             Some(mut heya) => {
                 if include_members {
                     let members = Member::in_heya(&db, heya.id, rank_for_basho)?;
                     heya.member_count = members.len();
                     heya.members = Some(members);
                 }
-                Ok(Some(heya))
+                Ok(heya)
             }
-            None => Ok(None),
+            None => Err(DataError::HeyaNotFound { slug: slug.map(|s| s.to_string()), id })
         }
     }
 
@@ -180,9 +179,7 @@ impl Heya {
         .execute(params![heya_id, oyakata, now])?;
 
         Self::validate_quota(&txn, oyakata)?;
-        let heya = Self::with_slug(&txn, &slug, false)?.ok_or(DataError::HeyaIntegrity {
-            what: "heya failed to insert".to_string(),
-        })?;
+        let heya = Self::with_slug(&txn, &slug, false)?;
         txn.commit()?;
 
         Ok(heya)

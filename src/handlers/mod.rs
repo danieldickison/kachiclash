@@ -73,7 +73,13 @@ impl error::ResponseError for HandlerError {
 
 impl From<DataError> for HandlerError {
     fn from(err: DataError) -> Self {
-        Self::DatabaseError(err)
+        match err {
+            DataError::HeyaNotFound { slug: _, id: _ } => {
+                debug!("{err:?}");
+                HandlerError::NotFound("heya".to_string())
+            }
+            _ => Self::DatabaseError(err),
+        }
     }
 }
 

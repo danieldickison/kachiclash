@@ -104,7 +104,7 @@ pub async fn basho(
     let heya = query
         .0
         .heya
-        .and_then(|heya_id| Heya::with_id(&db, heya_id, false).transpose())
+        .map(|heya_id| Heya::with_id(&db, heya_id, false))
         .transpose()?;
     let leaders = BashoPlayerResults::fetch(
         &db,

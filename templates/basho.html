@@ -147,7 +147,7 @@
             {% if let Some(heya_options) = self.heya_options() %}
               {% if heya_options.len() > 0 %}
                 <form method="GET">
-                  <label for="heya-select">Filter by Heya:</label>
+                  <label for="heya-select">Filter by heya:</label>
                   <select name="heya" id="heya-select">
                     <option {% if heya.is_none() %} selected {% endif %}}>
                       Everybody
@@ -244,6 +244,8 @@
                 {% when None %}
                 {% endmatch %}
             </div>
+
+
             {% if basho.player_count > leaders.len() - 2 %}
                 <p>
                     Showing top {{leaders.len() - 2}} players out of {{basho.player_count}} total.
