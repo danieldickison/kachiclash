@@ -53,6 +53,7 @@
   {% if let Some(player) = base.player %}
     {% if player.is_admin() %}
       <section>
+        <h2>Admin</h2>
         <form method="POST">
           <label>player id: <input type="text" name="add_player_id"></label>
           <button>Recruit</button>
