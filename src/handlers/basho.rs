@@ -4,6 +4,7 @@ use rusqlite::Connection;
 use std::collections::HashSet;
 
 use super::{BaseTemplate, HandlerError, IdentityExt, Result};
+use crate::data::heya::HeyaId;
 use crate::data::leaders::{BashoPlayerResults, ResultPlayer};
 use crate::data::{
     self, BashoId, BashoInfo, BashoRikishiByRank, DataError, FetchBashoRikishi, Heya, PlayerId,
@@ -27,6 +28,11 @@ pub struct BashoTemplate {
     initially_selectable: bool,
 }
 
+pub struct HeyaOption<'a> {
+    heya: &'a Heya,
+    selected: bool,
+}
+
 impl BashoTemplate {
     fn self_rank(&self) -> Option<usize> {
         if !self.basho.has_started() {
@@ -38,12 +44,28 @@ impl BashoTemplate {
             _ => None,
         })
     }
+
+    fn heya_options<'a>(&'a self) -> Option<Vec<HeyaOption<'a>>> {
+        let selected_heya_id = self.heya.as_ref().map_or(-1, |h| h.id);
+        self.base.player.as_ref().map(|player| {
+            player
+                .heyas
+                .as_ref()
+                .unwrap()
+                .iter()
+                .map(|heya| HeyaOption {
+                    heya,
+                    selected: heya.id == selected_heya_id,
+                })
+                .collect()
+        })
+    }
 }
 
 #[derive(Deserialize)]
 pub struct BashoQuery {
     all: Option<bool>,
-    heya: Option<String>,
+    heya: Option<HeyaId>,
 }
 
 #[get("")]
@@ -82,7 +104,7 @@ pub async fn basho(
     let heya = query
         .0
         .heya
-        .and_then(|slug| Heya::with_slug(&db, &slug).transpose())
+        .and_then(|heya_id| Heya::with_id(&db, heya_id, false).transpose())
         .transpose()?;
     let leaders = BashoPlayerResults::fetch(
         &db,

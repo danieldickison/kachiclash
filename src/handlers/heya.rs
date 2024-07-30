@@ -27,7 +27,7 @@ pub async fn page(
     let db = state.db.lock().unwrap();
     let base = BaseTemplate::new(&db, identity.as_ref(), &state)?;
     let player_id = identity.and_then(|i| i.player_id().ok());
-    match Heya::with_slug(&db, &path)? {
+    match Heya::with_slug(&db, &path, true)? {
         Some(heya) => Ok(HeyaTemplate {
             is_oyakata: player_id.map_or(false, |pid| pid == heya.oyakata.id),
             base,
@@ -52,7 +52,7 @@ pub async fn edit(
     identity: Identity,
 ) -> Result<impl Responder> {
     let mut db = state.db.lock().unwrap();
-    if let Some(mut heya) = Heya::with_slug(&db, &path)? {
+    if let Some(mut heya) = Heya::with_slug(&db, &path, false)? {
         apply_edit_actions(&mut heya, &mut db, data.0, identity.player_id()?)?;
         Ok(HttpResponse::SeeOther()
             .insert_header((http::header::LOCATION, heya.url_path()))

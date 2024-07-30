@@ -144,8 +144,26 @@
         <section id="leaderboard">
             <h2>Basho Leaderboard</h2>
 
-            {% if let Some(heya) = heya %}
-                <h3><a href="{{heya.url_path()}}">{{heya.name}}</a></h3>
+            {% if let Some(heya_options) = self.heya_options() %}
+              {% if heya_options.len() > 0 %}
+                <form method="GET">
+                  <label for="heya-select">Filter by Heya:</label>
+                  <select name="heya" id="heya-select">
+                    <option {% if heya.is_none() %} selected {% endif %}}>
+                      Everybody
+                    </option>
+                    <hr>
+                    {% for heya_option in heya_options %}
+                      <option
+                        value="{{heya_option.heya.id}}"
+                        {% if heya_option.selected %} selected {% endif %}
+                      >
+                        {{heya_option.heya.name}}
+                      </option>
+                    {% endfor %}
+                  </select>
+                </form>
+              {% endif %}
             {% endif %}
 
             {% match self.self_rank() %}
