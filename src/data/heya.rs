@@ -3,7 +3,7 @@ use std::ops::RangeInclusive;
 use chrono::{DateTime, Utc};
 use itertools::Itertools;
 use rusqlite::{Connection, OptionalExtension, Result as SqlResult, Row};
-use slug::slugify;
+use slug_intl::slugify;
 
 use super::{BashoId, BashoInfo, DataError, Player, PlayerId, Result};
 
@@ -187,12 +187,13 @@ impl Heya {
 
     pub fn set_name(&mut self, db: &Connection, name: &str) -> Result<()> {
         Self::validate_name(name)?;
+        let slug = slugify(name);
         db.prepare(
             "
-                UPDATE heya SET name = ? WHERE id = ?
+                UPDATE heya SET name = ?, slug = ? WHERE id = ?
             ",
         )?
-        .execute(params![name, self.id])?;
+        .execute(params![name, slug, self.id])?;
         Ok(())
     }
 

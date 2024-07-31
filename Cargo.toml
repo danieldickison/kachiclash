@@ -28,7 +28,7 @@ oauth2 = "4.1"
 anyhow = "1.0"
 num_cpus = "1.13"
 askama_actix = { git = "https://github.com/djc/askama.git" } #"0.14"
-slug = "0.1"
+slug_intl = "1.0.0-alpha.2"
 
 [dependencies.tokio]
 version = "1.0"

@@ -52,8 +52,10 @@ pub async fn edit(
     let mut db = state.db.lock().unwrap();
     let mut heya = Heya::with_slug(&db, &path, false)?;
     apply_edit_actions(&mut heya, &mut db, data.0, identity.player_id()?)?;
+
+    let updated_heya = Heya::with_id(&db, heya.id, false)?;
     Ok(HttpResponse::SeeOther()
-        .insert_header((http::header::LOCATION, heya.url_path()))
+        .insert_header((http::header::LOCATION, updated_heya.url_path()))
         .finish())
 }
 
