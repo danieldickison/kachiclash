@@ -756,9 +756,8 @@ fn upsert_basho_results(txn: &Transaction, basho_id: BashoId, bestow_awards: boo
 }
 
 fn upsert_player_ranks(txn: &Transaction, last_basho: BashoId) -> Result<()> {
-    let before_basho_id = last_basho.next();
-    let basho_range = before_basho_id.incr(-6)..before_basho_id;
-    let leaders = HistoricLeader::with_basho_range(txn, basho_range, u32::MAX)?;
+    let basho_range = last_basho.next().range_for_banzuke();
+    let leaders = HistoricLeader::with_basho_range(txn, &basho_range, u32::MAX)?;
     info!(
         "upsert_player_ranks for {} players after basho {}",
         leaders.len(),
@@ -783,7 +782,7 @@ fn upsert_player_ranks(txn: &Transaction, last_basho: BashoId) -> Result<()> {
         );
         insert_rank_stmt.execute(params![
             l.player.id,
-            before_basho_id,
+            basho_range.end,
             l.rank,
             l.wins.total.unwrap_or(0)
         ])?;

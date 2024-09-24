@@ -51,7 +51,7 @@ pub async fn stats_page(
     let basho_list = BashoInfo::list_all(&db)?;
     let leader_basho_count = query.b.unwrap_or(6);
     let basho_range = n_completed_basho(&basho_list, leader_basho_count);
-    let leaders = HistoricLeader::with_basho_range(&db, basho_range, LEADERS_LIMIT)?;
+    let leaders = HistoricLeader::with_basho_range(&db, &basho_range, LEADERS_LIMIT)?;
     let self_leader_index = match identity.as_ref() {
         Some(id) => {
             let player_id = id.player_id()?;

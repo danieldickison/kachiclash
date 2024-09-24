@@ -27,7 +27,10 @@ pub async fn page(
     let db = state.db.lock().unwrap();
     let base = BaseTemplate::new(&db, identity.as_ref(), &state)?;
     let player_id = identity.and_then(|i| i.player_id().ok());
-    let heya = Heya::with_slug(&db, &path, true)?;
+    let mut heya = Heya::with_slug(&db, &path, true)?;
+    for m in heya.members.as_mut().unwrap() {
+        m.is_self = player_id.is_some_and(|id| id == m.player.id);
+    }
     Ok(HeyaTemplate {
         is_oyakata: player_id.map_or(false, |pid| pid == heya.oyakata.id),
         base,

@@ -300,7 +300,7 @@ impl Rankable for HistoricLeader {
 impl HistoricLeader {
     pub fn with_basho_range(
         db: &Connection,
-        range: Range<BashoId>,
+        range: &Range<BashoId>,
         player_limit: u32,
     ) -> Result<Vec<Self>> {
         debug!("Fetching {} leaders in {:?}", player_limit, range);

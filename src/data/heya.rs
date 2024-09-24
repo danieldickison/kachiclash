@@ -23,6 +23,7 @@ pub struct Heya {
     pub create_date: DateTime<Utc>,
     pub member_count: usize,
     pub members: Option<Vec<Member>>, // might not be populated in all cases
+    pub recent_scores_bashos: Option<Vec<BashoId>>,
 }
 
 impl Heya {
@@ -54,6 +55,7 @@ impl Heya {
                 oyakata: Player::from_row(row)?,
                 members: None,
                 member_count: row.get("member_count")?,
+                recent_scores_bashos: None,
             })
         })?
         .collect()
@@ -105,6 +107,7 @@ impl Heya {
                     oyakata: Player::from_row(row)?,
                     members: None,
                     member_count: 0,
+                    recent_scores_bashos: None,
                 })
             },
         ).optional()? {
@@ -113,6 +116,9 @@ impl Heya {
                     let members = Member::in_heya(&db, heya.id, rank_for_basho)?;
                     heya.member_count = members.len();
                     heya.members = Some(members);
+                    let mut bashos = rank_for_basho.range_for_banzuke().to_vec();
+                    bashos.reverse();
+                    heya.recent_scores_bashos = Some(bashos);
                 }
                 Ok(heya)
             }
@@ -148,6 +154,7 @@ impl Heya {
                 oyakata: Player::from_row(row)?,
                 members: None,
                 member_count: row.get("member_count")?,
+                recent_scores_bashos: None,
             })
         })?
         .collect()
@@ -287,7 +294,9 @@ impl Heya {
 pub struct Member {
     pub player: Player,
     pub is_oyakata: bool,
+    pub is_self: bool,
     pub recruit_date: DateTime<Utc>,
+    pub recent_scores: Vec<u8>
 }
 
 impl Member {
@@ -297,10 +306,16 @@ impl Member {
             player,
             recruit_date: row.get("recruit_date")?,
             is_oyakata: row.get("is_oyakata")?,
+            is_self: false,
+            recent_scores: row.get::<_, String>("recent_scores")?
+                .split(",")
+                .map(|s| s.parse().unwrap())
+                .collect()
         })
     }
 
     fn in_heya(db: &Connection, heya_id: HeyaId, rank_for_basho: BashoId) -> SqlResult<Vec<Self>> {
+        let basho_range = rank_for_basho.range_for_banzuke();
         Ok(db
             .prepare(
                 "
@@ -308,18 +323,32 @@ impl Member {
                         p.*,
                         pr.rank,
                         hp.recruit_date,
-                        p.id = h.oyakata_player_id AS is_oyakata
+                        p.id = h.oyakata_player_id AS is_oyakata,
+                        (
+                            SELECT GROUP_CONCAT(COALESCE(br.wins, 0) ORDER BY b.id DESC)
+                            FROM basho AS b
+                            LEFT JOIN basho_result AS br ON br.basho_id = b.id AND br.player_id = p.id
+                            WHERE b.id >= :first_basho AND b.id < :before_basho
+                        ) AS recent_scores
                     FROM heya AS h
                     JOIN heya_player AS hp ON hp.heya_id = h.id
                     JOIN player_info AS p ON p.id = hp.player_id
-                    LEFT JOIN player_rank AS pr ON pr.player_id = p.id AND pr.before_basho_id = ?
-                    WHERE h.id = ?
+                    LEFT JOIN player_rank AS pr ON pr.player_id = p.id AND pr.before_basho_id = :before_basho
+                    WHERE h.id = :heya
                 ",
             )
             .unwrap()
-            .query_map(params![rank_for_basho, heya_id], Self::from_row)?
+            .query_map(named_params! {
+                ":heya": heya_id,
+                ":before_basho": basho_range.end,
+                ":first_basho": basho_range.start
+            }, Self::from_row)?
             .map(|r| r.unwrap())
             .sorted_by_key(|m| m.player.rank)
             .collect())
+    }
+
+    pub fn recent_scores_total(&self) -> u16 {
+        self.recent_scores.iter().map(|s| *s as u16).sum()
     }
 }

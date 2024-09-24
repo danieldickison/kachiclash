@@ -7,10 +7,6 @@
 {% endblock %}
 
 {% block head %}
-  <script src="/static/js/heya.js" type="module"></script>
-  {% if base.is_admin() || is_oyakata %}
-    <script src="/static/js/heya-admin.js" type="module"></script>
-  {% endif %}
   <link rel="stylesheet" href="/static/css/heya.css" />
 {% endblock %}
 
@@ -34,20 +30,52 @@
 
   <section>
     <h2>Members</h2>
-    <ol class="members">
+    <table class="members">
+      <thead>
+        <tr>
+          <th colspan="3"></th>
+          <th colspan="6">Recent Scores</th>
+        </tr>
+        <tr>
+          <th>Member</th>
+          <th>Recruited</th>
+          <th>Total</th>
+          {% for basho_id in heya.recent_scores_bashos.as_ref().unwrap().iter() %}
+            <th>
+              <a href="{{basho_id.url_path()}}?heya={{heya.id}}#leaderboard">
+                {{basho_id.season()}}
+              </a>
+            </th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
       {% for member in heya.members.as_ref().unwrap() %}
-        <li>
-          {{member.player.render().unwrap()|safe}}
-          (recruited {{member.recruit_date.format("%Y-%m-%d")}})
-          {% if is_oyakata && !member.is_oyakata %}
-            <form class="expel" method="POST">
-              <input type="hidden" name="delete_player_id" value="{{member.player.id}}">
-              <button>Expel</button>
-            </form>
+        <tr>
+          <td>{{member.player.render().unwrap()|safe}}</td>
+          <td>{{member.recruit_date.format("%Y-%m-%d")}}</td>
+          <td>{{member.recent_scores_total()}}</td>
+          {% for score in member.recent_scores %}
+            <td>{{score}}</td>
+          {% endfor %}
+          {% if !member.is_oyakata && (is_oyakata || member.is_self) %}
+            <td>
+              <form class="expel" method="POST">
+                <input type="hidden" name="delete_player_id" value="{{member.player.id}}">
+                <button>
+                  {% if member.is_self %}
+                    Leave
+                  {% else %}
+                    Expel
+                  {% endif %}
+                </button>
+              </form>
+            </td>
           {% endif %}
-        </li>
+        </tr>
       {% endfor %}
-    </ul>
+      </tbody>
+    </table>
   </section>
 
   {% if let Some(player) = base.player %}
