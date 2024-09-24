@@ -327,7 +327,7 @@ pub fn update_basho(
                 let id: i64 = row.get("id")?;
                 let family_name: String = row.get("family_name")?;
                 let given_name: String = row.get("given_name")?;
-                if rikishi_ids.get(&family_name).is_some() {
+                if rikishi_ids.contains_key(&family_name) {
                     ambiguous_shikona.push(family_name.to_owned());
                 }
                 rikishi_ids.insert(family_name, id);
@@ -418,7 +418,7 @@ pub fn update_torikumi(
         let family_name: String = row.get("family_name")?;
         let rank: Rank = row.get("rank")?;
         trace!("found mapping {} to rikishi id {}", family_name, id);
-        if rikishi_ids.get(&family_name).is_some() {
+        if rikishi_ids.contains_key(&family_name) {
             ambiguous_shikona.push(family_name.to_owned());
         }
         rikishi_ids.insert(family_name, id);

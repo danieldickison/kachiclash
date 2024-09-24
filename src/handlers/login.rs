@@ -104,7 +104,7 @@ async fn oauth_redirect(
     query: &OAuthRedirectQuery,
     state: web::Data<AppState>,
     session: Session,
-    provider: impl AuthProvider + Sync,
+    provider: impl AuthProvider,
 ) -> Result<impl Responder> {
     match session.get::<CsrfToken>("oauth_csrf").unwrap_or(None) {
         Some(ref session_csrf) if *session_csrf.secret() == query.state => {

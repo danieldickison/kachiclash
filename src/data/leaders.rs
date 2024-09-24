@@ -42,7 +42,7 @@ impl BashoPlayerResults {
                     .collect(),
             ),
             ResultPlayer::Max => (0, vec![]),
-            ResultPlayer::Min => (usize::max_value(), vec![]),
+            ResultPlayer::Min => (usize::MAX, vec![]),
         }
     }
     fn sort_key_before_basho(&self) -> impl Ord {
@@ -376,12 +376,12 @@ pub trait Rankable {
     fn set_rank(&mut self, ord: usize);
 }
 
-pub fn assign_ord<'a, I, R: 'a>(iter: &'a mut I)
+pub fn assign_ord<'a, I, R>(iter: &'a mut I)
 where
     I: Iterator<Item = &'a mut R>,
-    R: Rankable,
+    R: Rankable + 'a,
 {
-    let mut last_score = i32::min_value();
+    let mut last_score = i32::MIN;
     let mut ord = 1;
 
     for (i, r) in iter.enumerate() {

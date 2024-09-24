@@ -70,7 +70,7 @@ impl Player {
                 WHERE p.id = ?
             ",
             params![rank_for_basho, player_id],
-            |row| Player::from_row_with_heyas(&db, &row),
+            |row| Player::from_row_with_heyas(db, row),
         )
         .optional()
         .map_err(|e| e.into())
@@ -89,7 +89,7 @@ impl Player {
                 WHERE p.name = ?
             ",
             params![rank_for_basho, name],
-            |row| Player::from_row_with_heyas(&db, &row),
+            |row| Player::from_row_with_heyas(db, row),
         )
         .optional()
         .map_err(|e| e.into())
@@ -110,8 +110,8 @@ impl Player {
     }
 
     fn from_row_with_heyas(db: &Connection, row: &Row) -> SqlResult<Self> {
-        let mut player = Self::from_row(&row)?;
-        player.heyas = Some(Heya::for_player(&db, player.id)?);
+        let mut player = Self::from_row(row)?;
+        player.heyas = Some(Heya::for_player(db, player.id)?);
         Ok(player)
     }
 

@@ -62,11 +62,11 @@ impl Heya {
     }
 
     pub fn with_id(db: &Connection, id: HeyaId, include_members: bool) -> Result<Self> {
-        Self::query_one(&db, Some(id), None, include_members)
+        Self::query_one(db, Some(id), None, include_members)
     }
 
     pub fn with_slug(db: &Connection, slug: &str, include_members: bool) -> Result<Self> {
-        Self::query_one(&db, None, Some(slug), include_members)
+        Self::query_one(db, None, Some(slug), include_members)
     }
 
     pub fn query_one(
@@ -75,7 +75,7 @@ impl Heya {
         slug: Option<&str>,
         include_members: bool,
     ) -> Result<Self> {
-        let rank_for_basho = BashoInfo::current_or_next_basho_id(&db)?;
+        let rank_for_basho = BashoInfo::current_or_next_basho_id(db)?;
         let (where_clause, params) = if id.is_some() {
             ("heya.id = ?", params![id])
         } else if slug.is_some() {
@@ -113,7 +113,7 @@ impl Heya {
         ).optional()? {
             Some(mut heya) => {
                 if include_members {
-                    let members = Member::in_heya(&db, heya.id, rank_for_basho)?;
+                    let members = Member::in_heya(db, heya.id, rank_for_basho)?;
                     heya.member_count = members.len();
                     heya.members = Some(members);
                     let mut bashos = rank_for_basho.range_for_banzuke().to_vec();
@@ -259,7 +259,7 @@ impl Heya {
     }
 
     fn validate_quota(db: &Connection, player: PlayerId) -> Result<()> {
-        let player_heyas = Self::for_player(&db, player)?;
+        let player_heyas = Self::for_player(db, player)?;
         if player_heyas.len() > JOIN_MAX {
             return Err(DataError::HeyaIntegrity {
                 what: format!("Player {} in too many heyas (max {})", player, JOIN_MAX),
@@ -301,7 +301,7 @@ pub struct Member {
 
 impl Member {
     fn from_row(row: &Row) -> SqlResult<Self> {
-        let player = Player::from_row(&row)?;
+        let player = Player::from_row(row)?;
         Ok(Self {
             player,
             recruit_date: row.get("recruit_date")?,

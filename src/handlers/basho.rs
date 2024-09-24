@@ -45,7 +45,7 @@ impl BashoTemplate {
         })
     }
 
-    fn heya_options<'a>(&'a self) -> Option<Vec<HeyaOption<'a>>> {
+    fn heya_options(&self) -> Option<Vec<HeyaOption<'_>>> {
         let selected_heya_id = self.heya.as_ref().map_or(-1, |h| h.id);
         self.base.player.as_ref().map(|player| {
             player

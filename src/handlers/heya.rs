@@ -69,7 +69,7 @@ fn apply_edit_actions(
     user: PlayerId,
 ) -> Result<()> {
     if let Some(name) = data.set_name {
-        heya.set_name(&db, &name)?;
+        heya.set_name(db, &name)?;
     }
     if let Some(player_id) = data.add_player_id {
         if heya.oyakata.id == user {
