@@ -146,7 +146,7 @@
 
             {% if let Some(heya_options) = self.heya_options() %}
               {% if heya_options.len() > 0 %}
-                <form method="GET">
+                <form method="GET" action="#leaderboard">
                   <label for="heya-select">Filter by heya:</label>
                   <select name="heya" id="heya-select">
                     <option value="everybody" {% if heya.is_none() %} selected {% endif %}}>
