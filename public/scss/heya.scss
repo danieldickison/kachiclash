@@ -15,6 +15,34 @@
     font-style: italic;
     border: solid 2px var(--color-border-error);
   }
+
+  table.members {
+    border-collapse: collapse;
+
+    thead > tr {
+      background: #00000011;
+    }
+
+    tbody > tr:nth-child(2n) {
+      background: #00000011;
+    }
+
+    td, th {
+      padding: 0.25em 0.5em;
+    }
+
+    .total {
+      background: #ffffaa22;
+    }
+
+    .numeric {
+      text-align: right;;
+    }
+
+    button {
+      margin: 0;
+    }
+  }
 }
 
 #p-heya-list {
