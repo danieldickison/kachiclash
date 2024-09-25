@@ -1,3 +1,5 @@
+@use 'media';
+
 #p-heya, #p-heya-list {
   section {
     background: var(--color-light-yellow-bg);
@@ -41,6 +43,12 @@
 
     button {
       margin: 0;
+    }
+
+    @media (max-width: media.$narrow) {
+      .wide-only {
+        display: none;
+      }
     }
   }
 }

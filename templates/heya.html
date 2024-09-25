@@ -35,7 +35,7 @@
         <tr>
           <th colspan="2"></th>
           <th class="total"></th>
-          <th colspan="6">Recent Scores</th>
+          <th colspan="6" class="wide-only">Recent Scores</th>
           <th></th>
         </tr>
         <tr>
@@ -43,7 +43,7 @@
           <th>Recruited</th>
           <th class="numeric total">Total</th>
           {% for basho_id in heya.recent_scores_bashos.as_ref().unwrap().iter() %}
-            <th class="numeric">
+            <th class="numeric wide-only">
               <a href="{{basho_id.url_path()}}?heya={{heya.id}}#leaderboard">
                 {{basho_id.season()}}
               </a>
@@ -59,7 +59,7 @@
           <td>{{member.recruit_date.format("%Y-%m-%d")}}</td>
           <td class="numeric total">{{member.recent_scores_total()}}</td>
           {% for score in member.recent_scores %}
-            <td class="numeric">{{score}}</td>
+            <td class="numeric wide-only">{{score}}</td>
           {% endfor %}
           {% if !member.is_oyakata && (is_oyakata || member.is_self) %}
             <td>
