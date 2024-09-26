@@ -62,8 +62,8 @@
           {% for score in member.recent_scores %}
             <td class="numeric wide-only">{{score}}</td>
           {% endfor %}
-          {% if !member.is_oyakata && (is_oyakata || member.is_self) %}
-            <td>
+          <td>
+            {% if !member.is_oyakata && (is_oyakata || member.is_self) %}
               <form
                 class="expel"
                 method="POST"
@@ -79,8 +79,8 @@
                   {% endif %}
                 </button>
               </form>
-            </td>
-          {% endif %}
+            {% endif %}
+          </td>
         </tr>
       {% endfor %}
       </tbody>
@@ -88,13 +88,18 @@
   </section>
 
   {% if let Some(player) = base.player %}
-    {% if player.is_admin() %}
+    {% if is_oyakata || player.is_admin() %}
       <section>
-        <h2>Admin</h2>
-        <form method="POST">
-          <label>player id: <input type="text" name="add_player_id"></label>
-          <button>Recruit</button>
-        </form>
+        <h2>Recruitment</h2>
+
+        <p>To recruit members, click the <em>Recruit</em> button on players’ profile pages.</p>
+
+        {% if player.is_admin() %}
+          <form method="POST">
+            <label>player id: <input type="text" name="add_player_id"></label>
+            <button>Recruit</button>
+          </form>
+        {% endif %}
       </section>
     {% endif %}
   {% endif %}
