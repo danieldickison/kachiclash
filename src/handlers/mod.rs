@@ -11,6 +11,7 @@ use std::fmt::{Display, Formatter};
 
 pub mod admin;
 pub mod basho;
+pub mod heya;
 pub mod index;
 pub mod login;
 pub mod player;
@@ -23,6 +24,7 @@ mod user_agent;
 type Result<T> = std::result::Result<T, HandlerError>;
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum HandlerError {
     NotFound(String),
     MustBeLoggedIn,
@@ -71,7 +73,13 @@ impl error::ResponseError for HandlerError {
 
 impl From<DataError> for HandlerError {
     fn from(err: DataError) -> Self {
-        Self::DatabaseError(err)
+        match err {
+            DataError::HeyaNotFound { slug: _, id: _ } => {
+                debug!("{err:?}");
+                HandlerError::NotFound("heya".to_string())
+            }
+            _ => Self::DatabaseError(err),
+        }
     }
 }
 

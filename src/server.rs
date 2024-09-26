@@ -107,6 +107,13 @@ pub async fn run(app_state: &AppState) -> anyhow::Result<()> {
                     .service(handlers::admin::finalize_basho)
                     .service(handlers::admin::backfill_player_ranks),
             )
+            .service(
+                web::scope("/heya/{heya_id}")
+                    .service(handlers::heya::page)
+                    .service(handlers::heya::edit),
+            )
+            .service(handlers::heya::create)
+            .service(handlers::heya::list)
             .service(handlers::admin::list_players)
             .service(handlers::player::player_page)
             .service(handlers::admin::update_user_images)

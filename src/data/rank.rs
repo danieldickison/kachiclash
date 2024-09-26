@@ -207,7 +207,7 @@ impl RankGroup {
             RankName::Maegashira => match number {
                 0..=5 => Self(3),
                 6..=10 => Self(4),
-                11..=std::u16::MAX => Self(5),
+                11..=u16::MAX => Self(5),
             },
             RankName::Juryo => Self(6),
             _ => Self(7),

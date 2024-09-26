@@ -1,3 +1,4 @@
+use heya::HeyaId;
 use rusqlite::config::DbConfig::SQLITE_DBCONFIG_ENABLE_FKEY;
 use rusqlite::{Connection, OpenFlags};
 use std::path::Path;
@@ -23,6 +24,9 @@ use std::fmt;
 pub mod leaders;
 
 pub mod push;
+
+pub mod heya;
+pub use heya::Heya;
 
 pub type RikishiId = u32;
 pub type Day = u8;
@@ -60,8 +64,19 @@ type Result<T> = std::result::Result<T, DataError>;
 pub enum DataError {
     BashoHasStarted,
     InvalidPicks,
-    RikishiNotFound { family_name: String },
-    AmbiguousShikona { family_names: Vec<String> },
+    HeyaIntegrity {
+        what: String,
+    },
+    RikishiNotFound {
+        family_name: String,
+    },
+    AmbiguousShikona {
+        family_names: Vec<String>,
+    },
+    HeyaNotFound {
+        slug: Option<String>,
+        id: Option<HeyaId>,
+    },
     DatabaseError(rusqlite::Error),
     WebPushError(web_push::WebPushError),
     JsonError(serde_json::Error),
@@ -93,11 +108,15 @@ impl fmt::Display for DataError {
         match self {
             DataError::BashoHasStarted => write!(f, "Basho has already started"),
             DataError::InvalidPicks => write!(f, "Invalid picks"),
+            DataError::HeyaIntegrity { what } => write!(f, "Heya integrity error: {}", what),
             DataError::RikishiNotFound { family_name } => {
                 write!(f, "Rikishi not found: {}", family_name)
             }
             DataError::AmbiguousShikona { family_names } => {
                 write!(f, "Multiple rikishi with shikona: {:?}", family_names)
+            }
+            DataError::HeyaNotFound { slug, id } => {
+                write!(f, "Heya not found for slug {slug:?} or id {id:?}")
             }
             DataError::DatabaseError(e) => write!(f, "Database error: {}", e),
             DataError::UnknownLoginProvider => write!(f, "Unknown login provider"),

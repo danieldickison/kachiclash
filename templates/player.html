@@ -35,6 +35,22 @@
             <li class="join-date">
                 Joined: {{player.join_date.format("%Y-%m-%d")}} via {{player.login_service_name()}}
             </li>
+
+            {% set heyas = player.heyas.as_ref().unwrap() %}
+            {% if heyas.len() > 0 || recruit_heyas.len() > 0 %}
+                <li class="heyas">
+                    Heya:
+                    {% for heya in heyas %}
+                        <a href="{{heya.url_path()}}">{{heya.name}}</a>
+                    {% endfor %}
+                    {% for heya in recruit_heyas %}
+                        <form method="POST" action="{{heya.url_path()}}">
+                            <input type="hidden" name="add_player_id" value="{{player.id}}">
+                            <button>Recruit to {{heya.name}}</button>
+                        </form>
+                    {% endfor %}
+                </li>
+            {% endif %}
         </ul>
     </section>
 
@@ -54,7 +70,7 @@
                 {% for basho in basho_scores -%}
                 <tr {% if basho.basho_id.month == 1 %} class="first-of-year" {% endif %}>
                     <td><a href="{{basho.basho_id.url_path()}}">{{basho.basho_id|fmt("{:#}")}}</a></td>
-                    
+
                     <td>
                         {%- match basho.rank -%}
                         {%- when Some with (rank) -%} {{rank}}

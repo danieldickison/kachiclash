@@ -3,7 +3,9 @@ use actix_web::{get, web};
 use askama::Template;
 
 use super::{BaseTemplate, HandlerError, Result};
+use crate::data::Heya;
 use crate::data::{player::BashoScore, Player};
+use crate::handlers::IdentityExt;
 use crate::AppState;
 
 #[derive(Template)]
@@ -12,6 +14,7 @@ pub struct PlayerTemplate {
     base: BaseTemplate,
     player: Player,
     basho_scores: Vec<BashoScore>,
+    recruit_heyas: Vec<Heya>,
 }
 
 #[get("/player/{player}")]
@@ -26,10 +29,29 @@ pub async fn player_page(
     let player = Player::with_name(&db, name, base.current_or_next_basho_id)?
         .ok_or_else(|| HandlerError::NotFound("player".to_string()))?;
     let basho_scores = BashoScore::with_player_id(&db, player.id, &player.name)?;
+
+    let recruit_heyas = identity
+        .as_ref()
+        .and_then(|i| i.player_id().ok())
+        .map(|user_player_id| Heya::for_player(&db, user_player_id))
+        .transpose()?
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|hosted_heya| {
+            !player
+                .heyas
+                .as_ref()
+                .unwrap()
+                .iter()
+                .any(|member_heya| member_heya.id == hosted_heya.id)
+        })
+        .collect();
+
     Ok(PlayerTemplate {
         base,
         player,
         basho_scores,
+        recruit_heyas,
     })
 }
 

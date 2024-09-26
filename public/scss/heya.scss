@@ -1,0 +1,61 @@
+@use 'media';
+
+#p-heya, #p-heya-list {
+  section {
+    background: var(--color-light-yellow-bg);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+  }
+
+  p.error {
+    padding: 1ex;
+    font-style: italic;
+    border: solid 2px var(--color-border-error);
+  }
+
+  table.members {
+    border-collapse: collapse;
+    margin: 0 auto;
+
+    thead > tr {
+      background: #00000011;
+    }
+
+    tbody > tr:nth-child(2n) {
+      background: #00000011;
+    }
+
+    td, th {
+      padding: 0.25em 0.5em;
+    }
+
+    .total {
+      background: #ffffaa22;
+    }
+
+    .numeric {
+      text-align: right;;
+    }
+
+    button {
+      margin: 0;
+    }
+
+    form.expel {
+      display: inline;
+    }
+
+    @media (max-width: media.$narrow) {
+      .wide-only {
+        display: none;
+      }
+    }
+  }
+}
+
+#p-heya-list {
+  > section > table {
+    border-spacing: 1em 1ex;
+  }
+}

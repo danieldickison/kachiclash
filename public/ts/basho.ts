@@ -1,5 +1,6 @@
 const banzukeSection = document.getElementById('banzuke') as HTMLElement
 const pickForm = document.getElementById('banzuke-select-rikishi-form') as HTMLFormElement
+const heyaSelect = document.getElementById('heya-select') as HTMLSelectElement | null
 
 for (const el of document.querySelectorAll('.select-radio')) {
   const radio = el as HTMLInputElement
@@ -57,5 +58,14 @@ async function savePicks (formData: FormData, url: string): Promise<boolean> {
     return false
   }
 }
+
+heyaSelect?.addEventListener('change', () => {
+  // Remove heya from query params when selecting "everybody":
+  if (heyaSelect.value === 'everybody') {
+    heyaSelect.name = ''
+  }
+
+  heyaSelect.form?.submit()
+})
 
 export default {}

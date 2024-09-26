@@ -3,6 +3,7 @@ use rusqlite::types::{FromSql, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::convert::From;
 use std::fmt;
+use std::ops::{Deref, Range};
 use std::result::Result as StdResult;
 use std::str::FromStr;
 
@@ -15,6 +16,8 @@ pub struct BashoId {
 lazy_static! {
     static ref JST: FixedOffset = FixedOffset::east_opt(9 * 60 * 60).unwrap();
 }
+
+pub const N_BASHO_FOR_BANZUKE: usize = 6;
 
 impl BashoId {
     pub fn id(self) -> String {
@@ -66,6 +69,11 @@ impl BashoId {
 
     pub fn next(self) -> BashoId {
         self.incr(1)
+    }
+
+    /// Returns the range of basho that contribute to a player's ranking for this basho. This is currently defined as the six basho preceding this one.
+    pub fn range_for_banzuke(self) -> BashoRange {
+        BashoRange(self.incr(-(N_BASHO_FOR_BANZUKE as isize)) .. self)
     }
 
     pub fn incr(self, count: isize) -> BashoId {
@@ -164,5 +172,44 @@ impl ToSql for BashoId {
             .parse()
             .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
         Ok(ToSqlOutput::from(id))
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct BashoRange (Range<BashoId>);
+
+impl Deref for BashoRange {
+    type Target = Range<BashoId>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl BashoRange {
+    pub fn iter(&self) -> BashoIterator {
+        BashoIterator { range: self.clone() }
+    }
+
+    pub fn to_vec(&self) -> Vec<BashoId> {
+        self.iter().collect()
+    }
+}
+
+pub struct BashoIterator {
+    range: BashoRange
+}
+
+impl Iterator for BashoIterator {
+    type Item = BashoId;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.range.is_empty() {
+            None
+        } else {
+            let val = self.range.0.start;
+            self.range.0.start = val.next();
+            Some(val)
+        }
     }
 }
