@@ -8,6 +8,7 @@
 
 {% block head %}
   <link rel="stylesheet" href="/static/css/heya.css" />
+  <script src="/static/js/heya.js" type="module"></script>
 {% endblock %}
 
 {% block main %}
@@ -41,7 +42,7 @@
         <tr>
           <th></th>
           <th>Recruited</th>
-          <th class="numeric total">Total</th>
+          <th class="numeric total">Year</th>
           {% for basho_id in heya.recent_scores_bashos.as_ref().unwrap().iter() %}
             <th class="numeric wide-only">
               <a href="{{basho_id.url_path()}}?heya={{heya.id}}#leaderboard">
@@ -63,7 +64,12 @@
           {% endfor %}
           {% if !member.is_oyakata && (is_oyakata || member.is_self) %}
             <td>
-              <form class="expel" method="POST">
+              <form
+                class="expel"
+                method="POST"
+                data-heya="{{heya.name}}"
+                {% if !member.is_self %} data-member="{{member.player.name}}" {% endif %}
+              >
                 <input type="hidden" name="delete_player_id" value="{{member.player.id}}">
                 <button>
                   {% if member.is_self %}

@@ -8,10 +8,6 @@
     backdrop-filter: blur(3px);
   }
 
-  form.expel {
-    display: inline;
-  }
-
   p.error {
     padding: 1ex;
     font-style: italic;
@@ -20,6 +16,7 @@
 
   table.members {
     border-collapse: collapse;
+    margin: 0 auto;
 
     thead > tr {
       background: #00000011;
@@ -43,6 +40,10 @@
 
     button {
       margin: 0;
+    }
+
+    form.expel {
+      display: inline;
     }
 
     @media (max-width: media.$narrow) {

@@ -91,6 +91,10 @@ impl Heya {
                         heya.name AS heya_name,
                         heya.slug AS heya_slug,
                         heya.create_date,
+                        (
+                            SELECT COUNT(*) FROM heya_player AS hp2
+                            WHERE hp2.heya_id = heya.id
+                        ) AS member_count,
                         oyakata.*
                     FROM heya
                     JOIN player_info AS oyakata ON oyakata.id = heya.oyakata_player_id
@@ -106,7 +110,7 @@ impl Heya {
                     create_date: row.get("create_date")?,
                     oyakata: Player::from_row(row)?,
                     members: None,
-                    member_count: 0,
+                    member_count: row.get("member_count")?,
                     recent_scores_bashos: None,
                 })
             },
@@ -114,7 +118,6 @@ impl Heya {
             Some(mut heya) => {
                 if include_members {
                     let members = Member::in_heya(db, heya.id, rank_for_basho)?;
-                    heya.member_count = members.len();
                     heya.members = Some(members);
                     let mut bashos = rank_for_basho.range_for_banzuke().to_vec();
                     bashos.reverse();
