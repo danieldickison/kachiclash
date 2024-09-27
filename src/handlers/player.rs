@@ -37,6 +37,9 @@ pub async fn player_page(
         .transpose()?
         .unwrap_or_default()
         .into_iter()
+        .filter(|heya| {
+            heya.oyakata.id == identity.as_ref().unwrap().player_id().unwrap()
+        })
         .filter(|hosted_heya| {
             !player
                 .heyas
