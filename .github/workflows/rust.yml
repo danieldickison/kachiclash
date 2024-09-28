@@ -1,7 +1,11 @@
-name: Rust build, test and clippy
+name: Rust Build
 
 on:
   push:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   validate:
