@@ -7,20 +7,35 @@ PUBLIC=$KC_HOME/public
 SERVER=$KC_HOME/server
 SERVICE=kachiclash
 
-case $1 in
---beta)
-    PUBLIC=$KC_HOME/public-beta
-    SERVER=$KC_HOME/server-beta
-    SERVICE=kachiclash-beta
-    ;;
-'') ;;
-*)
-    echo "Unknown option: $1"
-    exit 3
-    ;;
-esac
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --beta)
+            shift
+            PUBLIC=$KC_HOME/public-beta
+            SERVER=$KC_HOME/server-beta
+            SERVICE=kachiclash-beta
+            ;;
+        -r|--run)
+            GH_RUN_ID="$2"
+            shift
+            shift
+            ;;
+        *)
+            echo "Unknown option: $1"
+            exit 3
+            ;;
+    esac
+done
 
-cargo build --bin=server --release --locked || exit
+if [ -n "$GH_RUN_ID" ]; then
+    echo "Using artifact from GH Action run ID: $GH_RUN_ID"
+    mkdir -p var
+    gh run download $GH_RUN_ID --name build-output --dir var/build-output
+    cd var/build-output
+else
+    echo "Building locally"
+    cargo build --bin=server --release --locked
+fi
 
 sudo rsync -rv public/ $PUBLIC
 sudo chown -R kachiclash:nogroup $PUBLIC
@@ -32,3 +47,8 @@ sudo install -vb \
     $SERVER
 
 sudo systemctl restart $SERVICE
+
+if [ -n "$GH_RUN_ID" ]; then
+    cd ..
+    rm -rf build-output
+fi

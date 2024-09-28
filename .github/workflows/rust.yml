@@ -1,28 +1,41 @@
-name: Rust build, test and clippy
+name: Rust Build
 
 on:
   push:
-  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v3.5.2
-    
+    - uses: actions/checkout@v4
     - name: Cache rust target files
-      uses: actions/cache@v3.3.1
+      uses: actions/cache@v4
       with:
-        path: target
-        key: ${{ runner.os }}-rust-target
-
-    - run: sudo npm install -g sass
-      
-    - name: Check
-      run: cargo check --verbose --all-targets --locked
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-rust-${{ hashFiles('**/Cargo.lock') }}
+        save-always: true
+    - name: Install sass
+      run: sudo npm install -g sass
     - name: Run tests
-      run: cargo test --verbose
+      run: cargo test --verbose --all-targets --locked
     - name: Clippy
       run: cargo clippy --verbose --no-deps --all-targets --locked
+    - name: Build
+      run: cargo build --bin=server --release --locked --verbose
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-output
+        path: |
+          target/release/server
+          public/
+        if-no-files-found: error
