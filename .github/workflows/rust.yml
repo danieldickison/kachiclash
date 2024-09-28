@@ -25,10 +25,8 @@ jobs:
         save-always: true
     - name: Install sass
       run: sudo npm install -g sass
-    - name: Check
-      run: cargo check --verbose --all-targets --locked
     - name: Run tests
-      run: cargo test --verbose
+      run: cargo test --verbose --all-targets --locked
     - name: Clippy
       run: cargo clippy --verbose --no-deps --all-targets --locked
     - name: Build
