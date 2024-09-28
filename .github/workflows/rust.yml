@@ -73,6 +73,9 @@ jobs:
       with:
         name: build-output
 
+    - name: Display structure of downloaded files
+      run: ls -R
+
     - name: GH Release
       uses: softprops/action-gh-release@v2
       with:
@@ -80,3 +83,4 @@ jobs:
           target/production/server
           public/
         generate_release_notes: true
+        fail_on_unmatched_files: true
