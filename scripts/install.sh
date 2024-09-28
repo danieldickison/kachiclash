@@ -29,11 +29,12 @@ done
 
 if [ -n "$GH_RUN_ID" ]; then
     echo "Using artifact from GH Action run ID: $GH_RUN_ID"
-    gh run download $GH_RUN_ID -n build-output -d gh-artifact || exit
-    cd gh-artifact
+    mkdir -p var
+    gh run download $GH_RUN_ID --name build-output --dir var/build-output
+    cd var/build-output
 else
     echo "Building locally"
-    cargo build --bin=server --release --locked || exit
+    cargo build --bin=server --release --locked
 fi
 
 sudo rsync -rv public/ $PUBLIC
@@ -49,5 +50,5 @@ sudo systemctl restart $SERVICE
 
 if [ -n "$GH_RUN_ID" ]; then
     cd ..
-    rm -rf gh-artifact
+    rm -rf build-output
 fi
