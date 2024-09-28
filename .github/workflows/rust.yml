@@ -63,7 +63,7 @@ jobs:
       with:
         name: build-output
         path: |
-          target/production/server
+          target/release/server
           public/
         if-no-files-found: error
 
@@ -84,7 +84,7 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          target/production/server
+          target/release/server
           public/
         generate_release_notes: true
         fail_on_unmatched_files: true
