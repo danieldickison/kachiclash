@@ -85,6 +85,6 @@ jobs:
       with:
         files: |
           target/release/server
-          public/
+          public/**/*
         generate_release_notes: true
         fail_on_unmatched_files: true
