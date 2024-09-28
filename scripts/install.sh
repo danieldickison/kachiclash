@@ -27,7 +27,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-if $GH_RUN_ID; then
+if [ -n "$GH_RUN_ID" ]; then
     echo "Using artifact from GH Action run ID: $GH_RUN_ID"
     gh run download $GH_RUN_ID -n build-output -d gh-artifact || exit
     cd gh-artifact
@@ -47,7 +47,7 @@ sudo install -vb \
 
 sudo systemctl restart $SERVICE
 
-if $GH_RUN_ID; then
+if [ -n "$GH_RUN_ID" ]; then
     cd ..
     rm -rf gh-artifact
 fi
