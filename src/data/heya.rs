@@ -347,7 +347,7 @@ impl Member {
                 ":first_basho": basho_range.start
             }, Self::from_row)?
             .map(|r| r.unwrap())
-            .sorted_by_key(|m| m.player.rank)
+            .sorted_by_key(|m| u16::MAX - m.recent_scores_total())
             .collect())
     }
 
