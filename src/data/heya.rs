@@ -43,7 +43,7 @@ impl Heya {
                     oyakata.*
                 FROM heya
                 JOIN player_info AS oyakata ON oyakata.id = heya.oyakata_player_id
-                ORDER BY heya.name
+                ORDER BY heya.name COLLATE NOCASE
             ",
         )?
         .query_and_then(params![], |row| {
