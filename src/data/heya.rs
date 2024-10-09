@@ -24,6 +24,7 @@ pub struct Heya {
     pub member_count: usize,
     pub members: Option<Vec<Member>>, // might not be populated in all cases
     pub recent_scores_bashos: Option<Vec<BashoId>>,
+    pub recruit_date: Option<DateTime<Utc>>, // of the player for `for_player`
 }
 
 impl Heya {
@@ -56,6 +57,7 @@ impl Heya {
                 members: None,
                 member_count: row.get("member_count")?,
                 recent_scores_bashos: None,
+                recruit_date: None,
             })
         })?
         .collect()
@@ -112,6 +114,7 @@ impl Heya {
                     members: None,
                     member_count: row.get("member_count")?,
                     recent_scores_bashos: None,
+                    recruit_date: None,
                 })
             },
         ).optional()? {
@@ -141,7 +144,8 @@ impl Heya {
                         SELECT COUNT(*) FROM heya_player AS hp2
                         WHERE hp2.heya_id = heya.id
                     ) AS member_count,
-                    oyakata.*
+                    oyakata.*,
+                    hp.recruit_date
                 FROM heya_player AS hp
                 JOIN heya ON heya.id = hp.heya_id
                 JOIN player_info AS oyakata ON oyakata.id = heya.oyakata_player_id
@@ -158,6 +162,7 @@ impl Heya {
                 members: None,
                 member_count: row.get("member_count")?,
                 recent_scores_bashos: None,
+                recruit_date: Some(row.get("recruit_date")?)
             })
         })?
         .collect()

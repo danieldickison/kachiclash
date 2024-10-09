@@ -42,6 +42,14 @@
                     Heya:
                     {% for heya in heyas %}
                         <a href="{{heya.url_path()}}">{{heya.name}}</a>
+                        (
+                          {%- if player.id == heya.oyakata.id -%}
+                            established
+                          {%- else -%}
+                            recruited
+                          {%- endif %}
+                          {{heya.recruit_date.unwrap().format("%Y-%m-%d") -}}
+                        )
                     {% endfor %}
                     {% for heya in recruit_heyas %}
                         <form method="POST" action="{{heya.url_path()}}">
