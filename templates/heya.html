@@ -33,18 +33,21 @@
     <h2>Members</h2>
     <table class="members">
       <thead>
-        <tr>
+        <tr class="wide-only">
           <th colspan="2"></th>
           <th class="total"></th>
-          <th colspan="6" class="wide-only">Recent Scores</th>
+          <th colspan="6">Recent Scores</th>
           <th></th>
         </tr>
         <tr>
           <th></th>
-          <th>Recruited</th>
+          <th>Since</th>
           <th class="numeric total">Year</th>
           {% for basho_id in heya.recent_scores_bashos.as_ref().unwrap().iter() %}
-            <th class="numeric wide-only">
+            <th class="
+              numeric
+              {% if !loop.first %} wide-only {% endif %}
+            ">
               <a href="{{basho_id.url_path()}}?heya={{heya.id}}#leaderboard">
                 {{basho_id.season()}}
               </a>
@@ -57,10 +60,15 @@
       {% for member in heya.members.as_ref().unwrap() %}
         <tr>
           <td>{{member.player.render().unwrap()|safe}}</td>
-          <td>{{member.recruit_date.format("%Y-%m-%d")}}</td>
+          <td class="numeric">{{member.recruit_date.format("%Y")}}</td>
           <td class="numeric total">{{member.recent_scores_total()}}</td>
           {% for score in member.recent_scores %}
-            <td class="numeric wide-only">{{score}}</td>
+            <td class="
+              numeric
+              {% if !loop.first %} wide-only {% endif %}
+            ">
+              {{score}}
+            </td>
           {% endfor %}
           <td>
             {% if !member.is_oyakata && (is_oyakata || member.is_self) %}
