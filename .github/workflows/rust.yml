@@ -22,7 +22,6 @@ jobs:
           ~/.cargo/git/db/
           target/
         key: ${{ runner.os }}-rust-${{ hashFiles('**/Cargo.lock') }}
-        save-always: true
     - name: Install sass
       run: sudo npm install -g sass
     - name: Run tests
