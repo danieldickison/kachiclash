@@ -37,7 +37,7 @@ else
     cargo build --bin=server --release --locked
 fi
 
-sudo rsync -rv public/ $PUBLIC
+sudo rsync -rv --checksum public/ $PUBLIC
 sudo chown -R kachiclash:nogroup $PUBLIC
 sudo chmod 0555 $PUBLIC
 # sudo chmod 0555 /storage/kachiclash.com/public/{css,img,js}
