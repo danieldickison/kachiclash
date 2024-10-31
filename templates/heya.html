@@ -67,7 +67,9 @@
               numeric
               {% if !loop.first %} wide-only {% endif %}
             ">
-              {{score}}
+              {% if let Some(s) = score %} {{s}}
+              {% else %} --
+              {% endif %}
             </td>
           {% endfor %}
           <td>

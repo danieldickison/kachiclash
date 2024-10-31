@@ -85,9 +85,10 @@ impl Heya {
         } else {
             panic!("must specify id or slug for Heya::query_one");
         };
-        match db.query_row_and_then(
-            &format!(
-                "
+        match db
+            .query_row_and_then(
+                &format!(
+                    "
                     SELECT
                         heya.id AS heya_id,
                         heya.name AS heya_name,
@@ -102,33 +103,45 @@ impl Heya {
                     JOIN player_info AS oyakata ON oyakata.id = heya.oyakata_player_id
                     WHERE {where_clause}
                 "
-            ),
-            params,
-            |row| -> SqlResult<Heya> {
-                Ok(Self {
-                    id: row.get("heya_id")?,
-                    name: row.get("heya_name")?,
-                    slug: row.get("heya_slug")?,
-                    create_date: row.get("create_date")?,
-                    oyakata: Player::from_row(row)?,
-                    members: None,
-                    member_count: row.get("member_count")?,
-                    recent_scores_bashos: None,
-                    recruit_date: None,
-                })
-            },
-        ).optional()? {
+                ),
+                params,
+                |row| -> SqlResult<Heya> {
+                    Ok(Self {
+                        id: row.get("heya_id")?,
+                        name: row.get("heya_name")?,
+                        slug: row.get("heya_slug")?,
+                        create_date: row.get("create_date")?,
+                        oyakata: Player::from_row(row)?,
+                        members: None,
+                        member_count: row.get("member_count")?,
+                        recent_scores_bashos: None,
+                        recruit_date: None,
+                    })
+                },
+            )
+            .optional()?
+        {
             Some(mut heya) => {
                 if include_members {
-                    let members = Member::in_heya(db, heya.id, rank_for_basho)?;
+                    let current_basho = BashoInfo::with_id(&db, rank_for_basho)?;
+                    let include_current_basho = current_basho.is_some();
+
+                    let members = Member::in_heya(db, heya.id, rank_for_basho, include_current_basho)?;
                     heya.members = Some(members);
+
                     let mut bashos = rank_for_basho.range_for_banzuke().to_vec();
+                    if include_current_basho {
+                        bashos.push(rank_for_basho);
+                    }
                     bashos.reverse();
                     heya.recent_scores_bashos = Some(bashos);
                 }
                 Ok(heya)
             }
-            None => Err(DataError::HeyaNotFound { slug: slug.map(|s| s.to_string()), id })
+            None => Err(DataError::HeyaNotFound {
+                slug: slug.map(|s| s.to_string()),
+                id,
+            }),
         }
     }
 
@@ -162,7 +175,7 @@ impl Heya {
                 members: None,
                 member_count: row.get("member_count")?,
                 recent_scores_bashos: None,
-                recruit_date: Some(row.get("recruit_date")?)
+                recruit_date: Some(row.get("recruit_date")?),
             })
         })?
         .collect()
@@ -304,8 +317,10 @@ pub struct Member {
     pub is_oyakata: bool,
     pub is_self: bool,
     pub recruit_date: DateTime<Utc>,
-    pub recent_scores: Vec<u8>
+    pub recent_scores: Vec<Option<u8>>,
 }
+
+const SCORE_SENTINAL_NO_ENTRY: u8 = u8::MAX;
 
 impl Member {
     fn from_row(row: &Row) -> SqlResult<Self> {
@@ -315,35 +330,48 @@ impl Member {
             recruit_date: row.get("recruit_date")?,
             is_oyakata: row.get("is_oyakata")?,
             is_self: false,
-            recent_scores: row.get::<_, String>("recent_scores")?
+            recent_scores: row
+                .get::<_, String>("recent_scores")?
                 .split(",")
-                .map(|s| s.parse().unwrap())
-                .collect()
+                .map(|s| {
+                    let score = s.parse::<u8>().unwrap();
+                    if score == SCORE_SENTINAL_NO_ENTRY { None } else { Some(score) }
+                })
+                .collect(),
         })
     }
 
-    fn in_heya(db: &Connection, heya_id: HeyaId, rank_for_basho: BashoId) -> SqlResult<Vec<Self>> {
+    fn in_heya(db: &Connection, heya_id: HeyaId, rank_for_basho: BashoId, include_current_basho: bool) -> SqlResult<Vec<Self>> {
         let basho_range = rank_for_basho.range_for_banzuke();
+        let before_basho_operator = if include_current_basho { "<=" } else { "<" };
         Ok(db
             .prepare(
-                "
+                &format!("
                     SELECT
                         p.*,
                         pr.rank,
                         hp.recruit_date,
                         p.id = h.oyakata_player_id AS is_oyakata,
                         (
-                            SELECT GROUP_CONCAT(COALESCE(br.wins, 0) ORDER BY b.id DESC)
+                            SELECT GROUP_CONCAT(
+                                COALESCE(
+                                    br.wins,
+                                    IIF(EXISTS(
+                                        SELECT 1 FROM pick WHERE player_id = p.id AND basho_id = b.id
+                                    ), 0, {SCORE_SENTINAL_NO_ENTRY})
+                                )
+                                ORDER BY b.id DESC
+                            )
                             FROM basho AS b
                             LEFT JOIN basho_result AS br ON br.basho_id = b.id AND br.player_id = p.id
-                            WHERE b.id >= :first_basho AND b.id < :before_basho
+                            WHERE b.id >= :first_basho AND b.id {before_basho_operator} :before_basho
                         ) AS recent_scores
                     FROM heya AS h
                     JOIN heya_player AS hp ON hp.heya_id = h.id
                     JOIN player_info AS p ON p.id = hp.player_id
                     LEFT JOIN player_rank AS pr ON pr.player_id = p.id AND pr.before_basho_id = :before_basho
                     WHERE h.id = :heya
-                ",
+                "),
             )
             .unwrap()
             .query_map(named_params! {
@@ -357,6 +385,6 @@ impl Member {
     }
 
     pub fn recent_scores_total(&self) -> u16 {
-        self.recent_scores.iter().map(|s| *s as u16).sum()
+        self.recent_scores.iter().map(|s| s.unwrap_or(0) as u16).sum()
     }
 }
