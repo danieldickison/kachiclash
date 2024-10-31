@@ -68,6 +68,8 @@ pub struct BashoQuery {
     heya: Option<HeyaId>,
 }
 
+const DEFAULT_LEADERS_LIMIT: usize = 100;
+
 #[get("")]
 pub async fn basho(
     path: web::Path<BashoId>,
@@ -96,16 +98,21 @@ pub async fn basho(
     } = FetchBashoRikishi::with_db(&db, basho_id, &picks)?;
     let limit = if !basho.has_started() || query.all.unwrap_or(false) {
         1000000
-    } else if state.config.is_dev() {
-        3
     } else {
-        100
+        DEFAULT_LEADERS_LIMIT
     };
-    let heya = query
-        .0
-        .heya
-        .map(|heya_id| Heya::with_id(&db, heya_id, false))
-        .transpose()?;
+
+    // Ignore heya param in pre-basho view since it duplicates info on the heya page
+    let heya = if basho.has_started() {
+        query
+            .0
+            .heya
+            .map(|heya_id| Heya::with_id(&db, heya_id, false))
+            .transpose()?
+    } else {
+        None
+    };
+
     let leaders = BashoPlayerResults::fetch(
         &db,
         basho_id,
