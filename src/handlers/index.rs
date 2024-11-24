@@ -75,16 +75,20 @@ pub async fn index(
 }
 
 #[get("/pwa")]
-pub async fn pwa(state: web::Data<AppState>) -> Result<HttpResponse> {
+pub async fn pwa(
+    state: web::Data<AppState>,
+    query: web::Query<Vec<(String, String)>>,
+) -> Result<HttpResponse> {
     let db = state.db.lock().unwrap();
     let (current_basho, _) = BashoInfo::current_and_previous(&db)?;
-    let page;
+
+    let mut page = state.config.url();
+    page.query_pairs_mut().extend_pairs(query.iter());
     if let Some(basho) = current_basho {
-        page = basho.link_url();
-    } else {
-        page = "/".to_string();
+        page.set_path(&basho.link_url());
     }
+
     Ok(HttpResponse::TemporaryRedirect()
-        .insert_header((LOCATION, page))
+        .insert_header((LOCATION, page.to_string()))
         .finish())
 }
