@@ -343,7 +343,7 @@ impl PushType {
         let make_url = |campaign: &str| -> String {
             let mut url = base_url.join("pwa").unwrap();
             url.query_pairs_mut()
-                .append_pair("utm_source", "(direct)")
+                .append_pair("utm_source", "web push")
                 .append_pair("utm_medium", "push")
                 .append_pair("utm_campaign", campaign);
             url.to_string()
@@ -368,7 +368,7 @@ impl PushType {
                 Payload {
                     title: "New Basho!".to_owned(),
                     body: format!("Entries for {} are now open", basho_id),
-                    url: make_url("entries_open"),
+                    url: make_url("entries open"),
                     data: PayloadData::EntriesOpen {
                         basho_id: *basho_id,
                         start_date: basho.start_date.timestamp(),
@@ -417,7 +417,7 @@ impl PushType {
                         "{} ({}) has gone kyujyo. You should pick another rikishi.",
                         rikishi_name, rank
                     ),
-                    url: make_url("kyujyo_alert"),
+                    url: make_url("kyujyo alert"),
                     data: PayloadData::Empty,
                 }
             }
@@ -483,7 +483,7 @@ impl PushType {
                             ))
                             .join(", ")
                     ),
-                    url: make_url("day_result"),
+                    url: make_url("day result"),
                     data: PayloadData::DayResult {
                         basho_id: *basho_id,
                         name,
@@ -561,7 +561,7 @@ impl PushType {
                     } else {
                         format!("{name} finished {basho_id} ranked #{basho_rank} with a score of {score}. You have been {promoted} to {next_rank:#}.")
                     },
-                    url: make_url("basho_result"),
+                    url: make_url("basho result"),
                     data: PayloadData::BashoResult {
                         basho_id: *basho_id,
                         name,
