@@ -340,18 +340,26 @@ impl PushType {
     }
 
     pub fn build_payload(&self, base_url: &Url, db: &Connection) -> Result<Payload> {
-        let url = base_url.join("pwa").unwrap().to_string();
+        let make_url = |campaign: &str| -> String {
+            let mut url = base_url.join("pwa").unwrap();
+            url.query_pairs_mut()
+                .append_pair("utm_source", "(direct)")
+                .append_pair("utm_medium", "push")
+                .append_pair("utm_campaign", campaign);
+            url.to_string()
+        };
+
         let payload = match self {
             PushType::Test => Payload {
                 title: "Test".to_owned(),
                 body: "It worked!".to_owned(),
-                url,
+                url: make_url("test"),
                 data: PayloadData::Empty,
             },
             PushType::Announcement(msg) => Payload {
                 title: "Announcement".to_owned(),
                 body: msg.to_owned(),
-                url,
+                url: make_url("announcement"),
                 data: PayloadData::Empty,
             },
             PushType::EntriesOpen(basho_id) => {
@@ -360,7 +368,7 @@ impl PushType {
                 Payload {
                     title: "New Basho!".to_owned(),
                     body: format!("Entries for {} are now open", basho_id),
-                    url,
+                    url: make_url("entries_open"),
                     data: PayloadData::EntriesOpen {
                         basho_id: *basho_id,
                         start_date: basho.start_date.timestamp(),
@@ -387,7 +395,7 @@ impl PushType {
                 Payload {
                     title: "Basho Reminder".to_owned(),
                     body,
-                    url,
+                    url: make_url("basho_start_countdown"),
                     data: PayloadData::BashoStartCountdown {
                         basho_id: basho.id,
                         start_date: basho.start_date.timestamp_millis(),
@@ -409,7 +417,7 @@ impl PushType {
                         "{} ({}) has gone kyujyo. You should pick another rikishi.",
                         rikishi_name, rank
                     ),
-                    url,
+                    url: make_url("kyujyo_alert"),
                     data: PayloadData::Empty,
                 }
             }
@@ -475,7 +483,7 @@ impl PushType {
                             ))
                             .join(", ")
                     ),
-                    url,
+                    url: make_url("day_result"),
                     data: PayloadData::DayResult {
                         basho_id: *basho_id,
                         name,
@@ -553,7 +561,7 @@ impl PushType {
                     } else {
                         format!("{name} finished {basho_id} ranked #{basho_rank} with a score of {score}. You have been {promoted} to {next_rank:#}.")
                     },
-                    url,
+                    url: make_url("basho_result"),
                     data: PayloadData::BashoResult {
                         basho_id: *basho_id,
                         name,
