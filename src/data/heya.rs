@@ -123,7 +123,7 @@ impl Heya {
         {
             Some(mut heya) => {
                 if include_members {
-                    let current_basho = BashoInfo::with_id(&db, rank_for_basho)?;
+                    let current_basho = BashoInfo::with_id(db, rank_for_basho)?;
                     let include_current_basho = current_basho.is_some();
 
                     let members = Member::in_heya(db, heya.id, rank_for_basho, include_current_basho)?;

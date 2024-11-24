@@ -7,7 +7,6 @@ use actix_identity::Identity;
 use actix_web::http::header::LOCATION;
 use actix_web::{get, route, web, HttpResponse};
 use askama::Template;
-use url::Url;
 
 #[derive(Template)]
 #[template(path = "index.html")]
