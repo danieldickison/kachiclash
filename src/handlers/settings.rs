@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use actix_identity::Identity;
 use actix_web::{get, post, web, HttpResponse, Responder};
 use anyhow::anyhow;
-use askama::Template;
+use rinja::Template;
 
 use super::user_agent::UserAgent;
 use super::{BaseTemplate, HandlerError, Result};

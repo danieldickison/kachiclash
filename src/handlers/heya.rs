@@ -1,6 +1,6 @@
 use actix_identity::Identity;
 use actix_web::{get, http, post, web, HttpResponse, Responder};
-use askama::Template;
+use rinja::Template;
 use rusqlite::Connection;
 
 use crate::data::heya::{HOST_MAX, JOIN_MAX};
