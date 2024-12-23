@@ -603,7 +603,7 @@ impl FetchBashoRikishi {
             .collect::<SqlResult<Vec<FetchedRikishiRow>>>()?
             .into_iter()
             .filter(|row| row.0.is_makuuchi())
-            .group_by(|row| (row.0.name, row.0.number)) // rank name and number but group east/west together
+            .chunk_by(|row| (row.0.name, row.0.number)) // rank name and number but group east/west together
             .into_iter()
             .sorted_by(|(rank1, _), (rank2, _)| rank1.cmp(rank2))
             .map(|(rank, pair)| {
@@ -613,7 +613,7 @@ impl FetchBashoRikishi {
                     east: None,
                     west: None,
                 };
-                for (_, rows) in &pair.group_by(|row| row.0) {
+                for (_, rows) in &pair.chunk_by(|row| row.0) {
                     let mut rows = rows.peekable();
                     let arow = rows.peek().unwrap();
                     let side = arow.0.side;
