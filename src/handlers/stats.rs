@@ -6,7 +6,7 @@ use crate::data::{BashoId, BashoInfo};
 use crate::AppState;
 use actix_identity::Identity;
 use actix_web::{get, web};
-use askama::Template;
+use rinja::Template;
 
 #[derive(Template)]
 #[template(path = "stats.html")]

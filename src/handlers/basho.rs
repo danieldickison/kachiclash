@@ -13,7 +13,7 @@ use crate::data::{
 use crate::AppState;
 
 use actix_web::{get, http, post, web, Either, HttpResponse, Responder};
-use askama::Template;
+use rinja::Template;
 
 #[derive(Template)]
 #[template(path = "basho.html")]

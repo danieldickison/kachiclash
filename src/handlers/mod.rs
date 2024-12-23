@@ -1,4 +1,4 @@
-extern crate askama;
+extern crate rinja;
 
 use crate::data::{BashoId, BashoInfo, DataError, Player, PlayerId};
 use crate::AppState;

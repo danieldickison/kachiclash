@@ -8,7 +8,7 @@ use actix_session::Session;
 use actix_web::{get, http, web, HttpMessage, HttpRequest};
 use actix_web::{HttpResponse, Responder};
 
-use askama::Template;
+use rinja::Template;
 
 use super::{BaseTemplate, HandlerError, Result};
 use crate::data::player;

@@ -6,7 +6,7 @@ use crate::AppState;
 use actix_identity::Identity;
 use actix_web::http::header::LOCATION;
 use actix_web::{get, route, web, HttpResponse};
-use askama::Template;
+use rinja::Template;
 
 #[derive(Template)]
 #[template(path = "index.html")]
