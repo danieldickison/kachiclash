@@ -1,21 +1,31 @@
+use actix_identity::Identity;
 use actix_web::{post, web, HttpRequest, HttpResponse, Responder};
 
-use super::Result;
+use super::{BaseTemplate, Result};
 use crate::external::sumo_api;
 use crate::AppState;
 
 #[post("/register")]
-pub async fn register(state: web::Data<AppState>) -> Result<impl Responder> {
+pub async fn register(state: web::Data<AppState>, identity: Identity) -> Result<impl Responder> {
+    BaseTemplate::for_admin(&state.db.lock().unwrap(), &identity, &state)?;
     sumo_api::register_webhook(&state.config).await?;
     Ok(HttpResponse::NoContent().finish())
+}
+
+#[derive(Deserialize)]
+struct TestParams {
+    #[serde(rename = "type")]
+    webhook_type: String,
 }
 
 #[post("/test")]
 pub async fn request_test(
     state: web::Data<AppState>,
-    webhook_type: web::Query<String>,
+    query: web::Query<TestParams>,
+    identity: Identity,
 ) -> Result<impl Responder> {
-    sumo_api::request_webhook_test(&state.config, &webhook_type.0).await?;
+    BaseTemplate::for_admin(&state.db.lock().unwrap(), &identity, &state)?;
+    sumo_api::request_webhook_test(&state.config, &query.webhook_type).await?;
     Ok(HttpResponse::NoContent().finish())
 }
 
@@ -30,7 +40,7 @@ pub async fn receive_sumo_api(
         .get("X-Sumo-Webhook-Signature")
         .ok_or_else(|| actix_web::error::ErrorBadRequest("Missing X-Sumo-Webhook-Signature"))?
         .to_str()
-        .map_err(|e| actix_web::error::ErrorBadRequest("Malformed X-Sumo-Webhook-Signature"))?;
+        .map_err(|_e| actix_web::error::ErrorBadRequest("Malformed X-Sumo-Webhook-Signature"))?;
     let mut db = state.db.lock().unwrap();
     sumo_api::receive_webhook(&sig, &data, &mut db, &state.config.webhook_secret).await?;
     Ok(HttpResponse::NoContent().finish())

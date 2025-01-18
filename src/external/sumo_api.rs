@@ -133,6 +133,7 @@ impl BanzukeResponse {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[allow(dead_code)]
 pub struct MatchResultsWebhookData {
     date: BashoId,
     start_date: DateTime<Utc>,
@@ -142,6 +143,7 @@ pub struct MatchResultsWebhookData {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[allow(dead_code)]
 struct SumoApiTorikumi {
     id: String,
     basho_id: BashoId,

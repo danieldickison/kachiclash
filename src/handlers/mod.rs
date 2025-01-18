@@ -148,6 +148,19 @@ impl BaseTemplate {
         })
     }
 
+    fn for_admin(
+        db: &Connection,
+        identity: &Identity,
+        state: &web::Data<AppState>,
+    ) -> Result<Self> {
+        let base = BaseTemplate::new(db, Some(identity), state)?;
+        if base.player.as_ref().map_or(false, |p| p.is_admin()) {
+            Ok(base)
+        } else {
+            Err(HandlerError::MustBeLoggedIn)
+        }
+    }
+
     fn is_admin(&self) -> bool {
         match &self.player {
             Some(p) => p.is_admin(),

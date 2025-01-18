@@ -38,7 +38,7 @@ pub async fn edit_basho_page(
 ) -> Result<EditBashoTemplate> {
     let base = {
         let db = state.db.lock().unwrap();
-        admin_base(&db, &identity, &state)?
+        BaseTemplate::for_admin(&db, &identity, &state)?
     };
     Ok(EditBashoTemplate {
         base,
@@ -173,7 +173,7 @@ pub async fn edit_basho_post(
     let basho_id = *path;
     {
         let mut db = state.db.lock().unwrap();
-        admin_base(&db, &identity, &state)?;
+        BaseTemplate::for_admin(&db, &identity, &state)?;
         data::basho::update_basho(
             &mut db,
             basho_id,
@@ -197,19 +197,6 @@ pub async fn edit_basho_post(
     }))
 }
 
-fn admin_base(
-    db: &Connection,
-    identity: &Identity,
-    state: &web::Data<AppState>,
-) -> Result<BaseTemplate> {
-    let base = BaseTemplate::new(db, Some(identity), state)?;
-    if base.player.as_ref().map_or(false, |p| p.is_admin()) {
-        Ok(base)
-    } else {
-        Err(HandlerError::MustBeLoggedIn)
-    }
-}
-
 ///////
 
 #[derive(Template)]
@@ -231,7 +218,7 @@ pub async fn torikumi_page(
     let day = path.1;
     let base = {
         let db = state.db.lock().unwrap();
-        admin_base(&db, &identity, &state)?
+        BaseTemplate::for_admin(&db, &identity, &state)?
     };
     let sumo_db_text = fetch_sumo_db_torikumi(basho_id, day)
         .map_ok(Some)
@@ -291,7 +278,7 @@ pub async fn torikumi_post(
     state: web::Data<AppState>,
     identity: Identity,
 ) -> Result<impl Responder> {
-    admin_base(&state.db.lock().unwrap(), &identity, &state)?;
+    BaseTemplate::for_admin(&state.db.lock().unwrap(), &identity, &state)?;
     let mut notify = torikumi.notify;
     if let Some(torikumi) = &torikumi.torikumi {
         let mut db = state.db.lock().unwrap();
@@ -316,7 +303,7 @@ pub async fn finalize_basho(
 ) -> Result<impl Responder> {
     {
         let mut db = state.db.lock().unwrap();
-        admin_base(&db, &identity, &state)?;
+        BaseTemplate::for_admin(&db, &identity, &state)?;
         basho::finalize_basho(&mut db, *path)?;
     }
     let stats =
@@ -331,7 +318,7 @@ pub async fn backfill_player_ranks(
     identity: Identity,
 ) -> Result<impl Responder> {
     let mut db = state.db.lock().unwrap();
-    admin_base(&db, &identity, &state)?;
+    BaseTemplate::for_admin(&db, &identity, &state)?;
     backfill_past_player_ranks(&mut db, *path)?;
     Ok(HttpResponse::SeeOther()
         .insert_header((http::header::LOCATION, &*path.url_path()))
@@ -351,7 +338,7 @@ pub async fn list_players(
     identity: Identity,
 ) -> Result<ListPlayersTemplate> {
     let db = state.db.lock().unwrap();
-    let base = admin_base(&db, &identity, &state)?;
+    let base = BaseTemplate::for_admin(&db, &identity, &state)?;
     Ok(ListPlayersTemplate {
         players: Player::list_all(&db, base.current_or_next_basho_id)?,
         base,
