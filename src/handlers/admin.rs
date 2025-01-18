@@ -24,6 +24,22 @@ use serde::{Deserialize, Deserializer};
 use std::time::Duration;
 
 #[derive(Template)]
+#[template(path = "admin_page.html")]
+pub struct AdminPageTemplate {
+    base: BaseTemplate,
+}
+
+#[get("/admin")]
+pub async fn admin_page(
+    state: web::Data<AppState>,
+    identity: Identity,
+) -> Result<AdminPageTemplate> {
+    let db = state.db.lock().unwrap();
+    let base = BaseTemplate::for_admin(&db, &identity, &state)?;
+    Ok(AdminPageTemplate { base })
+}
+
+#[derive(Template)]
 #[template(path = "edit_basho.html")]
 pub struct EditBashoTemplate {
     base: BaseTemplate,

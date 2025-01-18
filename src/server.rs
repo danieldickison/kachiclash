@@ -114,6 +114,7 @@ pub async fn run(app_state: &AppState) -> anyhow::Result<()> {
             )
             .service(handlers::heya::create)
             .service(handlers::heya::list)
+            .service(handlers::admin::admin_page)
             .service(handlers::admin::list_players)
             .service(handlers::player::player_page)
             .service(handlers::admin::update_user_images)
