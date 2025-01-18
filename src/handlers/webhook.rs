@@ -38,7 +38,11 @@ pub async fn receive_sumo_api(
 ) -> Result<impl Responder> {
     let sig = req
         .headers()
-        .get("X-Sumo-Webhook-Signature")
+        .get("x-sumo-webhook-signature")
+        .map(|h| {
+            debug!("Received signature: {:?}", h);
+            h
+        })
         .ok_or_else(|| actix_web::error::ErrorBadRequest("Missing X-Sumo-Webhook-Signature"))?
         .to_str()
         .map_err(|_e| actix_web::error::ErrorBadRequest("Malformed X-Sumo-Webhook-Signature"))?;
