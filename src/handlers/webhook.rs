@@ -9,7 +9,7 @@ use crate::AppState;
 pub async fn register(state: web::Data<AppState>, identity: Identity) -> Result<impl Responder> {
     BaseTemplate::for_admin(&state.db.lock().unwrap(), &identity, &state)?;
     sumo_api::register_webhook(&state.config).await?;
-    Ok(HttpResponse::NoContent().finish())
+    Ok("Successfully registered")
 }
 
 #[derive(Deserialize)]
@@ -21,18 +21,19 @@ struct TestParams {
 #[post("/test")]
 pub async fn request_test(
     state: web::Data<AppState>,
-    query: web::Query<TestParams>,
+    query: web::Form<TestParams>,
     identity: Identity,
 ) -> Result<impl Responder> {
     BaseTemplate::for_admin(&state.db.lock().unwrap(), &identity, &state)?;
     sumo_api::request_webhook_test(&state.config, &query.webhook_type).await?;
-    Ok(HttpResponse::NoContent().finish())
+    Ok("Test request sent")
 }
 
 #[post("/sumo_api")]
 pub async fn receive_sumo_api(
     req: HttpRequest,
     data: web::Json<sumo_api::MatchResultsWebhookData>,
+    body: web::Bytes,
     state: web::Data<AppState>,
 ) -> Result<impl Responder> {
     let sig = req
@@ -42,6 +43,14 @@ pub async fn receive_sumo_api(
         .to_str()
         .map_err(|_e| actix_web::error::ErrorBadRequest("Malformed X-Sumo-Webhook-Signature"))?;
     let mut db = state.db.lock().unwrap();
-    sumo_api::receive_webhook(&sig, &data, &mut db, &state.config.webhook_secret).await?;
+    sumo_api::receive_webhook(
+        &req.full_url(),
+        &body,
+        &sig,
+        &data,
+        &mut db,
+        &state.config.webhook_secret,
+    )
+    .await?;
     Ok(HttpResponse::NoContent().finish())
 }

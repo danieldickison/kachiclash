@@ -3,7 +3,10 @@ use std::{collections::HashSet, time::Duration};
 
 use anyhow::{bail, Result};
 use chrono::{DateTime, Utc};
+use hmac_sha256::HMAC;
+use itertools::Itertools;
 use rusqlite::Connection;
+use url::Url;
 
 use crate::data::{
     basho::{update_torikumi, TorikumiMatchUpdateData},
@@ -211,12 +214,32 @@ pub async fn request_webhook_test(
     Ok(())
 }
 
+fn decode_hex_sha256(s: &str) -> Result<[u8; 32]> {
+    if s.len() != 64 {
+        bail!("Invalid SHA256 hex length {}", s.len());
+    }
+    let mut bytes = [0; 32];
+    for (i, duo) in s.chars().chunks(2).into_iter().enumerate() {
+        bytes[i] = u8::from_str_radix(&duo.collect::<String>(), 16)?;
+    }
+    Ok(bytes)
+}
+
 pub async fn receive_webhook(
+    url: &Url,
+    body: &[u8],
     sig: &str,
     data: &MatchResultsWebhookData,
     db: &mut Connection,
     secret: &str,
 ) -> Result<(), anyhow::Error> {
+    let mut hmac = HMAC::new(secret);
+    hmac.update(url.as_str());
+    hmac.update(body);
+    if decode_hex_sha256(sig)? != hmac.finalize() {
+        bail!("Invalid signature");
+    }
+
     let MatchResultsWebhookData {
         date: basho_id,
         torikumi,

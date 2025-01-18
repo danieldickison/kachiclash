@@ -29,6 +29,7 @@ anyhow = "1.0"
 num_cpus = "1.13"
 rinja_actix = "0.3.5"
 slug_intl = "1.0.0-alpha.2"
+hmac-sha256 = "1.1.8"
 
 [dependencies.tokio]
 version = "1.0"

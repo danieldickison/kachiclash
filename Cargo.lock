@@ -1626,6 +1626,7 @@ dependencies = [
  "chrono",
  "envconfig",
  "futures",
+ "hmac-sha256",
  "itertools",
  "lazy_static",
  "log",
