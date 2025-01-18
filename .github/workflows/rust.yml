@@ -9,32 +9,32 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v4
-    - name: Cache rust target files
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.cargo/bin/
-          ~/.cargo/registry/index/
-          ~/.cargo/registry/cache/
-          ~/.cargo/git/db/
-          target/
-        key: ${{ runner.os }}-rust-${{ hashFiles('**/Cargo.lock') }}
-    - name: Install sass
-      run: sudo npm install -g sass
-    - name: Run tests
-      run: cargo test --verbose --all-targets --locked
-    - name: Clippy
-      run: cargo clippy --verbose --no-deps --all-targets --locked
-    - name: Build
-      run: cargo build --bin=server --release --locked --verbose
-    - name: Upload build artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-output
-        path: |
-          target/release/server
-          public/
-        if-no-files-found: error
+      - uses: actions/checkout@v4
+      - name: Cache rust target files
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-rust-${{ hashFiles('**/Cargo.lock') }}
+      - name: Install sass
+        run: sudo npm install -g sass
+      - name: Run tests
+        run: cargo test --verbose --all-targets --locked
+      - name: Clippy
+        run: cargo clippy --verbose --no-deps --all-targets --locked
+      - name: Build
+        run: cargo build --bin=server --release --locked --verbose
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: |
+            target/release/server
+            public/
+          if-no-files-found: error
