@@ -8,6 +8,7 @@ use itertools::Itertools;
 use rusqlite::Connection;
 use url::Url;
 
+use crate::data::BashoInfo;
 use crate::data::{
     basho::{update_torikumi, TorikumiMatchUpdateData},
     BashoId, Rank, RankDivision,
@@ -136,6 +137,14 @@ impl BanzukeResponse {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct WebhookData {
+    #[serde(rename = "type")]
+    webhook_type: String,
+    payload: MatchResultsWebhookData, // TODO: enum of other types
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 #[allow(dead_code)]
 pub struct MatchResultsWebhookData {
     date: BashoId,
@@ -229,7 +238,7 @@ pub async fn receive_webhook(
     url: &Url,
     body: &[u8],
     sig: &str,
-    data: &MatchResultsWebhookData,
+    data: &WebhookData,
     db: &mut Connection,
     secret: &str,
 ) -> Result<(), anyhow::Error> {
@@ -240,15 +249,30 @@ pub async fn receive_webhook(
         bail!("Invalid signature");
     }
 
+    if data.webhook_type != "matchResults" {
+        bail!("Unexpected webhook type {}", data.webhook_type);
+    }
+
     let MatchResultsWebhookData {
         date: basho_id,
         torikumi,
         ..
-    } = data;
+    } = &data.payload;
+
     let day = torikumi[0].day;
     if torikumi.iter().any(|t| t.day != day) {
         bail!("Mismatched day in torikumi");
     }
+
+    let current_basho_id = BashoInfo::current_or_next_basho_id(db)?;
+    if *basho_id != current_basho_id {
+        bail!(
+            "Webhook basho {} is not the current one: {}",
+            basho_id,
+            current_basho_id
+        );
+    }
+
     let update_data = torikumi
         .iter()
         .map(|torikumi| TorikumiMatchUpdateData {

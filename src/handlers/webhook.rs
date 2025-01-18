@@ -32,7 +32,7 @@ pub async fn request_test(
 #[post("/sumo_api")]
 pub async fn receive_sumo_api(
     req: HttpRequest,
-    data: web::Json<sumo_api::MatchResultsWebhookData>,
+    data: web::Json<sumo_api::WebhookData>,
     body: web::Bytes,
     state: web::Data<AppState>,
 ) -> Result<impl Responder> {
