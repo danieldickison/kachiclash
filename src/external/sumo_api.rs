@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::sync::LazyLock;
 use std::{collections::HashSet, time::Duration};
 
 use anyhow::{bail, Result};
@@ -17,6 +18,8 @@ use crate::Config;
 
 const CONNECTION_TIMEOUT: u64 = 10;
 const RESPONSE_TIMEOUT: u64 = 20;
+static DRY_RUN: LazyLock<bool> =
+    LazyLock::new(|| std::env::var("SUMO_API_DRY_RUN").ok() == Some("1".to_string()));
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -242,6 +245,11 @@ pub async fn receive_webhook(
     db: &mut Connection,
     secret: &str,
 ) -> Result<(), anyhow::Error> {
+    if *DRY_RUN {
+        info!("Receive webhook data (dry run)");
+        debug!("sig: {}\nbody: {}", sig, String::from_utf8(body.to_vec())?);
+    }
+
     let mut hmac = HMAC::new(secret);
     hmac.update(url.as_str());
     hmac.update(body);
@@ -284,7 +292,15 @@ pub async fn receive_webhook(
             },
         })
         .collect::<Vec<_>>();
-    update_torikumi(db, *basho_id, day, &update_data)?;
+
+    if *DRY_RUN {
+        info!("Dry run; not updating db with {} bouts:", update_data.len());
+        for d in &update_data {
+            debug!("{} beat {}", d.winner, d.loser);
+        }
+    } else {
+        update_torikumi(db, *basho_id, day, &update_data)?;
+    }
     Ok(())
 }
 
@@ -456,21 +472,3 @@ mod tests {
         );
     }
 }
-
-// {
-//   "bashoId": "202307",
-//   "division": "Makuuchi",
-//   "east": [
-//     {
-//       "side": "East",
-//       "rikishiID": 45,
-//       "shikonaEn": "Terunofuji",
-//       "rank": "Yokozuna 1 East",
-//       "record": [
-//         {
-//           "result": "win",
-//           "opponentShikonaEn": "Abi",
-//           "opponentShikonaJp": "é˜¿ç‚Ž",
-//           "opponentID": 22,
-//           "kimarite": "oshidashi"
-//         },
