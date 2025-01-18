@@ -55,6 +55,12 @@ pub struct Config {
     )]
     pub session_secret: String,
 
+    #[envconfig(
+        from = "WEBHOOK_SECRET",
+        default = "abcdefghijklmnopqrstuvwxyz012345abcdefghijklmnopqrstuvwxyz012345"
+    )]
+    pub webhook_secret: String,
+
     #[envconfig(from = "VAPID_PUBLIC_KEY")]
     pub vapid_public_key: String,
 

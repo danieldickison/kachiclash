@@ -18,6 +18,7 @@ pub mod player;
 pub mod push;
 pub mod settings;
 pub mod stats;
+pub mod webhook;
 
 mod user_agent;
 

@@ -1,6 +1,15 @@
+use std::collections::HashMap;
 use std::{collections::HashSet, time::Duration};
 
-use crate::data::{basho::TorikumiMatchUpdateData, BashoId, Rank, RankDivision};
+use anyhow::{bail, Result};
+use chrono::{DateTime, Utc};
+use rusqlite::Connection;
+
+use crate::data::{
+    basho::{update_torikumi, TorikumiMatchUpdateData},
+    BashoId, Rank, RankDivision,
+};
+use crate::Config;
 
 const CONNECTION_TIMEOUT: u64 = 10;
 const RESPONSE_TIMEOUT: u64 = 20;
@@ -120,6 +129,114 @@ impl BanzukeResponse {
     pub fn all_rikishi(&self) -> impl Iterator<Item = &RikishiResponse> {
         self.east.iter().chain(self.west.iter())
     }
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MatchResultsWebhookData {
+    date: BashoId,
+    start_date: DateTime<Utc>,
+    end_date: DateTime<Utc>,
+    torikumi: Vec<SumoApiTorikumi>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SumoApiTorikumi {
+    id: String,
+    basho_id: BashoId,
+    division: RankDivision,
+    day: u8,
+    match_no: u8,
+    east_id: u32,
+    east_shikona: String,
+    east_rank: String,
+    west_id: u32,
+    west_shikona: String,
+    west_rank: String,
+    kimarite: String,
+    winner_id: u32,
+    winner_en: String,
+    winner_jp: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RegisterWebhookData {
+    name: String,
+    destination: String,
+    secret: String,
+    subscriptions: HashMap<String, bool>,
+}
+
+impl RegisterWebhookData {
+    fn with_types(config: &Config, types: &[&str]) -> Self {
+        let mut subscriptions = HashMap::new();
+        for t in types {
+            subscriptions.insert(t.to_string(), true);
+        }
+        Self {
+            name: format!("kachiclash-{}", config.env),
+            destination: format!("{}/webhook/sumo_api", config.url()),
+            secret: config.webhook_secret.clone(),
+            subscriptions,
+        }
+    }
+}
+
+pub async fn register_webhook(config: &Config) -> Result<(), reqwest::Error> {
+    let data = RegisterWebhookData::with_types(config, &["matchResults"]);
+    info!("Registering webhook with sumo-api");
+    make_client()?
+        .post("https://www.sumo-api.com/api/webhook/subscribe")
+        .json(&data)
+        .send()
+        .await?;
+    Ok(())
+}
+
+pub async fn request_webhook_test(
+    config: &Config,
+    webhook_type: &str,
+) -> Result<(), reqwest::Error> {
+    let data = RegisterWebhookData::with_types(config, &[webhook_type]);
+    let url = format!(
+        "https://www.sumo-api.com/api/webhook/test?type={}",
+        webhook_type
+    );
+    info!("Request test webhook for type {:?}", webhook_type);
+    make_client()?.post(url).json(&data).send().await?;
+    Ok(())
+}
+
+pub async fn receive_webhook(
+    sig: &str,
+    data: &MatchResultsWebhookData,
+    db: &mut Connection,
+    secret: &str,
+) -> Result<(), anyhow::Error> {
+    let MatchResultsWebhookData {
+        date: basho_id,
+        torikumi,
+        ..
+    } = data;
+    let day = torikumi[0].day;
+    if torikumi.iter().any(|t| t.day != day) {
+        bail!("Mismatched day in torikumi");
+    }
+    let update_data = torikumi
+        .iter()
+        .map(|torikumi| TorikumiMatchUpdateData {
+            winner: torikumi.winner_en.clone(),
+            loser: if torikumi.winner_en == torikumi.east_shikona {
+                torikumi.west_shikona.clone()
+            } else {
+                torikumi.east_shikona.clone()
+            },
+        })
+        .collect::<Vec<_>>();
+    update_torikumi(db, *basho_id, day, &update_data)?;
+    Ok(())
 }
 
 fn make_client() -> reqwest::Result<reqwest::Client> {
