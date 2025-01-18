@@ -1,12 +1,13 @@
 use super::{BaseTemplate, HandlerError, Result};
-use crate::data::basho::{backfill_past_player_ranks, update_torikumi};
+use crate::data::basho::backfill_past_player_ranks;
 use crate::data::push::{
     mass_notify_basho_result, mass_notify_day_result, mass_notify_kyujyo, SendStats,
 };
-use crate::data::{self, basho, BashoId, DbConn, Player, PlayerId, Rank, RankDivision};
+use crate::data::{self, basho, BashoId, DbConn, Player, PlayerId, Rank};
 use crate::external::discord::DiscordAuthProvider;
 use crate::external::google::GoogleAuthProvider;
 use crate::external::reddit::RedditAuthProvider;
+use crate::external::sumo_api::query_and_update_sumo_api_torikumi;
 use crate::external::{sumo_api, AuthProvider};
 use crate::AppState;
 
@@ -299,7 +300,7 @@ pub async fn torikumi_post(
     if let Some(torikumi) = &torikumi.torikumi {
         let mut db = state.db.lock().unwrap();
         data::basho::update_torikumi(&mut db, path.0, path.1, torikumi)?;
-    } else if !query_and_update_sumo_api_torikumi(path.0, path.1, &state, false).await? {
+    } else if !query_and_update_sumo_api_torikumi(path.0, path.1, &state.db).await? {
         notify = false;
     }
 
@@ -309,33 +310,6 @@ pub async fn torikumi_post(
         SendStats::default()
     };
     Ok(web::Json(stats))
-}
-
-pub async fn query_and_update_sumo_api_torikumi(
-    basho_id: BashoId,
-    day: u8,
-    app_state: &AppState,
-    dry_run: bool,
-) -> anyhow::Result<bool> {
-    debug!("Querying sumo-api for basho {} day {}", basho_id.id(), day);
-    let resp = sumo_api::BanzukeResponse::fetch(basho_id, RankDivision::Makuuchi).await?;
-    let complete = resp.day_complete(day);
-    if complete {
-        let update_data = resp.torikumi_update_data(day);
-        info!(
-            "Got complete day {} results; updating db with {} bouts",
-            day,
-            update_data.len()
-        );
-
-        if dry_run {
-            debug!("dry run; not updating db or sending push notifications");
-        } else {
-            let mut db = app_state.db.lock().unwrap();
-            update_torikumi(&mut db, basho_id, day, &update_data)?;
-        }
-    }
-    Ok(complete)
 }
 
 #[post("/finalize")]

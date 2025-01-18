@@ -9,11 +9,11 @@ use itertools::Itertools;
 use rusqlite::Connection;
 use url::Url;
 
-use crate::data::BashoInfo;
 use crate::data::{
     basho::{update_torikumi, TorikumiMatchUpdateData},
     BashoId, Rank, RankDivision,
 };
+use crate::data::{BashoInfo, DbConn};
 use crate::Config;
 
 const CONNECTION_TIMEOUT: u64 = 10;
@@ -136,6 +136,33 @@ impl BanzukeResponse {
     pub fn all_rikishi(&self) -> impl Iterator<Item = &RikishiResponse> {
         self.east.iter().chain(self.west.iter())
     }
+}
+
+pub async fn query_and_update_sumo_api_torikumi(
+    basho_id: BashoId,
+    day: u8,
+    db_conn: &DbConn,
+) -> anyhow::Result<bool> {
+    debug!("Querying sumo-api for basho {} day {}", basho_id.id(), day);
+    let resp = BanzukeResponse::fetch(basho_id, RankDivision::Makuuchi).await?;
+    let complete = resp.day_complete(day);
+    let update_data = resp.torikumi_update_data(day);
+    info!(
+        "Got day {} results; updating db with {} bouts",
+        day,
+        update_data.len()
+    );
+
+    if *DRY_RUN {
+        info!("Dry run; not updating db or sending push notifications");
+        for d in &update_data {
+            debug!("{} beat {}", d.winner, d.loser);
+        }
+        return Ok(false);
+    }
+
+    update_torikumi(&mut db_conn.lock().unwrap(), basho_id, day, &update_data)?;
+    Ok(complete)
 }
 
 #[derive(Debug, Deserialize)]
