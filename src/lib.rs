@@ -22,7 +22,6 @@ use url::Url;
 mod data;
 mod external;
 mod handlers;
-mod poll;
 mod server;
 mod util;
 
@@ -133,8 +132,4 @@ pub fn init_env() -> anyhow::Result<AppState> {
 
 pub async fn run_server(app_state: &AppState) -> anyhow::Result<()> {
     server::run(app_state).await
-}
-
-pub async fn start_poll(app_state: &AppState) -> anyhow::Result<()> {
-    poll::start(app_state).await
 }
