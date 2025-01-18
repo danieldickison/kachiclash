@@ -219,9 +219,11 @@ impl RegisterWebhookData {
         for t in types {
             subscriptions.insert(t.to_string(), true);
         }
+        let mut destination = config.url();
+        destination.set_path("/webhook/sumo_api");
         Self {
             name: format!("kachiclash-{}", config.env),
-            destination: format!("{}/webhook/sumo_api", config.url()),
+            destination: destination.to_string(),
             secret: config.webhook_secret.clone(),
             subscriptions,
         }
@@ -230,7 +232,10 @@ impl RegisterWebhookData {
 
 pub async fn register_webhook(config: &Config) -> Result<(), reqwest::Error> {
     let data = RegisterWebhookData::with_types(config, &["matchResults"]);
-    info!("Registering webhook with sumo-api");
+    info!(
+        "Registering webhook with sumo-api; name={} destination={}",
+        data.name, data.destination
+    );
     make_client()?
         .post("https://www.sumo-api.com/api/webhook/subscribe")
         .json(&data)
