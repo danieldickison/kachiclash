@@ -38,14 +38,14 @@ pub async fn receive_sumo_api(
 ) -> Result<impl Responder> {
     let sig = req
         .headers()
-        .get("x-sumo-webhook-signature")
+        .get("X-Webhook-Signature")
         .map(|h| {
             debug!("Received signature: {:?}", h);
             h
         })
-        .ok_or_else(|| actix_web::error::ErrorBadRequest("Missing X-Sumo-Webhook-Signature"))?
+        .ok_or_else(|| actix_web::error::ErrorBadRequest("Missing X-Webhook-Signature"))?
         .to_str()
-        .map_err(|_e| actix_web::error::ErrorBadRequest("Malformed X-Sumo-Webhook-Signature"))?;
+        .map_err(|_e| actix_web::error::ErrorBadRequest("Malformed X-Webhook-Signature"))?;
 
     let data = match serde_json::from_slice(&body) {
         Ok(data) => data,
