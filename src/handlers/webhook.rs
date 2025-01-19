@@ -1,4 +1,7 @@
+use std::ops::Deref;
+
 use actix_identity::Identity;
+use actix_web::http::header::{self, from_one_raw_str, ContentType, TryIntoHeaderValue};
 use actix_web::{post, web, HttpRequest, HttpResponse, Responder};
 use anyhow::anyhow;
 
@@ -30,23 +33,40 @@ pub async fn request_test(
     Ok("Test request sent")
 }
 
+struct XWebhookSignature(String);
+
+impl TryIntoHeaderValue for XWebhookSignature {
+    type Error = actix_web::error::HttpError;
+
+    fn try_into_value(self) -> std::result::Result<header::HeaderValue, Self::Error> {
+        header::HeaderValue::from_str(&self.0).map_err(|e| e.into())
+    }
+}
+
+impl header::Header for XWebhookSignature {
+    fn name() -> header::HeaderName {
+        header::HeaderName::from_static("x-webhook-signature")
+    }
+
+    fn parse<M: actix_web::HttpMessage>(
+        msg: &M,
+    ) -> std::result::Result<Self, actix_web::error::ParseError> {
+        let str: std::result::Result<String, _> = from_one_raw_str(msg.headers().get(Self::name()));
+        Ok(Self(str.unwrap_or_else(|_| "".to_string())))
+    }
+}
+
 #[post("/sumo_api")]
 pub async fn receive_sumo_api(
     req: HttpRequest,
     body: web::Bytes,
+    sig: web::Header<XWebhookSignature>,
+    content_type: web::Header<header::ContentType>,
     state: web::Data<AppState>,
 ) -> Result<impl Responder> {
-    let sig = req
-        .headers()
-        .get("X-Webhook-Signature")
-        .map(|h| {
-            debug!("Received signature: {:?}", h);
-            h
-        })
-        .ok_or_else(|| actix_web::error::ErrorBadRequest("Missing X-Webhook-Signature"))?
-        .to_str()
-        .map_err(|_e| actix_web::error::ErrorBadRequest("Malformed X-Webhook-Signature"))?;
-
+    if content_type.0 != ContentType::json() {
+        return Err(anyhow!("Unexpected content type: {}", content_type.0).into());
+    }
     let data = match serde_json::from_slice(&body) {
         Ok(data) => data,
         Err(e) => {
@@ -60,7 +80,7 @@ pub async fn receive_sumo_api(
     sumo_api::receive_webhook(
         &req.full_url(),
         &body,
-        &sig,
+        &sig.deref().0,
         &data,
         &mut db,
         &state.config.webhook_secret,

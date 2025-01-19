@@ -170,7 +170,7 @@ pub async fn query_and_update_sumo_api_torikumi(
 pub struct WebhookData {
     #[serde(rename = "type")]
     webhook_type: String,
-    payload: MatchResultsWebhookData, // TODO: enum of other types
+    payload: String, // base64 encoded JSON
 }
 
 #[derive(Debug, Deserialize)]
@@ -279,7 +279,7 @@ pub async fn receive_webhook(
 ) -> Result<(), anyhow::Error> {
     if *DRY_RUN {
         info!("Receive webhook data (dry run)");
-        debug!("sig: {}\nbody: {}", sig, String::from_utf8(body.to_vec())?);
+        debug!("sig: {}\nbody: {}", sig, String::from_utf8_lossy(&body));
     }
 
     let mut hmac = HMAC::new(secret);
@@ -297,7 +297,7 @@ pub async fn receive_webhook(
         date: basho_id,
         torikumi,
         ..
-    } = &data.payload;
+    } = serde_json::from_str(&data.payload)?;
 
     let day = torikumi[0].day;
     if torikumi.iter().any(|t| t.day != day) {
@@ -305,7 +305,7 @@ pub async fn receive_webhook(
     }
 
     let current_basho_id = BashoInfo::current_or_next_basho_id(db)?;
-    if *basho_id != current_basho_id {
+    if basho_id != current_basho_id {
         bail!(
             "Webhook basho {} is not the current one: {}",
             basho_id,
@@ -331,7 +331,7 @@ pub async fn receive_webhook(
             debug!("{} beat {}", d.winner, d.loser);
         }
     } else {
-        update_torikumi(db, *basho_id, day, &update_data)?;
+        update_torikumi(db, basho_id, day, &update_data)?;
     }
     Ok(())
 }
