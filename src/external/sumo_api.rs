@@ -269,6 +269,13 @@ fn decode_hex_sha256(s: &str) -> Result<[u8; 32]> {
     Ok(bytes)
 }
 
+fn verify_webhook_signature(url: &Url, body: &[u8], sig: &str, secret: &str) -> Result<bool> {
+    let mut hmac = HMAC::new(decode_hex_sha256(secret)?);
+    hmac.update(url.path()); //.as_str());
+    hmac.update(body);
+    Ok(decode_hex_sha256(sig)? == hmac.finalize())
+}
+
 pub async fn receive_webhook(
     url: &Url,
     body: &[u8],
@@ -282,11 +289,8 @@ pub async fn receive_webhook(
         debug!("sig: {}\nbody: {}", sig, String::from_utf8_lossy(&body));
     }
 
-    let mut hmac = HMAC::new(secret);
-    hmac.update(url.as_str());
-    hmac.update(body);
-    if decode_hex_sha256(sig)? != hmac.finalize() {
-        bail!("Invalid signature");
+    if !verify_webhook_signature(url, body, sig, secret)? {
+        bail!("Webhook signature verification failed");
     }
 
     if data.webhook_type != "matchResults" {
