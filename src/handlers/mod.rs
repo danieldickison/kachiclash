@@ -33,7 +33,7 @@ pub enum HandlerError {
     DatabaseError(DataError),
     CSRFError,
     Failure(anyhow::Error),
-    ActixError(String),
+    ActixError(actix_web::Error),
 }
 
 impl Error for HandlerError {}
@@ -47,7 +47,7 @@ impl Display for HandlerError {
             HandlerError::DatabaseError(_) => write!(f, "Database error"),
             HandlerError::CSRFError => write!(f, "CRSF error"),
             HandlerError::Failure(_) => write!(f, "Unexpected failure"),
-            HandlerError::ActixError(_) => write!(f, "actix-web error"),
+            HandlerError::ActixError(e) => e.fmt(f),
         }?;
         Ok(())
     }
@@ -59,6 +59,9 @@ impl error::ResponseError for HandlerError {
             "HandlerError {:?}, responding with error message: {}",
             self, self
         );
+        if let HandlerError::ActixError(e) = self {
+            return e.error_response();
+        }
         match self {
             HandlerError::NotFound(_) => HttpResponse::NotFound(),
             HandlerError::ExternalServiceError
@@ -104,14 +107,13 @@ impl From<reqwest::Error> for HandlerError {
 
 impl From<actix_web::Error> for HandlerError {
     fn from(err: actix_web::Error) -> Self {
-        // I can't figure out how to make the actix error Send+Sync so just make it a string for now.
-        Self::ActixError(err.to_string())
+        Self::ActixError(err)
     }
 }
 
 impl From<actix_identity::error::LoginError> for HandlerError {
     fn from(value: actix_identity::error::LoginError) -> Self {
-        Self::ActixError(value.to_string())
+        Self::Failure(value.into())
     }
 }
 

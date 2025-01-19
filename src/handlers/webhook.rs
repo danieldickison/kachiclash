@@ -1,5 +1,6 @@
 use actix_identity::Identity;
 use actix_web::{post, web, HttpRequest, HttpResponse, Responder};
+use anyhow::anyhow;
 
 use super::{BaseTemplate, Result};
 use crate::external::sumo_api;
@@ -32,7 +33,6 @@ pub async fn request_test(
 #[post("/sumo_api")]
 pub async fn receive_sumo_api(
     req: HttpRequest,
-    data: web::Json<sumo_api::WebhookData>,
     body: web::Bytes,
     state: web::Data<AppState>,
 ) -> Result<impl Responder> {
@@ -46,6 +46,16 @@ pub async fn receive_sumo_api(
         .ok_or_else(|| actix_web::error::ErrorBadRequest("Missing X-Sumo-Webhook-Signature"))?
         .to_str()
         .map_err(|_e| actix_web::error::ErrorBadRequest("Malformed X-Sumo-Webhook-Signature"))?;
+
+    let data = match serde_json::from_slice(&body) {
+        Ok(data) => data,
+        Err(e) => {
+            warn!("Failed to parse webhook JSON payload: {}", e);
+            trace!("Request body:\n{}", String::from_utf8_lossy(&body));
+            return Err(anyhow!("Failed to parse webhook JSON payload: {}", e).into());
+        }
+    };
+
     let mut db = state.db.lock().unwrap();
     sumo_api::receive_webhook(
         &req.full_url(),
