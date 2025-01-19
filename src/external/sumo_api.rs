@@ -271,7 +271,7 @@ fn decode_hex_sha256(s: &str) -> Result<[u8; 32]> {
 
 fn verify_webhook_signature(url: &Url, body: &[u8], sig: &str, secret: &str) -> Result<bool> {
     let mut hmac = HMAC::new(decode_hex_sha256(secret)?);
-    hmac.update(url.path()); //.as_str());
+    hmac.update(url.as_str());
     hmac.update(body);
     Ok(decode_hex_sha256(sig)? == hmac.finalize())
 }
@@ -285,8 +285,12 @@ pub async fn receive_webhook(
     secret: &str,
 ) -> Result<(), anyhow::Error> {
     if *DRY_RUN {
-        info!("Receive webhook data (dry run)");
-        debug!("sig: {}\nbody: {}", sig, String::from_utf8_lossy(&body));
+        info!(
+            "Receive webhook data (dry run)\nsig: {}\nurl: {}\nbody: {}",
+            sig,
+            url,
+            String::from_utf8_lossy(&body)
+        );
     }
 
     if !verify_webhook_signature(url, body, sig, secret)? {
