@@ -4,6 +4,7 @@ use actix_identity::Identity;
 use actix_web::http::header::{self, from_one_raw_str, ContentType, TryIntoHeaderValue};
 use actix_web::{post, web, HttpRequest, HttpResponse, Responder};
 use anyhow::anyhow;
+use url::Url;
 
 use super::{BaseTemplate, Result};
 use crate::external::sumo_api;
@@ -75,10 +76,11 @@ pub async fn receive_sumo_api(
             return Err(anyhow!("Failed to parse webhook JSON payload: {}", e).into());
         }
     };
+    let url = state.config.url().join(req.path()).unwrap();
 
     let mut db = state.db.lock().unwrap();
     sumo_api::receive_webhook(
-        &req.full_url(),
+        &url,
         &body,
         &sig.deref().0,
         &data,
