@@ -296,15 +296,14 @@ pub async fn torikumi_post(
     identity: Identity,
 ) -> Result<impl Responder> {
     BaseTemplate::for_admin(&state.db.lock().unwrap(), &identity, &state)?;
-    let mut notify = torikumi.notify;
     if let Some(torikumi) = &torikumi.torikumi {
         let mut db = state.db.lock().unwrap();
         data::basho::update_torikumi(&mut db, path.0, path.1, torikumi)?;
     } else if !query_and_update_sumo_api_torikumi(path.0, path.1, &state.db).await? {
-        notify = false;
+        warn!("torikumi from sumo-api was not complete");
     }
 
-    let stats = if notify {
+    let stats = if torikumi.notify {
         mass_notify_day_result(&state.db, &state.push, &state.config.url(), path.0, path.1).await?
     } else {
         SendStats::default()

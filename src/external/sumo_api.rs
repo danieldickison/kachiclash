@@ -79,7 +79,7 @@ impl BanzukeResponse {
         make_client()?.get(&url).send().await?.json().await
     }
 
-    pub fn day_complete(&self, day: u8) -> bool {
+    fn day_complete(&self, day: u8) -> bool {
         let day_idx = day as usize - 1;
         assert!(day_idx < 15);
         self.all_rikishi().all(|rikishi| {
@@ -90,7 +90,7 @@ impl BanzukeResponse {
         })
     }
 
-    pub fn torikumi_update_data(&self, day: u8) -> Vec<TorikumiMatchUpdateData> {
+    fn torikumi_update_data(&self, day: u8) -> Vec<TorikumiMatchUpdateData> {
         let day_idx = day as usize - 1;
         assert!(day_idx < 15);
         let mut seen_rikishi = HashSet::new();
