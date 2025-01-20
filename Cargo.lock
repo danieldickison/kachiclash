@@ -2677,9 +2677,9 @@ dependencies = [
 
 [[package]]
 name = "slug_intl"
-version = "1.0.0-alpha.2"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a1cd33b5d8dd1ff4c8dd55dcde2c2776329e5c9b3f68f84c7c0a3e406209464a"
+checksum = "1f8f174b11ac973a29491662c8a63c2beb3025a1b265d5b07eca7282fb842b5d"
 dependencies = [
  "finl_unicode",
  "unicode-normalization",
