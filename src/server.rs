@@ -136,20 +136,22 @@ pub async fn run(app_state: &AppState) -> anyhow::Result<()> {
     if is_dev {
         info!("starting sass --watch scss/:public/css/");
         // Not sure if we need to .wait on the child process or kill it manually. On my mac it seems to be unnecessary.
-        let _sass = Command::new("sass")
+        let mut sass = Command::new("sass")
             .arg("--watch")
             .arg("public/scss/:public/css/")
             .spawn()
             .expect("run sass");
+        std::thread::spawn(move || sass.wait());
 
         info!("starting npx tsc --watch");
         // Not sure if we need to .wait on the child process or kill it manually. On my mac it seems to be unnecessary.
-        let _sass = Command::new("npx")
+        let mut tsc = Command::new("npx")
             .arg("tsc")
             .arg("--watch")
             .arg("--preserveWatchOutput")
             .spawn()
             .expect("run tsc");
+        std::thread::spawn(move || tsc.wait());
     }
 
     server.await?;

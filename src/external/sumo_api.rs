@@ -303,7 +303,7 @@ fn verify_webhook_signature(url: &Url, body: &[u8], sig: &[u8; 32], secret: &str
     Ok(*sig == hmac.finalize())
 }
 
-pub async fn receive_webhook(
+pub fn receive_webhook(
     url: &Url,
     body: &[u8],
     sig_hex: &str,
@@ -591,7 +591,6 @@ mod tests {
             &mut db,
             WEBHOOK_SECRET.trim(),
         )
-        .await
         .expect("receive_webhook should handle payload")
     }
 }

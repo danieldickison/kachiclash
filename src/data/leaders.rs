@@ -17,6 +17,7 @@ pub struct BashoPlayerResults {
     pub is_self: bool,
 }
 
+#[allow(clippy::large_enum_variant)]
 pub enum ResultPlayer {
     RankedPlayer(Player, usize),
     Max,

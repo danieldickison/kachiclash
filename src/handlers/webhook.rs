@@ -89,7 +89,6 @@ pub async fn receive_sumo_api(
         &data,
         &mut db,
         &state.config.webhook_secret,
-    )
-    .await?;
+    )?;
     Ok(HttpResponse::NoContent().finish())
 }
