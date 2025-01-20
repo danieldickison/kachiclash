@@ -122,6 +122,7 @@ pub async fn run(app_state: &AppState) -> anyhow::Result<()> {
                 web::scope("/webhook")
                     .service(handlers::webhook::receive_sumo_api)
                     .service(handlers::webhook::register)
+                    .service(handlers::webhook::delete)
                     .service(handlers::webhook::request_test),
             )
             .default_service(web::route().to(default_not_found))
