@@ -312,7 +312,7 @@ pub async fn receive_webhook(
     secret: &str,
 ) -> Result<(), anyhow::Error> {
     if *DRY_RUN {
-        info!(
+        debug!(
             "Receive webhook data (dry run)\nsig: {}\nurl: {}\nbody: {}",
             sig_hex,
             url,
@@ -363,11 +363,16 @@ pub async fn receive_webhook(
         dry_run = true;
     }
 
+    for d in &update_data {
+        debug!("matchResults webhook: {} beat {}", d.winner, d.loser);
+    }
+
     if dry_run {
-        info!("Dry run; not updating db with {} bouts:", update_data.len());
-        for d in &update_data {
-            debug!("{} beat {}", d.winner, d.loser);
-        }
+        info!(
+            "Dry run; not updating db with {} bouts for day {}",
+            update_data.len(),
+            day
+        );
     } else {
         update_torikumi(db, basho_id, day, &update_data)?;
     }

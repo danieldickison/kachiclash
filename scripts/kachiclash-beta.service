@@ -8,13 +8,14 @@ Wants=network-online.target
 Type=simple
 User=kachiclash
 Group=nogroup
-Environment=KACHI_ENV=prod
+Environment=KACHI_ENV=beta
 Environment=KACHI_DB_PATH=/home/kachiclash/var/kachiclash.sqlite
 Environment=KACHI_STATIC_PATH=/home/kachiclash/public-beta
 Environment=KACHI_HERO=/static/img2/2021-Kachi-Clash-Banner-2.png
 Environment=KACHI_HOST=beta.kachiclash.com
 Environment=KACHI_PORT=8004
 Environment=RUST_BACKTRACE=1
+Environment=RUST_LOG=info,kachiclash=trace,rusqlite=trace,actix-web=debug
 Environment=SUMO_API_DRY_RUN=1
 EnvironmentFile=/home/kachiclash/prod_secrets
 ExecStart=/home/kachiclash/server-beta
