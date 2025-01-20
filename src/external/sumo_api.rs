@@ -236,13 +236,15 @@ pub async fn register_webhook(config: &Config) -> Result<String, reqwest::Error>
         "Registering webhook with sumo-api; name={} destination={}",
         data.name, data.destination
     );
-    Ok(make_client()?
+    let res = make_client()?
         .post("https://www.sumo-api.com/api/webhook/subscribe")
         .json(&data)
         .send()
-        .await?
-        .text()
-        .await?)
+        .await?;
+    let status = res.status();
+    let text = res.text().await?;
+    info!("sumo-api response {}: {}", status, text);
+    Ok(text)
 }
 
 pub async fn delete_webhook(config: &Config) -> Result<String, reqwest::Error> {
@@ -258,13 +260,15 @@ pub async fn delete_webhook(config: &Config) -> Result<String, reqwest::Error> {
         secret: config.webhook_secret.clone(),
     };
     info!("Deleting webhook with sumo-api; name={}", data.name);
-    Ok(make_client()?
+    let res = make_client()?
         .delete("https://www.sumo-api.com/api/webhook/subscribe")
         .json(&data)
         .send()
-        .await?
-        .text()
-        .await?)
+        .await?;
+    let status = res.status();
+    let text = res.text().await?;
+    info!("sumo-api response {}: {}", status, text);
+    Ok(text)
 }
 
 pub async fn request_webhook_test(
@@ -277,13 +281,11 @@ pub async fn request_webhook_test(
         webhook_type
     );
     info!("Request test webhook for type {:?}", webhook_type);
-    Ok(make_client()?
-        .post(url)
-        .json(&data)
-        .send()
-        .await?
-        .text()
-        .await?)
+    let res = make_client()?.post(url).json(&data).send().await?;
+    let status = res.status();
+    let text = res.text().await?;
+    info!("sumo-api response {}: {}", status, text);
+    Ok(text)
 }
 
 fn decode_hex_sha256(s: &str) -> Result<[u8; 32]> {
