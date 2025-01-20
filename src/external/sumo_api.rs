@@ -388,7 +388,10 @@ mod tests {
     use itertools::Itertools;
 
     use super::{BanzukeResponse, BoutResponse, BoutResult};
-    use crate::data::{basho::TorikumiMatchUpdateData, BashoId, Rank, RankDivision};
+    use crate::{
+        data::{basho::TorikumiMatchUpdateData, BashoId, Rank, RankDivision},
+        external::sumo_api::decode_hex_sha256,
+    };
 
     fn init_logger() {
         let _ = pretty_env_logger::env_logger::builder()
@@ -396,7 +399,11 @@ mod tests {
             .try_init();
     }
 
-    const BANZUKE_202307: &str = include_str!("sumo-api-banzuke-202307-makuuchi.json");
+    const BANZUKE_202307: &str = include_str!("fixtures/sumo-api-banzuke-202307-makuuchi.json");
+    const WEBHOOK_BODY: &str = include_str!("fixtures/webhook-body.json");
+    const WEBHOOK_URL: &str = include_str!("fixtures/webhook-url.txt");
+    const WEBHOOK_SIG: &str = include_str!("fixtures/webhook-sig.txt");
+    const WEBHOOK_SECRET: &str = include_str!("fixtures/webhook-secret.txt");
 
     #[tokio::test]
     async fn call_api() {
@@ -540,6 +547,20 @@ mod tests {
                 loser: "Bushozan".to_owned(),
             },
             data[13]
+        );
+    }
+
+    #[test]
+    fn verify_webhook_signature() {
+        assert!(
+            super::verify_webhook_signature(
+                &url::Url::parse(WEBHOOK_URL).unwrap(),
+                WEBHOOK_BODY.trim().as_bytes(),
+                &decode_hex_sha256(&WEBHOOK_SIG.trim()).unwrap(),
+                WEBHOOK_SECRET.trim()
+            )
+            .expect("parse webhook signature"),
+            "webhook signature verification failed"
         );
     }
 }
