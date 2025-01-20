@@ -230,32 +230,53 @@ impl RegisterWebhookData {
     }
 }
 
-pub async fn register_webhook(config: &Config) -> Result<(), reqwest::Error> {
+pub async fn register_webhook(config: &Config) -> Result<String, reqwest::Error> {
     let data = RegisterWebhookData::with_types(config, &["matchResults"]);
     info!(
         "Registering webhook with sumo-api; name={} destination={}",
         data.name, data.destination
     );
-    make_client()?
+    Ok(make_client()?
         .post("https://www.sumo-api.com/api/webhook/subscribe")
         .json(&data)
         .send()
-        .await?;
-    Ok(())
+        .await?
+        .text()
+        .await?)
+}
+
+pub async fn delete_webhook(config: &Config) -> Result<String, reqwest::Error> {
+    let data = RegisterWebhookData::with_types(config, &[]);
+    info!(
+        "Deleting webhook with sumo-api; name={} destination={}",
+        data.name, data.destination
+    );
+    Ok(make_client()?
+        .delete("https://www.sumo-api.com/api/webhook/subscribe")
+        .json(&data)
+        .send()
+        .await?
+        .text()
+        .await?)
 }
 
 pub async fn request_webhook_test(
     config: &Config,
     webhook_type: &str,
-) -> Result<(), reqwest::Error> {
+) -> Result<String, reqwest::Error> {
     let data = RegisterWebhookData::with_types(config, &[webhook_type]);
     let url = format!(
         "https://www.sumo-api.com/api/webhook/test?type={}",
         webhook_type
     );
     info!("Request test webhook for type {:?}", webhook_type);
-    make_client()?.post(url).json(&data).send().await?;
-    Ok(())
+    Ok(make_client()?
+        .post(url)
+        .json(&data)
+        .send()
+        .await?
+        .text()
+        .await?)
 }
 
 fn decode_hex_sha256(s: &str) -> Result<[u8; 32]> {

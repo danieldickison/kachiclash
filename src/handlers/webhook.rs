@@ -12,8 +12,13 @@ use crate::AppState;
 #[post("/register")]
 pub async fn register(state: web::Data<AppState>, identity: Identity) -> Result<impl Responder> {
     BaseTemplate::for_admin(&state.db.lock().unwrap(), &identity, &state)?;
-    sumo_api::register_webhook(&state.config).await?;
-    Ok("Successfully registered")
+    Ok(sumo_api::register_webhook(&state.config).await?)
+}
+
+#[post("/delete")]
+pub async fn delete(state: web::Data<AppState>, identity: Identity) -> Result<impl Responder> {
+    BaseTemplate::for_admin(&state.db.lock().unwrap(), &identity, &state)?;
+    Ok(sumo_api::delete_webhook(&state.config).await?)
 }
 
 #[derive(Deserialize)]
@@ -29,8 +34,7 @@ pub async fn request_test(
     identity: Identity,
 ) -> Result<impl Responder> {
     BaseTemplate::for_admin(&state.db.lock().unwrap(), &identity, &state)?;
-    sumo_api::request_webhook_test(&state.config, &query.webhook_type).await?;
-    Ok("Test request sent")
+    Ok(sumo_api::request_webhook_test(&state.config, &query.webhook_type).await?)
 }
 
 struct XWebhookSignature(String);
