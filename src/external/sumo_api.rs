@@ -3,17 +3,21 @@ use std::sync::LazyLock;
 use std::{collections::HashSet, time::Duration};
 
 use anyhow::{bail, Result};
-use chrono::{DateTime, Utc};
+use base64::prelude::*;
 use hmac_sha256::HMAC;
 use itertools::Itertools;
 use rusqlite::Connection;
 use url::Url;
 
+#[cfg(test)]
+use self::tests::BashoInfo;
+#[cfg(not(test))]
+use crate::data::BashoInfo;
+use crate::data::DbConn;
 use crate::data::{
     basho::{update_torikumi, TorikumiMatchUpdateData},
     BashoId, Rank, RankDivision,
 };
-use crate::data::{BashoInfo, DbConn};
 use crate::Config;
 
 const CONNECTION_TIMEOUT: u64 = 10;
@@ -173,15 +177,7 @@ pub struct WebhookData {
     payload: String, // base64 encoded JSON
 }
 
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-#[allow(dead_code)]
-pub struct MatchResultsWebhookData {
-    date: BashoId,
-    start_date: DateTime<Utc>,
-    end_date: DateTime<Utc>,
-    torikumi: Vec<SumoApiTorikumi>,
-}
+type MatchResultsWebhookPayload = Vec<SumoApiTorikumi>;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -332,24 +328,16 @@ pub async fn receive_webhook(
         bail!("Unexpected webhook type {}", data.webhook_type);
     }
 
-    let MatchResultsWebhookData {
-        date: basho_id,
-        torikumi,
-        ..
-    } = serde_json::from_str(&data.payload)?;
+    let torikumi: MatchResultsWebhookPayload =
+        serde_json::from_slice(&BASE64_STANDARD.decode(&data.payload)?)?;
+
+    if torikumi.is_empty() {
+        bail!("Empty torikumi payload");
+    }
 
     let day = torikumi[0].day;
     if torikumi.iter().any(|t| t.day != day) {
         bail!("Mismatched day in torikumi");
-    }
-
-    let current_basho_id = BashoInfo::current_or_next_basho_id(db)?;
-    if basho_id != current_basho_id {
-        bail!(
-            "Webhook basho {} is not the current one: {}",
-            basho_id,
-            current_basho_id
-        );
     }
 
     let update_data = torikumi
@@ -364,7 +352,18 @@ pub async fn receive_webhook(
         })
         .collect::<Vec<_>>();
 
-    if *DRY_RUN {
+    let basho_id = torikumi[0].basho_id;
+    let current_basho_id = BashoInfo::current_or_next_basho_id(db)?;
+    let mut dry_run = *DRY_RUN;
+    if basho_id != current_basho_id {
+        warn!(
+            "Webhook basho {} is not the current one: {}",
+            basho_id, current_basho_id
+        );
+        dry_run = true;
+    }
+
+    if dry_run {
         info!("Dry run; not updating db with {} bouts:", update_data.len());
         for d in &update_data {
             debug!("{} beat {}", d.winner, d.loser);
@@ -386,6 +385,8 @@ fn make_client() -> reqwest::Result<reqwest::Client> {
 #[cfg(test)]
 mod tests {
     use itertools::Itertools;
+    use rusqlite::Connection;
+    use url::Url;
 
     use super::{BanzukeResponse, BoutResponse, BoutResult};
     use crate::{
@@ -404,6 +405,14 @@ mod tests {
     const WEBHOOK_URL: &str = include_str!("fixtures/webhook-url.txt");
     const WEBHOOK_SIG: &str = include_str!("fixtures/webhook-sig.txt");
     const WEBHOOK_SECRET: &str = include_str!("fixtures/webhook-secret.txt");
+
+    pub struct BashoInfo;
+    impl BashoInfo {
+        pub fn current_or_next_basho_id(_db: &Connection) -> anyhow::Result<BashoId> {
+            // return basho id that's NOT for the webhook fixtures, so we force a dry run
+            Ok(BashoId::from(202307))
+        }
+    }
 
     #[tokio::test]
     async fn call_api() {
@@ -554,7 +563,7 @@ mod tests {
     fn verify_webhook_signature() {
         assert!(
             super::verify_webhook_signature(
-                &url::Url::parse(WEBHOOK_URL).unwrap(),
+                &Url::parse(WEBHOOK_URL).unwrap(),
                 WEBHOOK_BODY.trim().as_bytes(),
                 &decode_hex_sha256(&WEBHOOK_SIG.trim()).unwrap(),
                 WEBHOOK_SECRET.trim()
@@ -562,5 +571,22 @@ mod tests {
             .expect("parse webhook signature"),
             "webhook signature verification failed"
         );
+    }
+
+    #[tokio::test]
+    async fn receive_webhook() {
+        init_logger();
+        let data = serde_json::from_str(WEBHOOK_BODY).expect("parse webhook body");
+        let mut db = Connection::open_in_memory().expect("open in-memory db");
+        super::receive_webhook(
+            &Url::parse(WEBHOOK_URL).unwrap(),
+            WEBHOOK_BODY.trim().as_bytes(),
+            &WEBHOOK_SIG.trim(),
+            &data,
+            &mut db,
+            WEBHOOK_SECRET.trim(),
+        )
+        .await
+        .expect("receive_webhook should handle payload")
     }
 }
