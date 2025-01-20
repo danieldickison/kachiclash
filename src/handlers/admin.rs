@@ -22,6 +22,7 @@ use regex::{Regex, RegexBuilder};
 use rinja::Template;
 use rusqlite::{Connection, OptionalExtension, Result as SqlResult};
 use serde::{Deserialize, Deserializer};
+use std::sync::LazyLock;
 use std::time::Duration;
 
 #[derive(Template)]
@@ -253,13 +254,12 @@ pub async fn torikumi_page(
 }
 
 async fn fetch_sumo_db_torikumi(basho_id: BashoId, day: u8) -> Result<String> {
-    lazy_static! {
-        static ref RE: Regex =
-            RegexBuilder::new(r#"<div +class="simplecontent">\s*<pre>.*?\WMakuuchi\s+(.*?)</pre>"#)
-                .dot_matches_new_line(true)
-                .build()
-                .unwrap();
-    }
+    static RE: LazyLock<Regex> = LazyLock::new(|| {
+        RegexBuilder::new(r#"<div +class="simplecontent">\s*<pre>.*?\WMakuuchi\s+(.*?)</pre>"#)
+            .dot_matches_new_line(true)
+            .build()
+            .unwrap()
+    });
 
     let url = format!(
         "http://sumodb.sumogames.de/Results_text.aspx?b={}&d={}",

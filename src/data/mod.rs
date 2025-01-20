@@ -4,6 +4,9 @@ use rusqlite::{Connection, OpenFlags};
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
+#[cfg(debug_assertions)]
+use rusqlite::trace::{TraceEvent, TraceEventCodes};
+
 mod rank;
 pub use rank::{Rank, RankDivision, RankGroup, RankName, RankSide};
 
@@ -44,18 +47,27 @@ pub fn make_conn(path: &Path) -> DbConn {
         .expect("set foreign key enformance to on");
 
     #[cfg(debug_assertions)]
-    conn.trace(Some(db_trace));
+    conn.trace_v2(TraceEventCodes::SQLITE_TRACE_PROFILE, Some(db_trace));
 
     Arc::new(Mutex::new(conn))
 }
 
 #[cfg(debug_assertions)]
-fn db_trace(out: &str) {
+fn db_trace(event: TraceEvent) {
     use regex::Regex;
-    lazy_static! {
-        static ref RE: Regex = Regex::new(r"\s+").unwrap();
+    use std::sync::LazyLock;
+    static RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\s+").unwrap());
+
+    match event {
+        TraceEvent::Profile(stmt, duration) => {
+            trace!(
+                "sqlite: {} ({:.3}s)",
+                RE.replace_all(&stmt.sql(), " "),
+                duration.as_secs_f32()
+            );
+        }
+        _ => {}
     }
-    trace!("sqlite: {}", RE.replace_all(out, " "));
 }
 
 type Result<T> = std::result::Result<T, DataError>;

@@ -15,6 +15,7 @@ use regex::{Regex, RegexBuilder};
 use rinja::Template;
 use std::collections::HashMap;
 use std::ops::RangeInclusive;
+use std::sync::LazyLock;
 use url::Url;
 
 pub type PlayerId = i64;
@@ -42,9 +43,8 @@ pub struct Player {
 
 impl Player {
     pub fn name_is_valid(name: &str) -> bool {
-        lazy_static! {
-            static ref RE: Regex = RegexBuilder::new(NAME_REGEX).build().unwrap();
-        }
+        static RE: LazyLock<Regex> =
+            LazyLock::new(|| RegexBuilder::new(NAME_REGEX).build().unwrap());
 
         NAME_LENGTH.contains(&name.len()) && RE.is_match(name)
     }

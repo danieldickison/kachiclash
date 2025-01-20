@@ -6,6 +6,7 @@ use std::fmt;
 use std::ops::{Deref, Range};
 use std::result::Result as StdResult;
 use std::str::FromStr;
+use std::sync::LazyLock;
 
 #[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Copy, Clone, Hash)]
 pub struct BashoId {
@@ -13,9 +14,7 @@ pub struct BashoId {
     pub month: u8,
 }
 
-lazy_static! {
-    static ref JST: FixedOffset = FixedOffset::east_opt(9 * 60 * 60).unwrap();
-}
+static JST: LazyLock<FixedOffset> = LazyLock::new(|| FixedOffset::east_opt(9 * 60 * 60).unwrap());
 
 pub const N_BASHO_FOR_BANZUKE: usize = 6;
 
@@ -73,7 +72,7 @@ impl BashoId {
 
     /// Returns the range of basho that contribute to a player's ranking for this basho. This is currently defined as the six basho preceding this one.
     pub fn range_for_banzuke(self) -> BashoRange {
-        BashoRange(self.incr(-(N_BASHO_FOR_BANZUKE as isize)) .. self)
+        BashoRange(self.incr(-(N_BASHO_FOR_BANZUKE as isize))..self)
     }
 
     pub fn incr(self, count: isize) -> BashoId {
@@ -176,7 +175,7 @@ impl ToSql for BashoId {
 }
 
 #[derive(Debug, Clone)]
-pub struct BashoRange (Range<BashoId>);
+pub struct BashoRange(Range<BashoId>);
 
 impl Deref for BashoRange {
     type Target = Range<BashoId>;
@@ -188,7 +187,9 @@ impl Deref for BashoRange {
 
 impl BashoRange {
     pub fn iter(&self) -> BashoIterator {
-        BashoIterator { range: self.clone() }
+        BashoIterator {
+            range: self.clone(),
+        }
     }
 
     pub fn to_vec(&self) -> Vec<BashoId> {
@@ -197,7 +198,7 @@ impl BashoRange {
 }
 
 pub struct BashoIterator {
-    range: BashoRange
+    range: BashoRange,
 }
 
 impl Iterator for BashoIterator {
