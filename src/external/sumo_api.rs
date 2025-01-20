@@ -316,7 +316,7 @@ pub async fn receive_webhook(
             "Receive webhook data (dry run)\nsig: {}\nurl: {}\nbody: {}",
             sig_hex,
             url,
-            String::from_utf8_lossy(&body)
+            String::from_utf8_lossy(body)
         );
     }
 
@@ -570,7 +570,7 @@ mod tests {
             super::verify_webhook_signature(
                 &Url::parse(WEBHOOK_URL).unwrap(),
                 WEBHOOK_BODY.trim().as_bytes(),
-                &decode_hex_sha256(&WEBHOOK_SIG.trim()).unwrap(),
+                &decode_hex_sha256(WEBHOOK_SIG.trim()).unwrap(),
                 WEBHOOK_SECRET.trim()
             )
             .expect("parse webhook signature"),
@@ -586,7 +586,7 @@ mod tests {
         super::receive_webhook(
             &Url::parse(WEBHOOK_URL).unwrap(),
             WEBHOOK_BODY.trim().as_bytes(),
-            &WEBHOOK_SIG.trim(),
+            WEBHOOK_SIG.trim(),
             &data,
             &mut db,
             WEBHOOK_SECRET.trim(),
