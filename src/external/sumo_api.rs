@@ -246,11 +246,18 @@ pub async fn register_webhook(config: &Config) -> Result<String, reqwest::Error>
 }
 
 pub async fn delete_webhook(config: &Config) -> Result<String, reqwest::Error> {
-    let data = RegisterWebhookData::with_types(config, &[]);
-    info!(
-        "Deleting webhook with sumo-api; name={} destination={}",
-        data.name, data.destination
-    );
+    #[derive(Debug, Serialize)]
+    #[serde(rename_all = "camelCase")]
+    struct DeleteWebhookData {
+        name: String,
+        secret: String,
+    }
+
+    let data = DeleteWebhookData {
+        name: format!("kachiclash-{}", config.env),
+        secret: config.webhook_secret.clone(),
+    };
+    info!("Deleting webhook with sumo-api; name={}", data.name);
     Ok(make_client()?
         .delete("https://www.sumo-api.com/api/webhook/subscribe")
         .json(&data)
