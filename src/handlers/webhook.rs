@@ -4,7 +4,6 @@ use actix_identity::Identity;
 use actix_web::http::header::{self, from_one_raw_str, ContentType, TryIntoHeaderValue};
 use actix_web::{post, web, HttpRequest, HttpResponse, Responder};
 use anyhow::anyhow;
-use url::Url;
 
 use super::{BaseTemplate, Result};
 use crate::external::sumo_api;
