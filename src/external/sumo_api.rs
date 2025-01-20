@@ -1,9 +1,29 @@
+use std::collections::HashMap;
+use std::sync::LazyLock;
 use std::{collections::HashSet, time::Duration};
 
-use crate::data::{basho::TorikumiMatchUpdateData, BashoId, Rank, RankDivision};
+use anyhow::{bail, Result};
+use base64::prelude::*;
+use hmac_sha256::HMAC;
+use itertools::Itertools;
+use rusqlite::Connection;
+use url::Url;
+
+#[cfg(test)]
+use self::tests::BashoInfo;
+#[cfg(not(test))]
+use crate::data::BashoInfo;
+use crate::data::DbConn;
+use crate::data::{
+    basho::{update_torikumi, TorikumiMatchUpdateData},
+    BashoId, Rank, RankDivision,
+};
+use crate::Config;
 
 const CONNECTION_TIMEOUT: u64 = 10;
 const RESPONSE_TIMEOUT: u64 = 20;
+static DRY_RUN: LazyLock<bool> =
+    LazyLock::new(|| std::env::var("SUMO_API_DRY_RUN").ok() == Some("1".to_string()));
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -122,6 +142,243 @@ impl BanzukeResponse {
     }
 }
 
+pub async fn query_and_update_sumo_api_torikumi(
+    basho_id: BashoId,
+    day: u8,
+    db_conn: &DbConn,
+) -> anyhow::Result<bool> {
+    debug!("Querying sumo-api for basho {} day {}", basho_id.id(), day);
+    let resp = BanzukeResponse::fetch(basho_id, RankDivision::Makuuchi).await?;
+    let complete = resp.day_complete(day);
+    let update_data = resp.torikumi_update_data(day);
+    info!(
+        "Got day {} results; updating db with {} bouts",
+        day,
+        update_data.len()
+    );
+
+    if *DRY_RUN {
+        info!("Dry run; not updating db or sending push notifications");
+        for d in &update_data {
+            debug!("{} beat {}", d.winner, d.loser);
+        }
+        return Ok(false);
+    }
+
+    update_torikumi(&mut db_conn.lock().unwrap(), basho_id, day, &update_data)?;
+    Ok(complete)
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WebhookData {
+    #[serde(rename = "type")]
+    webhook_type: String,
+    payload: String, // base64 encoded JSON
+}
+
+type MatchResultsWebhookPayload = Vec<SumoApiTorikumi>;
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[allow(dead_code)]
+struct SumoApiTorikumi {
+    id: String,
+    basho_id: BashoId,
+    division: RankDivision,
+    day: u8,
+    match_no: u8,
+    east_id: u32,
+    east_shikona: String,
+    east_rank: String,
+    west_id: u32,
+    west_shikona: String,
+    west_rank: String,
+    kimarite: String,
+    winner_id: u32,
+    winner_en: String,
+    winner_jp: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RegisterWebhookData {
+    name: String,
+    destination: String,
+    secret: String,
+    subscriptions: HashMap<String, bool>,
+}
+
+impl RegisterWebhookData {
+    fn with_types(config: &Config, types: &[&str]) -> Self {
+        let mut subscriptions = HashMap::new();
+        for t in types {
+            subscriptions.insert(t.to_string(), true);
+        }
+        let mut destination = config.url();
+        destination.set_path("/webhook/sumo_api");
+        Self {
+            name: format!("kachiclash-{}", config.env),
+            destination: destination.to_string(),
+            secret: config.webhook_secret.clone(),
+            subscriptions,
+        }
+    }
+}
+
+pub async fn register_webhook(config: &Config) -> Result<String, reqwest::Error> {
+    let data = RegisterWebhookData::with_types(config, &["matchResults"]);
+    info!(
+        "Registering webhook with sumo-api; name={} destination={}",
+        data.name, data.destination
+    );
+    let res = make_client()?
+        .post("https://www.sumo-api.com/api/webhook/subscribe")
+        .json(&data)
+        .send()
+        .await?;
+    let status = res.status();
+    let text = res.text().await?;
+    info!("sumo-api response {}: {}", status, text);
+    Ok(text)
+}
+
+pub async fn delete_webhook(config: &Config) -> Result<String, reqwest::Error> {
+    #[derive(Debug, Serialize)]
+    #[serde(rename_all = "camelCase")]
+    struct DeleteWebhookData {
+        name: String,
+        secret: String,
+    }
+
+    let data = DeleteWebhookData {
+        name: format!("kachiclash-{}", config.env),
+        secret: config.webhook_secret.clone(),
+    };
+    info!("Deleting webhook with sumo-api; name={}", data.name);
+    let res = make_client()?
+        .delete("https://www.sumo-api.com/api/webhook/subscribe")
+        .json(&data)
+        .send()
+        .await?;
+    let status = res.status();
+    let text = res.text().await?;
+    info!("sumo-api response {}: {}", status, text);
+    Ok(text)
+}
+
+pub async fn request_webhook_test(
+    config: &Config,
+    webhook_type: &str,
+) -> Result<String, reqwest::Error> {
+    let data = RegisterWebhookData::with_types(config, &[webhook_type]);
+    let url = format!(
+        "https://www.sumo-api.com/api/webhook/test?type={}",
+        webhook_type
+    );
+    info!("Request test webhook for type {:?}", webhook_type);
+    let res = make_client()?.post(url).json(&data).send().await?;
+    let status = res.status();
+    let text = res.text().await?;
+    info!("sumo-api response {}: {}", status, text);
+    Ok(text)
+}
+
+fn decode_hex_sha256(s: &str) -> Result<[u8; 32]> {
+    if s.len() != 64 {
+        bail!("Invalid SHA256 hex length {}", s.len());
+    }
+    let mut bytes = [0; 32];
+    for (i, duo) in s.chars().chunks(2).into_iter().enumerate() {
+        bytes[i] = u8::from_str_radix(&duo.collect::<String>(), 16)?;
+    }
+    Ok(bytes)
+}
+
+fn verify_webhook_signature(url: &Url, body: &[u8], sig: &[u8; 32], secret: &str) -> Result<bool> {
+    let mut hmac = HMAC::new(secret);
+    let url_for_hmac = format!("{}{}", url.host_str().unwrap(), url.path());
+    hmac.update(url_for_hmac);
+    hmac.update(body);
+    Ok(*sig == hmac.finalize())
+}
+
+pub async fn receive_webhook(
+    url: &Url,
+    body: &[u8],
+    sig_hex: &str,
+    data: &WebhookData,
+    db: &mut Connection,
+    secret: &str,
+) -> Result<(), anyhow::Error> {
+    if *DRY_RUN {
+        debug!(
+            "Receive webhook data (dry run)\nsig: {}\nurl: {}\nbody: {}",
+            sig_hex,
+            url,
+            String::from_utf8_lossy(&body)
+        );
+    }
+
+    if !verify_webhook_signature(url, body, &decode_hex_sha256(sig_hex)?, secret)? {
+        bail!("Webhook signature verification failed");
+    }
+
+    if data.webhook_type != "matchResults" {
+        bail!("Unexpected webhook type {}", data.webhook_type);
+    }
+
+    let torikumi: MatchResultsWebhookPayload =
+        serde_json::from_slice(&BASE64_STANDARD.decode(&data.payload)?)?;
+
+    if torikumi.is_empty() {
+        bail!("Empty torikumi payload");
+    }
+
+    let day = torikumi[0].day;
+    if torikumi.iter().any(|t| t.day != day) {
+        bail!("Mismatched day in torikumi");
+    }
+
+    let update_data = torikumi
+        .iter()
+        .map(|torikumi| TorikumiMatchUpdateData {
+            winner: torikumi.winner_en.clone(),
+            loser: if torikumi.winner_en == torikumi.east_shikona {
+                torikumi.west_shikona.clone()
+            } else {
+                torikumi.east_shikona.clone()
+            },
+        })
+        .collect::<Vec<_>>();
+
+    let basho_id = torikumi[0].basho_id;
+    let current_basho_id = BashoInfo::current_or_next_basho_id(db)?;
+    let mut dry_run = *DRY_RUN;
+    if basho_id != current_basho_id {
+        warn!(
+            "Webhook basho {} is not the current one: {}",
+            basho_id, current_basho_id
+        );
+        dry_run = true;
+    }
+
+    for d in &update_data {
+        debug!("matchResults webhook: {} beat {}", d.winner, d.loser);
+    }
+
+    if dry_run {
+        info!(
+            "Dry run; not updating db with {} bouts for day {}",
+            update_data.len(),
+            day
+        );
+    } else {
+        update_torikumi(db, basho_id, day, &update_data)?;
+    }
+    Ok(())
+}
+
 fn make_client() -> reqwest::Result<reqwest::Client> {
     reqwest::Client::builder()
         .connect_timeout(Duration::from_secs(CONNECTION_TIMEOUT))
@@ -133,9 +390,14 @@ fn make_client() -> reqwest::Result<reqwest::Client> {
 #[cfg(test)]
 mod tests {
     use itertools::Itertools;
+    use rusqlite::Connection;
+    use url::Url;
 
     use super::{BanzukeResponse, BoutResponse, BoutResult};
-    use crate::data::{basho::TorikumiMatchUpdateData, BashoId, Rank, RankDivision};
+    use crate::{
+        data::{basho::TorikumiMatchUpdateData, BashoId, Rank, RankDivision},
+        external::sumo_api::decode_hex_sha256,
+    };
 
     fn init_logger() {
         let _ = pretty_env_logger::env_logger::builder()
@@ -143,7 +405,19 @@ mod tests {
             .try_init();
     }
 
-    const BANZUKE_202307: &str = include_str!("sumo-api-banzuke-202307-makuuchi.json");
+    const BANZUKE_202307: &str = include_str!("fixtures/sumo-api-banzuke-202307-makuuchi.json");
+    const WEBHOOK_BODY: &str = include_str!("fixtures/webhook-body.json");
+    const WEBHOOK_URL: &str = include_str!("fixtures/webhook-url.txt");
+    const WEBHOOK_SIG: &str = include_str!("fixtures/webhook-sig.txt");
+    const WEBHOOK_SECRET: &str = include_str!("fixtures/webhook-secret.txt");
+
+    pub struct BashoInfo;
+    impl BashoInfo {
+        pub fn current_or_next_basho_id(_db: &Connection) -> anyhow::Result<BashoId> {
+            // return basho id that's NOT for the webhook fixtures, so we force a dry run
+            Ok(BashoId::from(202307))
+        }
+    }
 
     #[tokio::test]
     async fn call_api() {
@@ -289,22 +563,35 @@ mod tests {
             data[13]
         );
     }
-}
 
-// {
-//   "bashoId": "202307",
-//   "division": "Makuuchi",
-//   "east": [
-//     {
-//       "side": "East",
-//       "rikishiID": 45,
-//       "shikonaEn": "Terunofuji",
-//       "rank": "Yokozuna 1 East",
-//       "record": [
-//         {
-//           "result": "win",
-//           "opponentShikonaEn": "Abi",
-//           "opponentShikonaJp": "é˜¿ç‚Ž",
-//           "opponentID": 22,
-//           "kimarite": "oshidashi"
-//         },
+    #[test]
+    fn verify_webhook_signature() {
+        assert!(
+            super::verify_webhook_signature(
+                &Url::parse(WEBHOOK_URL).unwrap(),
+                WEBHOOK_BODY.trim().as_bytes(),
+                &decode_hex_sha256(&WEBHOOK_SIG.trim()).unwrap(),
+                WEBHOOK_SECRET.trim()
+            )
+            .expect("parse webhook signature"),
+            "webhook signature verification failed"
+        );
+    }
+
+    #[tokio::test]
+    async fn receive_webhook() {
+        init_logger();
+        let data = serde_json::from_str(WEBHOOK_BODY).expect("parse webhook body");
+        let mut db = Connection::open_in_memory().expect("open in-memory db");
+        super::receive_webhook(
+            &Url::parse(WEBHOOK_URL).unwrap(),
+            WEBHOOK_BODY.trim().as_bytes(),
+            &WEBHOOK_SIG.trim(),
+            &data,
+            &mut db,
+            WEBHOOK_SECRET.trim(),
+        )
+        .await
+        .expect("receive_webhook should handle payload")
+    }
+}

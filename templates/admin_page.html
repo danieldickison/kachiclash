@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block main_id %}p-admin-page{% endblock %}
+
+{% block subtitle %}admin{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet" href="/static/css/admin.css">
+{% endblock %}
+
+{% block main %}
+    <form id="register-webhook" class="g-admin-form"
+        action="/webhook/register"
+        method="POST"
+    >
+        <button>Register Webhook</button>
+    </form>
+    <form id="delete-webhook" class="g-admin-form"
+        action="/webhook/delete"
+        method="POST"
+    >
+        <button>Delete Webhook</button>
+    </form>
+    <form id="test-webhook" class="g-admin-form"
+        action="/webhook/test"
+        method="POST"
+    >
+        <select name="type">
+            <option value="newBasho">newBasho</option>
+            <option value="newMatches">newMatches</option>
+            <option value="matchResults">matchResults</option>
+            <option value="endBasho">endBasho</option>
+        </select>
+        <button>Test Webhook</button>
+    </form>
+{% endblock %}

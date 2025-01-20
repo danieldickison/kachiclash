@@ -22,7 +22,6 @@ use url::Url;
 mod data;
 mod external;
 mod handlers;
-mod poll;
 mod server;
 mod util;
 
@@ -49,11 +48,11 @@ pub struct Config {
     )]
     pub hero_img_src: String,
 
-    #[envconfig(
-        from = "SESSION_SECRET",
-        default = "abcdefghijklmnopqrstuvwxyz012345abcdefghijklmnopqrstuvwxyz012345"
-    )]
+    #[envconfig(from = "SESSION_SECRET")]
     pub session_secret: String,
+
+    #[envconfig(from = "WEBHOOK_SECRET")]
+    pub webhook_secret: String,
 
     #[envconfig(from = "VAPID_PUBLIC_KEY")]
     pub vapid_public_key: String,
@@ -112,13 +111,6 @@ pub fn init_env() -> anyhow::Result<AppState> {
     pretty_env_logger::init();
 
     let config = Config::init_from_env().expect("Could not read config from environment");
-    if config.env != "dev"
-        && config.session_secret
-            == "abcdefghijklmnopqrstuvwxyz012345abcdefghijklmnopqrstuvwxyz012345"
-    {
-        panic!("default session_secret specified for non-dev deployment");
-    }
-
     let db = data::make_conn(&config.db_path);
     let push = PushBuilder::with_base64_private_key(&config.vapid_private_key)?;
 
@@ -127,8 +119,4 @@ pub fn init_env() -> anyhow::Result<AppState> {
 
 pub async fn run_server(app_state: &AppState) -> anyhow::Result<()> {
     server::run(app_state).await
-}
-
-pub async fn start_poll(app_state: &AppState) -> anyhow::Result<()> {
-    poll::start(app_state).await
 }
