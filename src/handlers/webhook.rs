@@ -95,7 +95,10 @@ pub async fn receive_sumo_api(
         &state.config.webhook_secret,
     )?;
     if should_send_notifications {
-        mass_notify_day_result(&state.db, &state.push, &state.config.url(), basho_id, day).await?;
+        let stats =
+            mass_notify_day_result(&state.db, &state.push, &state.config.url(), basho_id, day)
+                .await?;
+        info!("push notifications sent: {:?}", stats);
     }
     Ok(HttpResponse::NoContent().finish())
 }
