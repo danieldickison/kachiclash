@@ -6,6 +6,7 @@ use actix_web::{post, web, HttpRequest, HttpResponse, Responder};
 use anyhow::anyhow;
 
 use super::{BaseTemplate, Result};
+use crate::data::push::mass_notify_day_result;
 use crate::external::sumo_api;
 use crate::AppState;
 
@@ -81,14 +82,20 @@ pub async fn receive_sumo_api(
     };
     let url = state.config.url().join(req.path()).unwrap();
 
-    let mut db = state.db.lock().unwrap();
-    sumo_api::receive_webhook(
+    let sumo_api::ReceiveWebhookResult {
+        basho_id,
+        day,
+        should_send_notifications,
+    } = sumo_api::receive_webhook(
         &url,
         &body,
         &sig.deref().0,
         &data,
-        &mut db,
+        &mut state.db.lock().unwrap(),
         &state.config.webhook_secret,
     )?;
+    if should_send_notifications {
+        mass_notify_day_result(&state.db, &state.push, &state.config.url(), basho_id, day).await?;
+    }
     Ok(HttpResponse::NoContent().finish())
 }

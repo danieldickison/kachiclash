@@ -303,6 +303,13 @@ fn verify_webhook_signature(url: &Url, body: &[u8], sig: &[u8; 32], secret: &str
     Ok(*sig == hmac.finalize())
 }
 
+#[derive(Debug, Eq, PartialEq)]
+pub struct ReceiveWebhookResult {
+    pub basho_id: BashoId,
+    pub day: u8,
+    pub should_send_notifications: bool,
+}
+
 pub fn receive_webhook(
     url: &Url,
     body: &[u8],
@@ -310,7 +317,7 @@ pub fn receive_webhook(
     data: &WebhookData,
     db: &mut Connection,
     secret: &str,
-) -> Result<(), anyhow::Error> {
+) -> Result<ReceiveWebhookResult, anyhow::Error> {
     if *DRY_RUN {
         debug!(
             "Receive webhook data (dry run)\nsig: {}\nurl: {}\nbody: {}",
@@ -376,7 +383,11 @@ pub fn receive_webhook(
     } else {
         update_torikumi(db, basho_id, day, &update_data)?;
     }
-    Ok(())
+    Ok(ReceiveWebhookResult {
+        basho_id,
+        day,
+        should_send_notifications: !dry_run,
+    })
 }
 
 fn make_client() -> reqwest::Result<reqwest::Client> {
@@ -393,7 +404,7 @@ mod tests {
     use rusqlite::Connection;
     use url::Url;
 
-    use super::{BanzukeResponse, BoutResponse, BoutResult};
+    use super::{BanzukeResponse, BoutResponse, BoutResult, ReceiveWebhookResult};
     use crate::{
         data::{basho::TorikumiMatchUpdateData, BashoId, Rank, RankDivision},
         external::sumo_api::decode_hex_sha256,
@@ -583,14 +594,21 @@ mod tests {
         init_logger();
         let data = serde_json::from_str(WEBHOOK_BODY).expect("parse webhook body");
         let mut db = Connection::open_in_memory().expect("open in-memory db");
-        super::receive_webhook(
-            &Url::parse(WEBHOOK_URL).unwrap(),
-            WEBHOOK_BODY.trim().as_bytes(),
-            WEBHOOK_SIG.trim(),
-            &data,
-            &mut db,
-            WEBHOOK_SECRET.trim(),
+        assert_eq!(
+            ReceiveWebhookResult {
+                basho_id: BashoId::from(202311),
+                day: 1,
+                should_send_notifications: false
+            },
+            super::receive_webhook(
+                &Url::parse(WEBHOOK_URL).unwrap(),
+                WEBHOOK_BODY.trim().as_bytes(),
+                WEBHOOK_SIG.trim(),
+                &data,
+                &mut db,
+                WEBHOOK_SECRET.trim(),
+            )
+            .expect("successfully handle test webhook payload")
         )
-        .expect("receive_webhook should handle payload")
     }
 }
