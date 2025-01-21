@@ -58,15 +58,12 @@ fn db_trace(event: TraceEvent) {
     use std::sync::LazyLock;
     static RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\s+").unwrap());
 
-    match event {
-        TraceEvent::Profile(stmt, duration) => {
-            trace!(
-                "sqlite: {} ({:.3}s)",
-                RE.replace_all(&stmt.sql(), " "),
-                duration.as_secs_f32()
-            );
-        }
-        _ => {}
+    if let TraceEvent::Profile(stmt, duration) = event {
+        trace!(
+            "sqlite: {} ({:.3}s)",
+            RE.replace_all(&stmt.sql(), " "),
+            duration.as_secs_f32()
+        );
     }
 }
 
