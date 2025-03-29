@@ -25,7 +25,7 @@ pub enum ResultPlayer {
 }
 
 impl BashoPlayerResults {
-    // how to make this work with rinja borrow semantics with -> impl Iterator<Item = Option<&BashoRikishi>>
+    // how to make this work with askama borrow semantics with -> impl Iterator<Item = Option<&BashoRikishi>>
     pub fn picks(&self) -> Vec<Option<&BashoRikishi>> {
         self.picks
             .iter()

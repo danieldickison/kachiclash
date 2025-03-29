@@ -1,6 +1,7 @@
 use actix_identity::Identity;
 use actix_web::{get, web};
-use rinja::Template;
+use askama::Template;
+use askama_web::WebTemplate;
 
 use super::{BaseTemplate, HandlerError, Result};
 use crate::data::Heya;
@@ -8,7 +9,7 @@ use crate::data::{player::BashoScore, Player};
 use crate::handlers::IdentityExt;
 use crate::AppState;
 
-#[derive(Template)]
+#[derive(Template, WebTemplate)]
 #[template(path = "player.html")]
 pub struct PlayerTemplate {
     base: BaseTemplate,

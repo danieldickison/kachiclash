@@ -6,9 +6,10 @@ use crate::data::{BashoId, BashoInfo};
 use crate::AppState;
 use actix_identity::Identity;
 use actix_web::{get, web};
-use rinja::Template;
+use askama::Template;
+use askama_web::WebTemplate;
 
-#[derive(Template)]
+#[derive(Template, WebTemplate)]
 #[template(path = "stats.html")]
 pub struct StatsTemplate {
     base: BaseTemplate,

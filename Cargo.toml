@@ -26,7 +26,7 @@ rand = "0.8"
 oauth2 = "4.1"
 anyhow = "1.0"
 num_cpus = "1.13"
-rinja_actix = "0.3.5"
+askama = "0.13.0"
 slug_intl = "1.0.0"
 hmac-sha256 = "1.1.8"
 base64 = "0.22.1"
@@ -39,9 +39,9 @@ features = ["full"]
 version = "0.10.1"
 features = ["cookie-session"]
 
-[dependencies.rinja]
-version = "0.3.5"
-features = ["with-actix-web"]
+[dependencies.askama_web]
+version = "0.13.0"
+features = ["actix-web-4"]
 
 [dependencies.rusqlite]
 version = "0.33.0"

@@ -1,5 +1,6 @@
 extern crate itertools;
 use actix_identity::Identity;
+use askama_web::WebTemplate;
 use rusqlite::Connection;
 use std::collections::HashSet;
 
@@ -13,9 +14,9 @@ use crate::data::{
 use crate::AppState;
 
 use actix_web::{get, http, post, web, Either, HttpResponse, Responder};
-use rinja::Template;
+use askama::Template;
 
-#[derive(Template)]
+#[derive(Template, WebTemplate)]
 #[template(path = "basho.html")]
 pub struct BashoTemplate {
     base: BaseTemplate,

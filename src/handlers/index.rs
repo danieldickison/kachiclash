@@ -6,9 +6,10 @@ use crate::AppState;
 use actix_identity::Identity;
 use actix_web::http::header::LOCATION;
 use actix_web::{get, route, web, HttpResponse};
-use rinja::Template;
+use askama::Template;
+use askama_web::WebTemplate;
 
-#[derive(Template)]
+#[derive(Template, WebTemplate)]
 #[template(path = "index.html")]
 pub struct IndexTemplate {
     base: BaseTemplate,

@@ -15,17 +15,18 @@ use actix_identity::Identity;
 use actix_session::Session;
 use actix_web::{get, http, post, web, HttpResponse, Responder};
 use anyhow::anyhow;
+use askama::Template;
+use askama_web::WebTemplate;
 use chrono::NaiveDateTime;
 use futures::prelude::*;
 use itertools::Itertools;
 use regex::{Regex, RegexBuilder};
-use rinja::Template;
 use rusqlite::{Connection, OptionalExtension, Result as SqlResult};
 use serde::{Deserialize, Deserializer};
 use std::sync::LazyLock;
 use std::time::Duration;
 
-#[derive(Template)]
+#[derive(Template, WebTemplate)]
 #[template(path = "admin_page.html")]
 pub struct AdminPageTemplate {
     base: BaseTemplate,
@@ -41,7 +42,7 @@ pub async fn admin_page(
     Ok(AdminPageTemplate { base })
 }
 
-#[derive(Template)]
+#[derive(Template, WebTemplate)]
 #[template(path = "edit_basho.html")]
 pub struct EditBashoTemplate {
     base: BaseTemplate,
@@ -217,7 +218,7 @@ pub async fn edit_basho_post(
 
 ///////
 
-#[derive(Template)]
+#[derive(Template, WebTemplate)]
 #[template(path = "torikumi.html")]
 pub struct TorikumiTemplate {
     base: BaseTemplate,
@@ -341,7 +342,7 @@ pub async fn backfill_player_ranks(
         .finish())
 }
 
-#[derive(Template)]
+#[derive(Template, WebTemplate)]
 #[template(path = "list_players.html")]
 pub struct ListPlayersTemplate {
     base: BaseTemplate,

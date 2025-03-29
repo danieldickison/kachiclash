@@ -3,7 +3,8 @@ use std::collections::HashSet;
 use actix_identity::Identity;
 use actix_web::{get, post, web, HttpResponse, Responder};
 use anyhow::anyhow;
-use rinja::Template;
+use askama::Template;
+use askama_web::WebTemplate;
 
 use super::user_agent::UserAgent;
 use super::{BaseTemplate, HandlerError, Result};
@@ -13,7 +14,7 @@ use crate::data::DbConn;
 use crate::handlers::IdentityExt;
 use crate::AppState;
 
-#[derive(Template)]
+#[derive(Template, WebTemplate)]
 #[template(path = "settings.html")]
 pub struct SettingsTemplate {
     base: BaseTemplate,

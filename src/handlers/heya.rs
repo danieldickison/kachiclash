@@ -1,6 +1,7 @@
 use actix_identity::Identity;
 use actix_web::{get, http, post, web, HttpResponse, Responder};
-use rinja::Template;
+use askama::Template;
+use askama_web::WebTemplate;
 use rusqlite::Connection;
 
 use crate::data::heya::{HOST_MAX, JOIN_MAX};
@@ -10,7 +11,7 @@ use crate::AppState;
 
 use super::{BaseTemplate, Result};
 
-#[derive(Template)]
+#[derive(Template, WebTemplate)]
 #[template(path = "heya.html")]
 pub struct HeyaTemplate {
     base: BaseTemplate,
@@ -90,7 +91,7 @@ fn apply_edit_actions(
     Ok(())
 }
 
-#[derive(Template)]
+#[derive(Template, WebTemplate)]
 #[template(path = "heya_list.html")]
 pub struct HeyaListTemplate {
     base: BaseTemplate,

@@ -1,6 +1,7 @@
 extern crate oauth2;
 extern crate url;
 
+use askama_web::WebTemplate;
 use oauth2::{AuthorizationCode, CsrfToken, TokenResponse};
 
 use actix_identity::Identity;
@@ -8,7 +9,7 @@ use actix_session::Session;
 use actix_web::{get, http, web, HttpMessage, HttpRequest};
 use actix_web::{HttpResponse, Responder};
 
-use rinja::Template;
+use askama::Template;
 
 use super::{BaseTemplate, HandlerError, Result};
 use crate::data::player;
@@ -18,7 +19,7 @@ use crate::external::reddit::RedditAuthProvider;
 use crate::external::AuthProvider;
 use crate::{AppState, Config};
 
-#[derive(Template)]
+#[derive(Template, WebTemplate)]
 #[template(path = "login.html")]
 struct LoginTemplate {
     base: BaseTemplate,
