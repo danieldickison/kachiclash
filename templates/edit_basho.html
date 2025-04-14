@@ -35,14 +35,16 @@
         >Copy and paste the "text-only" banzuke from
         <a href="http://sumodb.sumogames.de/Banzuke_text.aspx?b=201907"
           >sumodb.sumogames.de</a
-        ></span>
+        ></span
+      >
       <textarea name="banzuke">
         {%- for rikishi in basho.banzuke -%}
           {{ rikishi.rank }}
           {{ rikishi.name }}
           {%- if rikishi.is_kyujyo %}x{%- endif %}
         {% endfor -%}
-      </textarea>
+      </textarea
+      >
     </label>
 
     <label>
