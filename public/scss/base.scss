@@ -233,8 +233,12 @@ section {
       list-style: none;
       padding: 0.5rem 0;
 
-      a {
-        padding: 0 2rem;
+      > li {
+        display: flex;
+        > * {
+          flex: 1;
+          padding: 0 2rem;
+        }
       }
     }
     &.open > menu {
