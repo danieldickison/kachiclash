@@ -1,4 +1,4 @@
-module.exports = {
+export default tseslint.config({
   env: {
     browser: true,
     es2021: true,
@@ -22,4 +22,4 @@ module.exports = {
     project: "tsconfig.json",
   },
   rules: {},
-};
+});
