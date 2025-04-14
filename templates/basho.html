@@ -2,335 +2,433 @@
 
 {% block main_id %}p-basho{% endblock %}
 
-{% block subtitle %}{{basho.id}}{% endblock %}
+{% block subtitle %}{{ basho.id }}{% endblock %}
 
 {% block head %}
-    <script src="/static/js/basho.js" type="module"></script>
-    {% if base.is_admin() %}
-        <script src="/static/js/basho-admin.js" type="module"></script>
-    {% endif %}
-    <link rel="stylesheet" href="/static/css/basho.css">
-    <meta name="basho_id" content="{{basho.id.id()}}" />
+  <script src="/static/js/basho.js" type="module"></script>
+  {% if base.is_admin() %}
+    <script src="/static/js/basho-admin.js" type="module"></script>
+  {% endif %}
+  <link rel="stylesheet" href="/static/css/basho.css" />
+  <meta name="basho_id" content="{{ basho.id.id() }}" />
 {% endblock %}
 
 {% block main %}
+  <h1>{{ basho.id }} in {{ basho.venue }}</h1>
 
-    <h1>{{basho.id}} in {{basho.venue}}</h1>
+  {% if base.is_admin() %}
+    <section id="admin">
+      <h3>Admin Controls</h3>
+      <menu>
+        <li><a href="{{ basho.id.url_path() }}/edit">edit banzuke</a></li>
+        <li>
+          notifications:
+          <menu>
+            <li><button class="trigger-announcement">announcement…</button></li>
+            {% if basho.has_started() %}
 
-    {% if base.is_admin() %}
-        <section id="admin">
-            <h3>Admin Controls</h3>
+            {% else %}
+              <li>
+                <button class="trigger-entries-open">entries open</button>
+              </li>
+              <li>
+                <button class="trigger-countdown">basho countdown</button>
+              </li>
+            {% endif %}
+          </menu>
+        </li>
+        {% if next_day <= 15 %}
+          <li>
+            Torikumi:
             <menu>
-                <li><a href="{{basho.id.url_path()}}/edit">edit banzuke</a></li>
-                <li>notifications:
-                    <menu>
-                        <li><button class="trigger-announcement">announcement…</button></li>
-                        {% if basho.has_started() %}
-                        {% else %}
-                            <li><button class="trigger-entries-open">entries open</button></li>
-                            <li><button class="trigger-countdown">basho countdown</button></li>
-                        {% endif %}
-                    </menu>
-                </li>
-                {% if next_day <= 15 %}
-                    <li>Torikumi:
-                        <menu>
-                            <li><a href="{{basho.id.url_path()}}/day/{{next_day}}">edit day {{next_day}}</a></li>
-                            <li><button class="update-torikumi" data-day="{{next_day}}">update from sumo-api</button></li>
-                        </menu>
-                    </li>
-                {% else %}
-                    <li><button class="finalize-basho">finalize basho</button></li>
-                {% endif %}
-                <!-- <li><form method="post" action="{{basho.id.url_path()}}/backfill_player_ranks">
+              <li>
+                <a href="{{ basho.id.url_path() }}/day/{{ next_day }}"
+                  >edit day {{ next_day }}</a
+                >
+              </li>
+              <li>
+                <button class="update-torikumi" data-day="{{ next_day }}">
+                  update from sumo-api
+                </button>
+              </li>
+            </menu>
+          </li>
+        {% else %}
+          <li><button class="finalize-basho">finalize basho</button></li>
+        {% endif %}
+        <!-- <li><form method="post" action="{{ basho.id.url_path() }}/backfill_player_ranks">
                     <button>backfill player ranks</button>
                 </form></li> -->
-                <li><button class="hide-admin">hide</button></li>
-            </menu>
-        </section>
-    {% endif %}
-
-    {# TODO: put sponsorship data in the db #}
-    {% if basho.id.id()[..] >= "202311" %}
-        <section id="sponsors">
-            <h2>Rewards</h2>
-            <div class="sponsor-grid">
-                <a class="logo" href="https://tegatastore.com" target="_blank">
-                    <img src="/static/img/tegatastore.png" alt="Tegata Store logo">
-                </a>
-                <div>
-                    <p>
-                        <a href="https://tegatastore.com" target="_blank"><strong>The Tegata Store</strong></a> will ship any one <a href="https://tegatastore.com/collections/authentic-torikumi-sheets" target="_blank">authentic torikumi sheet</a> to the winner of this basho!
-                    </p>
-
-                    <p class="fine-print">
-                        In the case of a tie, the player with the highest rank at the start of the basho will win the reward.
-                    </p>
-                </div>
-        </section>
-    {% endif %}
-
-    <section id="banzuke"
-        class="
-            {% if basho.has_started() %} has-started {% else %} hide-pick-counts {% endif %}
-            {% if initially_selectable %} selectable {% endif %}
-        "
-    >
-        <img class="gunbai" alt="decorative gunbai" src="/static/img2/banzuke/Gunbai.webp" width="281" height="237">
-
-        <h2><img alt="Rules" src="/static/img2/banzuke/Rules.webp" width="655" height="152"></h2>
-        <ol class="rules">
-            <li>Pick 1 rikishi from each section.</li>
-            <li>Each time one of your picks wins a bout, you get 1 point.</li>
-            <li>The Emperor’s Cup is awarded to the highest points total, and player rankings are updated at the end of each basho.</li>
-        </ol>
-
-        <img class="rope" alt="decorative rope" src="/static/img2/banzuke/Rope.webp" width="1100" height="99">
-
-        <h2><img alt="Banzuke Picks" src="/static/img2/banzuke/Banzuke-Picks.webp" width="1282" height="124"></h2>
-
-        {% if !basho.has_started() -%}
-            <p class="g-time-remaining">
-                Time remaining to enter/change your picks:
-                <span class="js-basho-count-down" data-start-date="{{basho.start_date.timestamp_millis()}}"></span>
-            </p>
-        {%- endif %}
-
-        <form id="banzuke-select-rikishi-form" action="{{basho.id.url_path()}}/picks">
-
-            <div class="buttons">
-                {% if !basho.has_started() && base.player.is_some() -%}
-                    <button class="g-big-button save-picks-button">Save Picks</button>
-                    <button class="g-big-button change-picks-button">Change Picks</button>
-                {%- endif -%}
-            </div>
-
-            {%- if base.player.is_none() -%}
-                <p class="g-centered"><a href="/login">Log in or sign up</a> to play!</p>
-            {%- endif -%}
-
-            <div class="banzuke-table">
-                <div class="header east rikishi">East</div>
-                <div class="header east pick-count">Picks</div>
-                <div class="header rank">Rank</div>
-                <div class="header west rikishi">West</div>
-                <div class="header west pick-count">Picks</div>
-
-                {% for rr in rikishi_by_rank -%}
-                    {% let row_style = format!("grid-row: {}", _loop_item.index + 2) %}
-                    {% if rr.rank == "boundary" %}
-                        <div style="{{row_style}}" class="boundary"></div>
-                    {% else %}
-                        <div style="{{row_style}}" class="rank-group-{{rr.rank_group}} bg"></div>
-                        {%- call rikishi_results(rr.east) -%}
-                        <div style="{{row_style}}" class="rank">
-                            {{rr.rank}}
-                        </div>
-                        {%- call rikishi_results(rr.west) -%}
-                    {% endif %}
-                {% endfor -%}
-            </div>
-
-            <div class="buttons">
-                {% if !basho.has_started() && base.player.is_some() -%}
-                    <button class="g-big-button save-picks-button">Save Picks</button>
-                    <button class="g-big-button change-picks-button">Change Picks</button>
-                {%- endif -%}
-            </div>
-        </form>
+        <li><button class="hide-admin">hide</button></li>
+      </menu>
     </section>
+  {% endif %}
 
-    {% if basho.has_started() %}
-        <section id="leaderboard">
-            <h2>Basho Leaderboard</h2>
+  {# TODO: put sponsorship data in the db #}
+  {% if basho.id.id()[..] >= "202311" %}
+    <section id="sponsors">
+      <h2>Rewards</h2>
+      <div class="sponsor-grid">
+        <a class="logo" href="https://tegatastore.com" target="_blank">
+          <img src="/static/img/tegatastore.png" alt="Tegata Store logo" />
+        </a>
+        <div>
+          <p>
+            <a href="https://tegatastore.com" target="_blank"
+              ><strong>The Tegata Store</strong></a
+            >
+            will ship any one
+            <a
+              href="https://tegatastore.com/collections/authentic-torikumi-sheets"
+              target="_blank"
+              >authentic torikumi sheet</a
+            >
+            to the winner of this basho!
+          </p>
 
-            {% if let Some(heya_options) = self.heya_options() %}
-              {% if heya_options.len() > 0 %}
-                <form method="GET" action="#leaderboard">
-                  <label for="heya-select">Filter by heya:</label>
-                  <select name="heya" id="heya-select">
-                    <option value="everybody" {% if heya.is_none() %} selected {% endif %}}>
-                      Everybody
-                    </option>
-                    <hr>
-                    {% for heya_option in heya_options %}
-                      <option
-                        value="{{heya_option.heya.id}}"
-                        {% if heya_option.selected %} selected {% endif %}
-                      >
-                        {{heya_option.heya.name}}
-                      </option>
-                    {% endfor %}
-                  </select>
-                </form>
-              {% endif %}
-            {% endif %}
+          <p class="fine-print">
+            In the case of a tie, the player with the highest rank at the start
+            of the basho will win the reward.
+          </p>
+        </div>
+      </div>
+    </section>
+  {% endif %}
 
-            {% match self.self_rank() %}
-            {% when Some with (rank) %}
-            <p class="current-rank">
-                You are currently ranked
-                <a href="#self-leader">#{{rank}}</a>
-            </p>
-            {% when None %}
-            {% endmatch %}
+  <section
+    id="banzuke"
+    class="
+            {% if basho.has_started() %}has-started{% else %}hide-pick-counts{% endif %}
+            {% if initially_selectable %}selectable{% endif %}
+        "
+  >
+    <img
+      class="gunbai"
+      alt="decorative gunbai"
+      src="/static/img2/banzuke/Gunbai.webp"
+      width="281"
+      height="237"
+    />
 
-            <div class="leaderboard-table">
-                <div class="header day">Day</div>
-                <div class="header rank">#</div>
-                <div class="header name">Player</div>
-                <div class="header pick">Picks</div>
-                {% for day in 1..16 -%}
-                    <div class="header score">{{day}}</div>
-                {% endfor -%}
-                <div class="header score total">Total</div>
+    <h2>
+      <img
+        alt="Rules"
+        src="/static/img2/banzuke/Rules.webp"
+        width="655"
+        height="152"
+      />
+    </h2>
+    <ol class="rules">
+      <li>Pick 1 rikishi from each section.</li>
+      <li>Each time one of your picks wins a bout, you get 1 point.</li>
+      <li>
+        The Emperor’s Cup is awarded to the highest points total, and player
+        rankings are updated at the end of each basho.
+      </li>
+    </ol>
 
-                {% for leader in leaders -%}
-                    {# inside of `let` we access the loop context as `_loop_item` and its index is 0-based #}
-                    {% let row_style = format!("grid-row: {}", _loop_item.index + 3) %}
-                    {% let row_classes %}
-                    {% match leader.player -%}
-                    {%- when ResultPlayer::Max -%}
-                        {% let row_classes = "min-max" %}
-                    {%- when ResultPlayer::Min -%}
-                        {% let row_classes = "min-max" %}
-                    {%- when ResultPlayer::RankedPlayer with (_, 1) -%}
-                        {% let row_classes = "top-leader" %}
-                    {%- when _ -%}
-                        {% let row_classes = "" %}
-                    {%- endmatch %}
+    <img
+      class="rope"
+      alt="decorative rope"
+      src="/static/img2/banzuke/Rope.webp"
+      width="1100"
+      height="99"
+    />
 
-                    {% match leader.player -%}
-                    {%- when ResultPlayer::Max %}
-                        <div style="{{row_style}}" class="{{row_classes}} name">Best Possible</div>
-                    {%- when ResultPlayer::Min %}
-                        <div style="{{row_style}}" class="{{row_classes}} name">Worst Possible</div>
-                    {%- when ResultPlayer::RankedPlayer with (player, rank) %}
-                        <div style="{{row_style}}" class="{{row_classes}} rank">{{rank}}</div>
-                        <div style="{{row_style}}" class="{{row_classes}} name">{{player.render().unwrap()|safe}}</div>
-                    {%- endmatch -%}
+    <h2>
+      <img
+        alt="Banzuke Picks"
+        src="/static/img2/banzuke/Banzuke-Picks.webp"
+        width="1282"
+        height="124"
+      />
+    </h2>
 
-                    {% for rikishi in leader.picks() -%}
-                        {%- match rikishi -%}
-                        {%- when Some with (r) -%}
-                            <div style="{{row_style}}" class="
-                                {{row_classes}}
-                                pick
-                                pick-{{loop.index}}
-                                {% if r.is_kyujyo %}kyujyo{% endif -%}
-                            ">{{r.name}}</div>
-                        {%- when None -%}
-                        {%- endmatch -%}
-                    {%- endfor %}
+    {% if !basho.has_started() -%}
+      <p class="g-time-remaining">
+        Time remaining to enter/change your picks:
+        <span
+          class="js-basho-count-down"
+          data-start-date="{{ basho.start_date.timestamp_millis() }}"
+        ></span>
+      </p>
+    {%- endif %}
 
-                    {% for wins in leader.days -%}
-                        <div style="{{row_style}}" class="{{row_classes}} score score-{{loop.index}}">
-                        {%- match wins -%}
-                        {%- when Some with (num) %}{{num}}
-                        {%- when None %}-
-                        {%- endmatch -%}
-                        </div>
-                    {% endfor -%}
+    <form
+      id="banzuke-select-rikishi-form"
+      action="{{ basho.id.url_path() }}/picks"
+    >
+      <div class="buttons">
+        {% if !basho.has_started() && base.player.is_some() -%}
+          <button class="g-big-button save-picks-button">Save Picks</button>
+          <button class="g-big-button change-picks-button">Change Picks</button>
+        {%- endif -%}
+      </div>
 
-                    <div style="{{row_style}}" class="{{row_classes}} score total">{{leader.total}}</div>
-                {%- endfor %}
+      {%- if base.player.is_none() -%}
+        <p class="g-centered">
+          <a href="/login">Log in or sign up</a> to play!
+        </p>
+      {%- endif -%}
 
-                {% match self_leader_index %}
-                {% when Some with (idx) %}
-                    <div id="self-leader"
-                        {# account for 2 header rows and make it 1-based #}
-                        style="grid-row: {{idx + 3}};"
-                    ></div>
-                {% when None %}
-                {% endmatch %}
+      <div class="banzuke-table">
+        <div class="header east rikishi">East</div>
+        <div class="header east pick-count">Picks</div>
+        <div class="header rank">Rank</div>
+        <div class="header west rikishi">West</div>
+        <div class="header west pick-count">Picks</div>
+
+        {% for rr in rikishi_by_rank -%}
+          {% let row_style = format!("grid-row: {}", _loop_item.index + 2) %}
+          {% if rr.rank == "boundary" %}
+            <div style="{{ row_style }}" class="boundary"></div>
+          {% else %}
+            <div
+              style="{{ row_style }}"
+              class="rank-group-{{ rr.rank_group }} bg"
+            ></div>
+            {%- call rikishi_results(rr.east) -%}
+            <div style="{{ row_style }}" class="rank">{{ rr.rank }}</div>
+            {%- call rikishi_results(rr.west) -%}
+          {% endif %}
+        {% endfor -%}
+      </div>
+
+      <div class="buttons">
+        {% if !basho.has_started() && base.player.is_some() -%}
+          <button class="g-big-button save-picks-button">Save Picks</button>
+          <button class="g-big-button change-picks-button">Change Picks</button>
+        {%- endif -%}
+      </div>
+    </form>
+  </section>
+
+  {% if basho.has_started() %}
+    <section id="leaderboard">
+      <h2>Basho Leaderboard</h2>
+
+      {% if let Some(heya_options) = self.heya_options() %}
+        {% if heya_options.len() > 0 %}
+          <form method="GET" action="#leaderboard">
+            <label for="heya-select">Filter by heya:</label>
+            <select name="heya" id="heya-select">
+              <option
+                value="everybody"
+                {% if heya.is_none() %}selected{% endif %}}
+              >
+                Everybody
+              </option>
+              <hr />
+              {% for heya_option in heya_options %}
+                <option
+                  value="{{ heya_option.heya.id }}"
+                  {% if heya_option.selected %}selected{% endif %}
+                >
+                  {{ heya_option.heya.name }}
+                </option>
+              {% endfor %}
+            </select>
+          </form>
+        {% endif %}
+      {% endif %}
+
+      {% match self.self_rank() %}
+        {% when Some with (rank) %}
+        <p class="current-rank">
+          You are currently ranked
+          <a href="#self-leader">#{{ rank }}</a>
+        </p>
+        {% when None %}
+      {% endmatch %}
+
+      <div class="leaderboard-table">
+        <div class="header day">Day</div>
+        <div class="header rank">#</div>
+        <div class="header name">Player</div>
+        <div class="header pick">Picks</div>
+        {% for day in 1..16 -%}
+          <div class="header score">{{ day }}</div>
+        {% endfor -%}
+        <div class="header score total">Total</div>
+
+        {% for leader in leaders -%}
+          {# inside of `let` we access the loop context as `_loop_item` and its index is 0-based #}
+          {% let row_style = format!("grid-row: {}", _loop_item.index + 3) %}
+          {% let row_classes %}
+          {% match leader.player -%}
+            {%- when ResultPlayer::Max -%}
+            {% let row_classes = "min-max" %}
+            {%- when ResultPlayer::Min -%}
+            {% let row_classes = "min-max" %}
+            {%- when ResultPlayer::RankedPlayer with (_, 1) -%}
+            {% let row_classes = "top-leader" %}
+            {%- when _ -%}
+            {% let row_classes = "" %}
+          {%- endmatch %}
+
+          {% match leader.player -%}
+            {%- when ResultPlayer::Max %}
+            <div style="{{ row_style }}" class="{{ row_classes }} name">
+              Best Possible
             </div>
+            {%- when ResultPlayer::Min %}
+            <div style="{{ row_style }}" class="{{ row_classes }} name">
+              Worst Possible
+            </div>
+            {%- when ResultPlayer::RankedPlayer with (player, rank) %}
+            <div style="{{ row_style }}" class="{{ row_classes }} rank">
+              {{ rank }}
+            </div>
+            <div style="{{ row_style }}" class="{{ row_classes }} name">
+              {{ player.render().unwrap()|safe }}
+            </div>
+          {%- endmatch -%}
 
-            {% if let Some(heya) = heya.as_ref() %}
-                <p>
-                    Showing {{leaders.len() - 2}} <a href="{{heya.url_path()}}">{{heya.name}}</a> members out of <a href="?all=true">{{basho.player_count}} total players</a> this basho.
-                </p>
-            {% else if basho.player_count > leaders.len() - 2 %}
-                <p>
-                    Showing top {{leaders.len() - 2}} players out of <a href="?all=true">{{basho.player_count}} total</a>.
-                </p>
-            {% endif %}
-        </section>
-    {% else %}
-        <section id="entries">
-            <h2>{{basho.player_count}} Entries</h2>
-            <ul>
-                {% for leader in leaders -%}
-                {% match leader.player -%}
-                {%- when ResultPlayer::RankedPlayer with (player, _) %}
-                    <li>{{player.render().unwrap()|safe}}</li>
-                {%- when _ -%}
-                {%- endmatch -%}
-                {%- endfor %}
-            </ul>
-        </section>
-    {% endif %}
+          {% for rikishi in leader.picks() -%}
+            {%- match rikishi -%}
+              {%- when Some with (r) -%}
+              <div
+                style="{{ row_style }}"
+                class="
+                                {{ row_classes }}
+                                pick
+                                pick-{{ loop.index }}
+                                {% if r.is_kyujyo %}kyujyo{% endif -%}
+                            "
+              >
+                {{ r.name }}
+              </div>
+              {%- when None -%}
+            {%- endmatch -%}
+          {%- endfor %}
+
+          {% for wins in leader.days -%}
+            <div
+              style="{{ row_style }}"
+              class="{{ row_classes }} score score-{{ loop.index }}"
+            >
+              {%- match wins -%}
+                {%- when Some with (num) %}{{ num }}
+                {%- when None %}-
+              {%- endmatch -%}
+            </div>
+          {% endfor -%}
+
+          <div style="{{ row_style }}" class="{{ row_classes }} score total">
+            {{ leader.total }}
+          </div>
+        {%- endfor %}
+
+        {% match self_leader_index %}
+          {% when Some with (idx) %}
+          <div
+            id="self-leader"
+            {# account for 2 header rows and make it 1-based #}
+            style="grid-row: {{ idx + 3 }};"
+          ></div>
+          {% when None %}
+        {% endmatch %}
+      </div>
+
+      {% if let Some(heya) = heya.as_ref() %}
+        <p>
+          Showing {{ leaders.len() - 2 }}
+          <a href="{{ heya.url_path() }}">{{ heya.name }}</a> members out of
+          <a href="?all=true">{{ basho.player_count }} total players</a> this
+          basho.
+        </p>
+      {% else if basho.player_count > leaders.len() - 2 %}
+        <p>
+          Showing top {{ leaders.len() - 2 }} players out of
+          <a href="?all=true">{{ basho.player_count }} total</a>.
+        </p>
+      {% endif %}
+    </section>
+  {% else %}
+    <section id="entries">
+      <h2>{{ basho.player_count }} Entries</h2>
+      <ul>
+        {% for leader in leaders -%}
+          {% match leader.player -%}
+            {%- when ResultPlayer::RankedPlayer with (player, _) %}
+            <li>{{ player.render().unwrap()|safe }}</li>
+            {%- when _ -%}
+          {%- endmatch -%}
+        {%- endfor %}
+      </ul>
+    </section>
+  {% endif %}
 {% endblock %}
 
 {%- macro rikishi_results(rikishi) -%}
-    {%- match rikishi -%}
+  {%- match rikishi -%}
     {%- when Some with (rikishi) -%}
-        {% let side = format!("{:#}", rikishi.rank.side).to_lowercase() %}
-        <label
-            style="{{row_style}}"
-            class="
-                {{side}}
+    {% let side = format!("{:#}", rikishi.rank.side).to_lowercase() %}
+    <label
+      style="{{ row_style }}"
+      class="
+                {{ side }}
                 click-target
-                {%- if rikishi.is_player_pick %} is-player-pick {% endif -%}"
-            for="banzuke-rikishi-{{rikishi.id}}"> </label>
-        {% if !basho.has_started() %}
-            <input type="radio"
-                id="banzuke-rikishi-{{rikishi.id}}"
-                style="{{row_style}}"
-                class="{{side}} select-radio"
-                name="rank-group-{{rikishi.rank.group()}}"
-                value="{{rikishi.id}}"
-                required
-                {% if rikishi.is_player_pick -%} checked {%- endif %}
-                {% if !initially_selectable -%} disabled {%- endif %}
-            >
-        {% endif %}
-        <label
-            style="{{row_style}}"
-            class="
-                {{side}}
+                {%- if rikishi.is_player_pick %}is-player-pick{% endif -%}"
+      for="banzuke-rikishi-{{ rikishi.id }}"
+    >
+    </label>
+    {% if !basho.has_started() %}
+      <input
+        type="radio"
+        id="banzuke-rikishi-{{ rikishi.id }}"
+        style="{{ row_style }}"
+        class="{{ side }} select-radio"
+        name="rank-group-{{ rikishi.rank.group() }}"
+        value="{{ rikishi.id }}"
+        required
+        {% if rikishi.is_player_pick -%}checked{%- endif %}
+        {% if !initially_selectable -%}disabled{%- endif %}
+      />
+    {% endif %}
+    <label
+      style="{{ row_style }}"
+      class="
+                {{ side }}
                 rikishi
-                {%- if rikishi.is_kyujyo %} is-kyujyo {% endif -%}
+                {%- if rikishi.is_kyujyo %}is-kyujyo{% endif -%}
             "
-            for="banzuke-rikishi-{{rikishi.id}}"
-            data-rikishi-id="{{rikishi.id}}"
-        >
-            {%- if rikishi.rank.side == RankSide::East -%} {{- rikishi.name }} {%- endif %}
-            <a class="info-link" target="_blank" href="http://sumodb.sumogames.de/Rikishi.aspx?shikona={{rikishi.name}}&b={{basho.id.id()}}"></a>
-            {%- if rikishi.rank.side == RankSide::West -%} {{ rikishi.name -}} {%- endif -%}
-        </label>
-        <div style="{{row_style}}" class="{{side}} pick-count">
-            {{rikishi.picks}}
-        </div>
-        {% if basho.has_started() %}
-            <div style="{{row_style}}" class="{{side}} hoshi">
-            {%- for chunk in rikishi.result_chunks() %}
-                <span class="chunk">
-                    {%- for day in chunk -%}
-                    <span class="
+      for="banzuke-rikishi-{{ rikishi.id }}"
+      data-rikishi-id="{{ rikishi.id }}"
+    >
+      {%- if rikishi.rank.side == RankSide::East -%}{{- rikishi.name }}{%- endif %}
+      <a
+        class="info-link"
+        target="_blank"
+        href="http://sumodb.sumogames.de/Rikishi.aspx?shikona={{ rikishi.name }}&b={{ basho.id.id() }}"
+      ></a>
+      {%- if rikishi.rank.side == RankSide::West -%}{{ rikishi.name -}}{%- endif -%}
+    </label>
+    <div style="{{ row_style }}" class="{{ side }} pick-count">
+      {{ rikishi.picks }}
+    </div>
+    {% if basho.has_started() %}
+      <div style="{{ row_style }}" class="{{ side }} hoshi">
+        {%- for chunk in rikishi.result_chunks() %}
+          <span class="chunk">
+            {%- for day in chunk -%}
+              <span
+                class="
                         {%- match day -%}
-                        {%- when Some with (true) -%}   win
-                        {%- when Some with (false) -%}  loss
-                        {%- when None -%}               blank
-                        {%- endmatch -%}
-                    "></span>
-                    {%- endfor -%}
-                </span>
-            {% endfor -%}
-            </div>
-            <div style="{{row_style}}" class="{{side}} win-loss">
-                {{rikishi.wins}}-{{rikishi.losses}}
-            </div>
-        {% endif %}
+                  {%- when Some with (true) -%}
+                  win {%- when Some with (false) -%} loss {%- when None -%}
+                  blank
+                {%- endmatch -%}
+                    "
+              ></span>
+            {%- endfor -%}
+          </span>
+        {% endfor -%}
+      </div>
+      <div style="{{ row_style }}" class="{{ side }} win-loss">
+        {{ rikishi.wins }}-{{ rikishi.losses }}
+      </div>
+    {% endif %}
     {%- when None -%}
-    {%- endmatch -%}
+  {%- endmatch -%}
 {%- endmacro -%}

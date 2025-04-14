@@ -3,7 +3,7 @@
 {% block main_id %}p-heya{% endblock %}
 
 {% block subtitle %}
-  {{heya.name}}
+  {{ heya.name }}
 {% endblock %}
 
 {% block head %}
@@ -12,20 +12,20 @@
 {% endblock %}
 
 {% block main %}
-  <h1>{{heya.name}}</h1>
+  <h1>{{ heya.name }}</h1>
 
   <section>
     {% if is_oyakata %}
       <form method="POST">
-        <input type="text" name="set_name" value="{{heya.name}}">
+        <input type="text" name="set_name" value="{{ heya.name }}" />
         <button>Change Name</button>
       </form>
     {% endif %}
     <dl>
       <dt>Oyakata</dt>
-      <dd>{{heya.oyakata.render().unwrap()|safe}}</dd>
+      <dd>{{ heya.oyakata.render().unwrap()|safe }}</dd>
       <dt>Inaugurated</dt>
-      <dd>{{heya.create_date.format("%Y-%m-%d")}}</dd>
+      <dd>{{ heya.create_date.format("%Y-%m-%d") }}</dd>
     </dl>
   </section>
 
@@ -44,12 +44,16 @@
           <th>Since</th>
           <th class="numeric total">Year</th>
           {% for basho_id in heya.recent_scores_bashos.as_ref().unwrap().iter() %}
-            <th class="
+            <th
+              class="
               numeric
-              {% if !loop.first %} wide-only {% endif %}
-            ">
-              <a href="{{basho_id.url_path()}}?heya={{heya.id}}#leaderboard">
-                {{basho_id.season()}}
+              {% if !loop.first %}wide-only{% endif %}
+            "
+            >
+              <a
+                href="{{ basho_id.url_path() }}?heya={{ heya.id }}#leaderboard"
+              >
+                {{ basho_id.season() }}
               </a>
             </th>
           {% endfor %}
@@ -57,42 +61,50 @@
         </tr>
       </thead>
       <tbody>
-      {% for member in heya.members.as_ref().unwrap() %}
-        <tr>
-          <td>{{member.player.render().unwrap()|safe}}</td>
-          <td class="numeric">{{member.recruit_date.format("%Y")}}</td>
-          <td class="numeric total">{{member.recent_scores_total()}}</td>
-          {% for score in member.recent_scores %}
-            <td class="
+        {% for member in heya.members.as_ref().unwrap() %}
+          <tr>
+            <td>{{ member.player.render().unwrap()|safe }}</td>
+            <td class="numeric">{{ member.recruit_date.format("%Y") }}</td>
+            <td class="numeric total">{{ member.recent_scores_total() }}</td>
+            {% for score in member.recent_scores %}
+              <td
+                class="
               numeric
-              {% if !loop.first %} wide-only {% endif %}
-            ">
-              {% if let Some(s) = score %} {{s}}
-              {% else %} --
+              {% if !loop.first %}wide-only{% endif %}
+            "
+              >
+                {% if let Some(s) = score %}
+                  {{ s }}
+                {% else %}
+                  --
+                {% endif %}
+              </td>
+            {% endfor %}
+            <td>
+              {% if !member.is_oyakata && (is_oyakata || member.is_self) %}
+                <form
+                  class="expel"
+                  method="POST"
+                  data-heya="{{ heya.name }}"
+                  {% if !member.is_self %}data-member="{{ member.player.name }}"{% endif %}
+                >
+                  <input
+                    type="hidden"
+                    name="delete_player_id"
+                    value="{{ member.player.id }}"
+                  />
+                  <button>
+                    {% if member.is_self %}
+                      Leave
+                    {% else %}
+                      Expel
+                    {% endif %}
+                  </button>
+                </form>
               {% endif %}
             </td>
-          {% endfor %}
-          <td>
-            {% if !member.is_oyakata && (is_oyakata || member.is_self) %}
-              <form
-                class="expel"
-                method="POST"
-                data-heya="{{heya.name}}"
-                {% if !member.is_self %} data-member="{{member.player.name}}" {% endif %}
-              >
-                <input type="hidden" name="delete_player_id" value="{{member.player.id}}">
-                <button>
-                  {% if member.is_self %}
-                    Leave
-                  {% else %}
-                    Expel
-                  {% endif %}
-                </button>
-              </form>
-            {% endif %}
-          </td>
-        </tr>
-      {% endfor %}
+          </tr>
+        {% endfor %}
       </tbody>
     </table>
   </section>
@@ -102,11 +114,14 @@
       <section>
         <h2>Recruitment</h2>
 
-        <p>To recruit members, click the <em>Recruit</em> button on players’ profile pages.</p>
+        <p>
+          To recruit members, click the <em>Recruit</em> button on players’
+          profile pages.
+        </p>
 
         {% if player.is_admin() %}
           <form method="POST">
-            <label>player id: <input type="text" name="add_player_id"></label>
+            <label>player id: <input type="text" name="add_player_id" /></label>
             <button>Recruit</button>
           </form>
         {% endif %}

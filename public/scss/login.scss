@@ -1,14 +1,14 @@
 #p-login {
-    #external-providers {
-        > a {
-            font-size: 2rem;
-            padding: 0.5rem;
-            background: var(--color-navy);
-            color: var(--color-fg-inv);
-            border: solid 1px var(--color-border);
-            display: block;
-            margin: 1rem 5rem;
-            text-align: center;
-        }
+  #external-providers {
+    > a {
+      font-size: 2rem;
+      padding: 0.5rem;
+      background: var(--color-navy);
+      color: var(--color-fg-inv);
+      border: solid 1px var(--color-border);
+      display: block;
+      margin: 1rem 5rem;
+      text-align: center;
     }
+  }
 }

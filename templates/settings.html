@@ -4,69 +4,91 @@
 {% block main_id %}p-settings{% endblock %}
 
 {% block head %}
-    <link rel="stylesheet" href="/static/css/settings.css">
-    <script type="module" src="/static/js/settings.js"></script>
+  <link rel="stylesheet" href="/static/css/settings.css" />
+  <script type="module" src="/static/js/settings.js"></script>
 {% endblock %}
 
 {% block main %}
-    <form id="settings-form" class="busy">
-        <section>
-            <h2>Settings</h2>
-            
-            <fieldset name="profile">
-                <legend>Profile</legend>
-                <label>
-                    Display name:
-                    <input name="name" type="text"
-                        required
-                        minlength="{{player::NAME_LENGTH.start()}}"
-                        maxlength="{{player::NAME_LENGTH.end()}}"
-                        pattern="{{player::NAME_REGEX}}"
-                        value="{{base.player.as_ref().unwrap().name}}"
-                    >
-                    <span class="hint">(letters and numbers only)</span>
-                </label>
-                <p>
-                    Your profile picture is synced with your external account when you log in. To update your Kachi Clash avatar, first update your profile pic in your external service account (Discord, Reddit, Google, etc), then log out and log back into Kachi Clash using the same account.
-                </p>
-            </fieldset>
-            
-            <fieldset name="notifications" disabled>
-                <legend>Notifications</legend>
-                <p class="available">Enable push notifications on this device for:</p>
-                <p class="warning denied">Please check browser settings to allow notifications from this site.</p>
-                <p class="warning unavailable">Push notifications are not supported in this browser.</p>
-                <p class="warning unavailable-ios-pwa">On iOS and iPadOS 16.4 or newer, push notifications can be enabled by opening the share menu and choosing “Add to Home Screen”.</p>
-                <ul>
-                    <li><label>
-                        <input type="checkbox" value="EntriesOpen" />
-                        Basho entries open
-                    </label></li>
-                    <li><label>
-                        <input type="checkbox" value="BashoStartCountdown" />
-                        Reminders before basho starts
-                    </label></li>
-                    <li><label>
-                        <input type="checkbox" value="DayResult" />
-                        Daily bout results
-                    </label></li>
-                    <li><label>
-                        <input type="checkbox" value="BashoResult" />
-                        Final basho results
-                    </label></li>
-                    <li><label>
-                        <input type="checkbox" value="Announcement" />
-                        Miscellaneous announcements
-                    </label></li>
-                </ul>
-                <button name="test-notification" class="g-small-button" type="button">
-                    Send test notification
-                </button>
-            </fieldset>
-            
-            <button class="save-button g-big-button">Save</button>
-            
-            <div class="messages"></div>
-        </section>
-    </form>
+  <form id="settings-form" class="busy">
+    <section>
+      <h2>Settings</h2>
+
+      <fieldset name="profile">
+        <legend>Profile</legend>
+        <label>
+          Display name:
+          <input
+            name="name"
+            type="text"
+            required
+            minlength="{{ player::NAME_LENGTH.start() }}"
+            maxlength="{{ player::NAME_LENGTH.end() }}"
+            pattern="{{ player::NAME_REGEX }}"
+            value="{{ base.player.as_ref().unwrap().name }}"
+          />
+          <span class="hint">(letters and numbers only)</span>
+        </label>
+        <p>
+          Your profile picture is synced with your external account when you log
+          in. To update your Kachi Clash avatar, first update your profile pic
+          in your external service account (Discord, Reddit, Google, etc), then
+          log out and log back into Kachi Clash using the same account.
+        </p>
+      </fieldset>
+
+      <fieldset name="notifications" disabled>
+        <legend>Notifications</legend>
+        <p class="available">Enable push notifications on this device for:</p>
+        <p class="warning denied">
+          Please check browser settings to allow notifications from this site.
+        </p>
+        <p class="warning unavailable">
+          Push notifications are not supported in this browser.
+        </p>
+        <p class="warning unavailable-ios-pwa">
+          On iOS and iPadOS 16.4 or newer, push notifications can be enabled by
+          opening the share menu and choosing “Add to Home Screen”.
+        </p>
+        <ul>
+          <li>
+            <label>
+              <input type="checkbox" value="EntriesOpen" />
+              Basho entries open
+            </label>
+          </li>
+          <li>
+            <label>
+              <input type="checkbox" value="BashoStartCountdown" />
+              Reminders before basho starts
+            </label>
+          </li>
+          <li>
+            <label>
+              <input type="checkbox" value="DayResult" />
+              Daily bout results
+            </label>
+          </li>
+          <li>
+            <label>
+              <input type="checkbox" value="BashoResult" />
+              Final basho results
+            </label>
+          </li>
+          <li>
+            <label>
+              <input type="checkbox" value="Announcement" />
+              Miscellaneous announcements
+            </label>
+          </li>
+        </ul>
+        <button name="test-notification" class="g-small-button" type="button">
+          Send test notification
+        </button>
+      </fieldset>
+
+      <button class="save-button g-big-button">Save</button>
+
+      <div class="messages"></div>
+    </section>
+  </form>
 {% endblock %}

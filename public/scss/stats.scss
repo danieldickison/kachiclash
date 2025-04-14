@@ -1,47 +1,48 @@
 #p-stats {
-    section {
-        background: var(--color-bg);
-    }
+  section {
+    background: var(--color-bg);
+  }
 
+  table {
+    margin: 0 auto;
+  }
+
+  #prev-winners {
     table {
-        margin: 0 auto;
+      border-spacing: 0.25em 1em;
     }
+  }
 
-    #prev-winners {
-        table {
-            border-spacing: 0.25em 1em;
-        }
+  #players {
+    table {
+      border-collapse: collapse;
+
+      td,
+      th {
+        padding: 0.125rem 0.25rem;
+      }
+
+      .num {
+        text-align: right;
+      }
+
+      .rank {
+        text-align: right;
+        padding-right: 0.5rem;
+      }
+
+      .border-left {
+        border-left: solid 1px var(--color-border);
+      }
+
+      .sort-key {
+        font-weight: bold;
+      }
+
+      #self-leader td.player {
+        background: var(--color-table-highlight-bg);
+        box-shadow: var(--table-highlight-shadow);
+      }
     }
-
-    #players {
-        table {
-            border-collapse: collapse;
-
-            td, th {
-                padding: 0.125rem 0.25rem;
-            }
-
-            .num {
-                text-align: right;
-            }
-
-            .rank {
-                text-align: right;
-                padding-right: 0.5rem;
-            }
-
-            .border-left {
-                border-left: solid 1px var(--color-border);
-            }
-
-            .sort-key {
-                font-weight: bold;
-            }
-
-            #self-leader td.player {
-                background: var(--color-table-highlight-bg);
-                box-shadow: var(--table-highlight-shadow);
-            }
-        }
-    }
+  }
 }

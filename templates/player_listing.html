@@ -1,13 +1,17 @@
-<a class="g-player-listing" href="{{self.url_path()}}">
-    <span class="img-wrapper"><img class="js-player-img" src="{{self.tiny_thumb()}}" alt=""></span>
-    <span class="name">{{name}}</span>
-    
-    {%- match self.rank -%}
-    {%- when Some(rank) -%} <span class="rank">{{rank}}</span>
+<a class="g-player-listing" href="{{ self.url_path() }}">
+  <span class="img-wrapper"
+    ><img class="js-player-img" src="{{ self.tiny_thumb() }}" alt=""
+  /></span>
+  <span class="name">{{ name }}</span>
+
+  {%- match self.rank -%}
+    {%- when Some(rank) -%} <span class="rank">{{ rank }}</span>
     {%- when None -%}
-    {%- endmatch -%}
-    
-    {%- if self.has_emperors_cup() -%}
-        <span class="cup">{{crate::data::award::Award::EmperorsCup.emoji()}}</span>
-    {%- endif -%}
+  {%- endmatch -%}
+
+  {%- if self.has_emperors_cup() -%}
+    <span class="cup"
+      >{{ crate::data::award::Award::EmperorsCup.emoji() }}</span
+    >
+  {%- endif -%}
 </a>
