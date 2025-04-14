@@ -290,11 +290,11 @@
               <div
                 style="{{ row_style }}"
                 class="
-                                {{ row_classes }}
-                                pick
-                                pick-{{ loop.index }}
-                                {% if r.is_kyujyo %}kyujyo{% endif -%}
-                            "
+                  {{ row_classes }}
+                  pick
+                  pick-{{ loop.index }}
+                  {% if r.is_kyujyo %}kyujyo{% endif -%}
+                "
               >
                 {{ r.name }}
               </div>
@@ -367,9 +367,10 @@
     <label
       style="{{ row_style }}"
       class="
-                {{ side }}
-                click-target
-                {%- if rikishi.is_player_pick %}is-player-pick{% endif -%}"
+        {{ side }}
+        click-target
+        {% if rikishi.is_player_pick %}is-player-pick{% endif -%}
+      "
       for="banzuke-rikishi-{{ rikishi.id }}"
     >
     </label>
@@ -389,10 +390,10 @@
     <label
       style="{{ row_style }}"
       class="
-                {{ side }}
-                rikishi
-                {%- if rikishi.is_kyujyo %}is-kyujyo{% endif -%}
-            "
+        {{ side }}
+        rikishi
+        {% if rikishi.is_kyujyo -%}is-kyujyo{%- endif %}
+      "
       for="banzuke-rikishi-{{ rikishi.id }}"
       data-rikishi-id="{{ rikishi.id }}"
     >
@@ -414,12 +415,12 @@
             {%- for day in chunk -%}
               <span
                 class="
-                        {%- match day -%}
+                  {%- match day -%}
                   {%- when Some with (true) -%}
                   win {%- when Some with (false) -%} loss {%- when None -%}
                   blank
                 {%- endmatch -%}
-                    "
+                "
               ></span>
             {%- endfor -%}
           </span>

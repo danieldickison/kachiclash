@@ -21,7 +21,7 @@
         ></span
       >
       <textarea name="torikumi">
-                {%- match sumo_db_text -%}
+        {%- match sumo_db_text -%}
           {%- when Some with (str) -%}{{ str }}
           {%- when None -%}
         {%- endmatch -%}
