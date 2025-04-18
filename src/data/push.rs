@@ -7,7 +7,7 @@ use rusqlite::{types::FromSqlResult, Connection, Row, RowIndex};
 use url::Url;
 use web_push::{
     ContentEncoding, HyperWebPushClient, PartialVapidSignatureBuilder, SubscriptionInfo,
-    VapidSignatureBuilder, WebPushClient, WebPushError, WebPushMessageBuilder, URL_SAFE_NO_PAD,
+    VapidSignatureBuilder, WebPushClient, WebPushError, WebPushMessageBuilder,
 };
 
 // Keep types in sync with push.ts
@@ -137,7 +137,7 @@ pub struct PushBuilder {
 impl PushBuilder {
     pub fn with_base64_private_key(base64: &str) -> Result<Self> {
         Ok(Self {
-            vapid: VapidSignatureBuilder::from_base64_no_sub(base64, URL_SAFE_NO_PAD)?,
+            vapid: VapidSignatureBuilder::from_base64_no_sub(base64)?,
             client: HyperWebPushClient::new(),
         })
     }
@@ -181,8 +181,8 @@ impl PushBuilder {
             match res {
                 Ok(_) => (),
                 Err(
-                    web_push::WebPushError::EndpointNotValid
-                    | web_push::WebPushError::EndpointNotFound,
+                    web_push::WebPushError::EndpointNotValid(_)
+                    | web_push::WebPushError::EndpointNotFound(_),
                 ) => invalid_subscriptions.push(sub.id),
                 Err(ref e) => {
                     warn!(
@@ -231,8 +231,8 @@ impl SendStats {
             match res {
                 Ok(_) => stats.success += 1,
                 Err(
-                    web_push::WebPushError::EndpointNotValid
-                    | web_push::WebPushError::EndpointNotFound,
+                    web_push::WebPushError::EndpointNotValid(_)
+                    | web_push::WebPushError::EndpointNotFound(_),
                 ) => stats.invalid += 1,
                 Err(_) => stats.fail += 1,
             };
