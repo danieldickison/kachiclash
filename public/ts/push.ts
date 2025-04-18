@@ -12,37 +12,6 @@ export type PushType =
   | { DayResult: [BashoId, PlayerId, Day] }
   | { BashoResult: [BashoId, PlayerId] };
 
-export type Payload = { title: string; body: string; url: string } & (
-  | {
-      type: "Empty";
-    }
-  | {
-      type: "EntriesOpen";
-      basho_id: BashoId;
-      start_date: number;
-    }
-  | {
-      type: "BashoStartCountdown";
-      basho_id: BashoId;
-      start_date: number;
-    }
-  | {
-      type: "DayResult";
-      basho_id: BashoId;
-      name: string;
-      day: Day;
-      rikishi: [
-        RikishiDayResult,
-        RikishiDayResult,
-        RikishiDayResult,
-        RikishiDayResult,
-        RikishiDayResult,
-      ];
-      rank: number;
-      leader_score: number;
-    }
-);
-
 export interface RikishiDayResult {
   name: string;
   win?: boolean;

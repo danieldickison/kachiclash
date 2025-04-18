@@ -23,15 +23,16 @@
   });
 
   self.addEventListener("push", (e: any) => {
-    const { title, body, ...data } = e.data.json(); // as Payload // needs to be esmodule to import
+    const data = e.data.json();
+    const { title, body, navigate } = data;
     console.debug("Received push notification with data", data);
-    e.waitUntil(self.registration.showNotification(title, { body, data }));
+    e.waitUntil(self.registration.showNotification(title, { body, navigate }));
   });
 
   self.addEventListener("notificationclick", async (e: any) => {
     const notification = e.notification as Notification;
     notification.close();
-    e.waitUntil(openOrFocusClient(notification.data.url));
+    e.waitUntil(openOrFocusClient(notification.data.navigate));
   });
 
   async function openOrFocusClient(url: string): Promise<void> {
