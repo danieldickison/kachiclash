@@ -1,6 +1,7 @@
-@use 'media';
+@use "media";
 
-#p-heya, #p-heya-list {
+#p-heya,
+#p-heya-list {
   section {
     background: var(--color-light-yellow-bg);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
@@ -26,7 +27,8 @@
       background: #00000011;
     }
 
-    td, th {
+    td,
+    th {
       padding: 0.25em 0.5em;
     }
 
@@ -35,7 +37,7 @@
     }
 
     .numeric {
-      text-align: right;;
+      text-align: right;
     }
 
     button {

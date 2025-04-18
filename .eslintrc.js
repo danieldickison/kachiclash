@@ -1,27 +1,25 @@
-module.exports = {
+export default tseslint.config({
   env: {
     browser: true,
-    es2021: true
+    es2021: true,
   },
-  extends: 'standard-with-typescript',
+  extends: ["plugin:@typescript-eslint/recommended", "prettier"],
+  parser: "@typescript-eslint/parser",
   overrides: [
     {
       env: {
-        node: true
+        node: true,
       },
-      files: [
-        '.eslintrc.{js,cjs}'
-      ],
+      files: [".eslintrc.{js,cjs}"],
       parserOptions: {
-        sourceType: 'script'
-      }
-    }
+        sourceType: "script",
+      },
+    },
   ],
   parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-    project: 'tsconfig.json'
+    ecmaVersion: "latest",
+    sourceType: "module",
+    project: "tsconfig.json",
   },
-  rules: {
-  }
-}
+  rules: {},
+});

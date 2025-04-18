@@ -4,6 +4,11 @@
 // see the documentation: https://zed.dev/docs/configuring-zed#folder-specific-settings
 {
   "file_types": {
-    "Liquid": ["html"]
+    "HTML-Jinja": ["html"]
+  },
+  "languages": {
+    "HTML-Jinja": {
+      "tab_size": 2
+    }
   }
 }

@@ -1,27 +1,27 @@
 .g-admin-form {
-    .footnote {
-        font-size: 0.875rem;
-        color: #999;
-        margin: 0;
+  .footnote {
+    font-size: 0.875rem;
+    color: #999;
+    margin: 0;
+  }
+
+  label {
+    display: block;
+    margin-bottom: 10px;
+
+    > input:not([type="checkbox"]) {
+      display: block;
     }
 
-    label {
-        display: block;
-        margin-bottom: 10px;
-        
-        > input:not([type="checkbox"]) {
-            display: block;
-        }
-
-        > textarea {
-            display: block;
-            width: 100%;
-            min-height: 100px;
-        }
+    > textarea {
+      display: block;
+      width: 100%;
+      min-height: 100px;
     }
+  }
 }
 
 #p-new-basho {
-    #make-basho-form {
-    }
+  #make-basho-form {
+  }
 }

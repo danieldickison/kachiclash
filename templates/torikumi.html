@@ -2,37 +2,46 @@
 
 {% block main_id %}p-torikumi{% endblock %}
 
-{% block subtitle %}{{basho_id}} day {{day}}{% endblock %}
+{% block subtitle %}{{ basho_id }} day {{ day }}{% endblock %}
 
 {% block head %}
-    <script src="/static/js/torikumi.js" type="module"></script>
-    <link rel="stylesheet" href="/static/css/admin.css">
+  <script src="/static/js/torikumi.js" type="module"></script>
+  <link rel="stylesheet" href="/static/css/admin.css" />
 {% endblock %}
 
 {% block main %}
-    <form id="torikumi-form" class="g-admin-form">
-        <h2>Enter torikumi results for {{basho_id}} day {{day}}</h2>
-        <label>
-            Torikumi:
-            <span class="footnote">Copy and paste the "text-only" torikumi results from <a href="http://sumodb.sumogames.de/Results_text.aspx?b=201907&d=1">sumodb.sumogames.de</a></span>
-            <textarea name="torikumi">
-                {%- match sumo_db_text -%}
-                {%- when Some with (str) -%}{{str}}
-                {%- when None -%}
-                {%- endmatch -%}
-            </textarea>
-        </label>
-        
-        <label>
-            <input type="checkbox" name="notify" checked>
-            trigger push notifications
-        </label>
+  <form id="torikumi-form" class="g-admin-form">
+    <h2>Enter torikumi results for {{ basho_id }} day {{ day }}</h2>
+    <label>
+      Torikumi:
+      <span class="footnote"
+        >Copy and paste the "text-only" torikumi results from
+        <a href="http://sumodb.sumogames.de/Results_text.aspx?b=201907&d=1"
+          >sumodb.sumogames.de</a
+        ></span
+      >
+      <textarea name="torikumi">
+        {%- match sumo_db_text -%}
+          {%- when Some with (str) -%}{{ str }}
+          {%- when None -%}
+        {%- endmatch -%}
+            </textarea
+      >
+    </label>
 
-        <input type="submit">
-        
-        <table class="parsed-torikumi">
-            <thead><th>winner</th><th>loser</th></thead>
-            <tbody></tbody>
-        </table>
-    </form>
+    <label>
+      <input type="checkbox" name="notify" checked />
+      trigger push notifications
+    </label>
+
+    <input type="submit" />
+
+    <table class="parsed-torikumi">
+      <thead>
+        <th>winner</th>
+        <th>loser</th>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </form>
 {% endblock %}

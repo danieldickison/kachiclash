@@ -4,101 +4,115 @@
 {% block main_id %}p-stats{% endblock %}
 
 {% block head %}
-    <link rel="stylesheet" href="/static/css/stats.css">
+  <link rel="stylesheet" href="/static/css/stats.css" />
 {% endblock %}
 
 {% block main %}
-    <section id="prev-winners">
-        <h2>Previous Emperor's Cup Winners</h2>
-        <table class="basho-list">
-            <thead>
-                <th>Basho</th>
-                <th>Players</th>
-                <th>Winner</th>
-                <th>Score</th>
-            </thead>
-            <tbody>
-                {% for basho in basho_list -%}
-                    {% if !basho.winners.is_empty() %}
-                        <tr>
-                            <td class="basho"><a href="{{basho.link_url()}}">{{basho.id|fmt("{:#}")}}</a></td>
-                            <td>{{basho.player_count}}</td>
-                            <td class="winner">
-                                {% for player in basho.winners -%}
-                                    {{player.render().unwrap()|safe}}
-                                    {%- if !loop.last %}, {% endif -%}
-                                {%- endfor %}
-                            </td>
-                            <td>
-                                {% match basho.winning_score %}
-                                {% when Some with (score) %}{{score}}
-                                {% when None %}
-                                {% endmatch %}
-                            </td>
-                        </tr>
-                    {% endif %}
-                {% endfor %}
-            </tbody>
-        </table>
-    </section>
+  <section id="prev-winners">
+    <h2>Previous Emperor's Cup Winners</h2>
+    <table class="basho-list">
+      <thead>
+        <th>Basho</th>
+        <th>Players</th>
+        <th>Winner</th>
+        <th>Score</th>
+      </thead>
+      <tbody>
+        {% for basho in basho_list -%}
+          {% if !basho.winners.is_empty() %}
+            <tr>
+              <td class="basho">
+                <a href="{{ basho.link_url() }}">{{ basho.id|fmt("{:#}") }}</a>
+              </td>
+              <td>{{ basho.player_count }}</td>
+              <td class="winner">
+                {% for player in basho.winners -%}
+                  {{ player.render().unwrap()|safe }}
+                  {%- if !loop.last %},{% endif -%}
+                {%- endfor %}
+              </td>
+              <td>
+                {% match basho.winning_score %}
+                  {% when Some with (score) %}{{ score }}
+                  {% when None %}
+                {% endmatch %}
+              </td>
+            </tr>
+          {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
 
-    <section id="players">
-        <h2>Players</h2>
-        <p>Ranked by total wins recorded in the <strong>past {{leader_basho_count}} basho</strong>.</p>
-        <p>
-            See also: past
-            {% for c in leader_basho_count_options %}
-                <a href="?b={{c}}#players">{{c}} basho</a>{% if !loop.last %},{% endif -%}
-            {%- endfor %}.
-        </p>
+  <section id="players">
+    <h2>Players</h2>
+    <p>
+      Ranked by total wins recorded in the
+      <strong>past {{ leader_basho_count }} basho</strong>.
+    </p>
+    <p>
+      See also: past
+      {% for c in leader_basho_count_options %}
+        <a href="?b={{ c }}#players">{{ c }} basho</a
+        >{% if !loop.last %},{% endif -%}
+      {%- endfor %}.
+    </p>
 
-        {% match self.self_leader() %}
-        {% when Some with (leader) %}
-            <p class="current-rank">You are currently ranked <a href="#self-leader">#{{leader.ord}}</a></p>
-        {% when None %}
-        {% endmatch %}
+    {% match self.self_leader() %}
+      {% when Some with (leader) %}
+      <p class="current-rank">
+        You are currently ranked <a href="#self-leader">#{{ leader.ord }}</a>
+      </p>
+      {% when None %}
+    {% endmatch %}
 
-        <table class="leaderboard">
-            <thead>
-                <tr>
-                    <th rowspan="2">Rank</th>
-                    <th rowspan="2">Player</th>
-                    <th colspan="3" class="border-left">Basho Ranks</th>
-                    <th colspan="4" class="border-left">Wins</th>
-                </tr>
-                <tr>
-                    <th class="border-left">best</th>
-                    <th>worst</th>
-                    <th>avg</th>
-                    <th class="border-left">most</th>
-                    <th>least</th>
-                    <th>avg</th>
-                    <th>total</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for leader in leaders %}
-                <tr {% if self.is_self(leader) %}id="self-leader"{% endif %}>
-                    <td class="rank">{{leader.ord}}</td>
-                    <td class="player">{{leader.player.render().unwrap()|safe}}</td>
-                    <td class="num border-left">{% call numeric_stat(leader.ranks.min) %}</td>
-                    <td class="num">{% call numeric_stat(leader.ranks.max) %}</td>
-                    <td class="num">{% call numeric_stat(leader.ranks.mean) %}</td>
-                    <td class="num border-left">{% call numeric_stat(leader.wins.max) %}</td>
-                    <td class="num">{% call numeric_stat(leader.wins.min) %}</td>
-                    <td class="num">{% call numeric_stat(leader.wins.mean) %}</td>
-                    <td class="num sort-key">{% call numeric_stat(leader.wins.total) %}</td>
-                </tr>
-            {% endfor %}
-                
-            </tbody>
-        </table>
-    </section>
+    <table class="leaderboard">
+      <thead>
+        <tr>
+          <th rowspan="2">Rank</th>
+          <th rowspan="2">Player</th>
+          <th colspan="3" class="border-left">Basho Ranks</th>
+          <th colspan="4" class="border-left">Wins</th>
+        </tr>
+        <tr>
+          <th class="border-left">best</th>
+          <th>worst</th>
+          <th>avg</th>
+          <th class="border-left">most</th>
+          <th>least</th>
+          <th>avg</th>
+          <th>total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for leader in leaders %}
+          <tr {% if self.is_self(leader) %}id="self-leader"{% endif %}>
+            <td class="rank">{{ leader.ord }}</td>
+            <td class="player">{{ leader.player.render().unwrap()|safe }}</td>
+            <td class="num border-left">
+              {% call numeric_stat(leader.ranks.min) %}
+            </td>
+            <td class="num">{% call numeric_stat(leader.ranks.max) %}</td>
+            <td class="num">{% call numeric_stat(leader.ranks.mean) %}</td>
+            <td class="num border-left">
+              {% call numeric_stat(leader.wins.max) %}
+            </td>
+            <td class="num">{% call numeric_stat(leader.wins.min) %}</td>
+            <td class="num">{% call numeric_stat(leader.wins.mean) %}</td>
+            <td class="num sort-key">
+              {% call numeric_stat(leader.wins.total) %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
 {% endblock %}
 
 {%- macro numeric_stat(opt_num) -%}
-    {%- match opt_num -%}
-    {%- when Some with (num) -%} {{"{:.1}"|format(num)}}
+  {%- match opt_num -%}
+    {%- when Some with (num) -%}
+    {{ "{:.1}"|format(num) }}
     {%- when None -%}
-    {%- endmatch -%}
+  {%- endmatch -%}
 {%- endmacro -%}

@@ -1,211 +1,210 @@
-@use 'media';
+@use "media";
 
 #p-index {
-    section {
-        margin: 0;
+  section {
+    margin: 0;
+  }
+
+  #next-basho {
+    padding-top: 0;
+    padding-bottom: 0;
+
+    .button-link {
+      width: 100%;
+      height: auto;
+      transition: transform ease-out 100ms;
+
+      &:hover {
+        transform: scale(1.04);
+        transition: transform ease-out 200ms;
+      }
+    }
+  }
+
+  #prev-winners {
+    padding-bottom: 0;
+
+    h2 {
+      position: absolute;
+      z-index: 1;
+      margin: 0;
+
+      img {
+        width: 100%;
+        height: auto;
+      }
     }
 
-    #next-basho {
-        padding-top: 0;
-        padding-bottom: 0;
+    .winners {
+      position: relative;
+      margin-left: min(210px, 23%);
+      margin-top: min(160px, 15%);
+      padding-right: min(100px, 10%);
+      padding-bottom: 50px;
+      font-size: 1.75rem;
+      display: flex;
+      flex-flow: row wrap;
+      align-items: baseline;
+      justify-content: space-evenly;
+      z-index: 2;
 
-        .button-link {
-            width: 100%;
-            height: auto;
-            transition: transform ease-out 100ms;
+      .g-player-listing {
+        margin-right: 1ex;
+      }
 
-            &:hover {
-                transform: scale(1.04);
-                transition: transform ease-out 200ms;
-            }
-        }
+      @media (max-width: media.$medium-width) {
+        font-size: 1.5rem;
+      }
+
+      @media (max-width: media.$narrow) {
+        font-size: 1.25rem;
+      }
+    }
+  }
+
+  #leaderboard {
+    padding-top: calc(36.36% + 2px); // percentage of bg image *width*
+    padding-left: 10%;
+    padding-right: 10%;
+    padding-bottom: 0;
+    margin-bottom: 0;
+    // compute height based on aspect ratio of bg image
+    height: calc(min(100vw, var(--content-max-width)) * 1.2273);
+
+    // engraved wood appearance
+    text-shadow: var(--emboss-text-shadow);
+
+    background-image: url(/static/img2/player-ranking/light-bg.webp);
+    background-size: contain;
+    background-repeat: no-repeat;
+    @media (prefers-color-scheme: dark) {
+      background-image: url(/static/img2/player-ranking/dark-bg.webp);
     }
 
-    #prev-winners {
-        padding-bottom: 0;
-
-        h2 {
-            position: absolute;
-            z-index: 1;
-            margin: 0;
-
-            img {
-                width: 100%;
-                height: auto;
-            }
-        }
-
-        .winners {
-            position: relative;
-            margin-left: min(210px, 23%);
-            margin-top: min(160px, 15%);
-            padding-right: min(100px, 10%);
-            padding-bottom: 50px;
-            font-size: 1.75rem;
-            display: flex;
-            flex-flow: row wrap;
-            align-items: baseline;
-            justify-content: space-evenly;
-            z-index: 2;
-
-            .g-player-listing {
-                margin-right: 1ex;
-            }
-
-            @media (max-width: media.$medium-width) {
-                font-size: 1.5rem;
-            }
-
-            @media (max-width: media.$narrow) {
-                font-size: 1.25rem;
-            }
-        }
+    &::before {
+      content: " ";
+      z-index: 1;
+      pointer-events: none;
+      position: absolute;
+      width: 100%;
+      left: 0;
+      top: 29.63%;
+      height: 4.545%;
+      background-image: url(/static/img2/player-ranking/light-mask.webp);
+      background-size: contain;
+      background-repeat: no-repeat;
+      @media (prefers-color-scheme: dark) {
+        background-image: url(/static/img2/player-ranking/dark-mask.webp);
+      }
     }
 
-
-    #leaderboard {
-        padding-top: calc(36.36% + 2px); // percentage of bg image *width*
-        padding-left: 10%;
-        padding-right: 10%;
-        padding-bottom: 0;
-        margin-bottom: 0;
-        // compute height based on aspect ratio of bg image
-        height: calc(min(100vw, var(--content-max-width)) * 1.2273);
-
-        // engraved wood appearance
-        text-shadow: var(--emboss-text-shadow);
-        
-        background-image: url(/static/img2/player-ranking/light-bg.webp);
-        background-size: contain;
-        background-repeat: no-repeat;
-        @media (prefers-color-scheme: dark) {
-            background-image: url(/static/img2/player-ranking/dark-bg.webp);
-        }
-
-        &::before {
-            content: " ";
-            z-index: 1;
-            pointer-events: none;
-            position: absolute;
-            width: 100%;
-            left: 0;
-            top: 29.63%;
-            height: 4.545%;
-            background-image: url(/static/img2/player-ranking/light-mask.webp);
-            background-size: contain;
-            background-repeat: no-repeat;
-            @media (prefers-color-scheme: dark) {
-                background-image: url(/static/img2/player-ranking/dark-mask.webp);
-            }
-        }
-
-        .scroll-container {
-            width: 100%;
-            height: 100%;
-            overflow-y: scroll;
-            padding: 2em 10%;
-        }
-
-        .current-rank {
-            margin-bottom: 0;
-
-            @media (max-width: media.$narrow) {
-                text-align: center;
-                > a {
-                    display: block;
-                }
-            }
-        }
-        
-        .g-player-listing .rank {
-            display: none;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: [east] 50% [mid] 50% [west];
-            grid-auto-flow: row;
-            border-bottom: 1px solid var(--color-border);
-            padding-bottom: 1em;
-            margin-bottom: 1em;
-            column-gap: 1em;
-
-            .group {
-                &.side-e {
-                    grid-column: east / mid;
-                    @media (max-width: media.$narrow) {
-                        grid-column: east / west;
-                    }
-                }
-                &.side-w {
-                    grid-column: mid / west;
-                    @media (max-width: media.$narrow) {
-                        grid-column: east / west;
-                    }
-                }
-
-                &.rank-name-y {
-                    font-size: x-large;
-                }
-                &.rank-name-o,
-                &.rank-name-s,
-                &.rank-name-k, {
-                    font-size: large;
-                }
-                &.rank-name-j {
-                    font-size: small;
-                }
-                &.rank-name-ms {
-                    font-size: x-small;
-                }
-                &.rank-name-sd,
-                &.rank-name-jd,
-                &.rank-name-jk {
-                    font-size: xx-small;
-                }
-
-                a {
-                    color: inherit;
-                }
-
-                h3 {
-                    text-align: left;
-                    margin: 1.5em 0 0.25em;
-                    
-                    > .sub {
-                        font-size: x-small;
-                        color: var(--color-fg-sub);
-                    }
-                }
-
-                .players {
-                    margin: 0;
-                    padding: 0;
-                    display: flex;
-                    flex-flow: row wrap;
-                    align-items: baseline;
-                    column-gap: 1em;
-                    
-                    > li {
-                        list-style: none;
-
-                        &.self {
-                            background: var(--color-table-highlight-bg);
-                            box-shadow: var(--table-highlight-shadow);
-                        }
-                    }
-                }
-            }
-        }
-
-        .all-stats {
-            font-weight: bolder;
-            color: var(--color-mauve);
-            white-space: nowrap;
-
-            &::after {
-                content: ' ➡';
-            }
-        }
+    .scroll-container {
+      width: 100%;
+      height: 100%;
+      overflow-y: scroll;
+      padding: 2em 10%;
     }
+
+    .current-rank {
+      margin-bottom: 0;
+
+      @media (max-width: media.$narrow) {
+        text-align: center;
+        > a {
+          display: block;
+        }
+      }
+    }
+
+    .g-player-listing .rank {
+      display: none;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: [east] 50% [mid] 50% [west];
+      grid-auto-flow: row;
+      border-bottom: 1px solid var(--color-border);
+      padding-bottom: 1em;
+      margin-bottom: 1em;
+      column-gap: 1em;
+
+      .group {
+        &.side-e {
+          grid-column: east / mid;
+          @media (max-width: media.$narrow) {
+            grid-column: east / west;
+          }
+        }
+        &.side-w {
+          grid-column: mid / west;
+          @media (max-width: media.$narrow) {
+            grid-column: east / west;
+          }
+        }
+
+        &.rank-name-y {
+          font-size: x-large;
+        }
+        &.rank-name-o,
+        &.rank-name-s,
+        &.rank-name-k {
+          font-size: large;
+        }
+        &.rank-name-j {
+          font-size: small;
+        }
+        &.rank-name-ms {
+          font-size: x-small;
+        }
+        &.rank-name-sd,
+        &.rank-name-jd,
+        &.rank-name-jk {
+          font-size: xx-small;
+        }
+
+        a {
+          color: inherit;
+        }
+
+        h3 {
+          text-align: left;
+          margin: 1.5em 0 0.25em;
+
+          > .sub {
+            font-size: x-small;
+            color: var(--color-fg-sub);
+          }
+        }
+
+        .players {
+          margin: 0;
+          padding: 0;
+          display: flex;
+          flex-flow: row wrap;
+          align-items: baseline;
+          column-gap: 1em;
+
+          > li {
+            list-style: none;
+
+            &.self {
+              background: var(--color-table-highlight-bg);
+              box-shadow: var(--table-highlight-shadow);
+            }
+          }
+        }
+      }
+    }
+
+    .all-stats {
+      font-weight: bolder;
+      color: var(--color-mauve);
+      white-space: nowrap;
+
+      &::after {
+        content: " ➡";
+      }
+    }
+  }
 }

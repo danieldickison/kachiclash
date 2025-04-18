@@ -2,118 +2,140 @@
 
 {% block main_id %}p-player{% endblock %}
 
-{% block subtitle %}{{player.name}}{% endblock %}
+{% block subtitle %}{{ player.name }}{% endblock %}
 
 {% block head %}
-    <link rel="stylesheet" href="/static/css/player.css">
+  <link rel="stylesheet" href="/static/css/player.css" />
 {% endblock %}
 
 {% block main %}
+  <section id="profile">
+    <span class="img-wrapper"
+      ><img
+        alt="avatar"
+        class="js-player-img"
+        src="{{ player.medium_thumb() }}"
+    /></span>
 
-    <section id="profile">
-        <span class="img-wrapper"><img alt="avatar" class="js-player-img" src="{{player.medium_thumb()}}"></span>
+    {% if self.is_self() %}
+      <div class="buttons">
+        <a class="g-small-button edit" href="/settings">✏️ edit</a>
+      </div>
+    {% endif %}
 
-        {% if self.is_self() %}
-            <div class="buttons">
-                <a class="g-small-button edit" href="/settings">✏️ edit</a>
-            </div>
-        {% endif %}
+    <div class="name">
+      {{ player.name }}
+      {% if player.has_emperors_cup() -%}
+        {{ crate::data::award::Award::EmperorsCup.emoji() }}
+      {%- endif %}
+    </div>
+    <ul class="stats">
+      <li class="rank">
+        {%- match player.rank -%}
+          {%- when Some(rank) -%}
+          Rank: {{ rank|fmt("{:#}") }}
+          {%- when None -%}
+          Unranked
+        {%- endmatch -%}
+      </li>
+      <li class="join-date">
+        Joined: {{ player.join_date.format("%Y-%m-%d") }} via
+        {{ player.login_service_name() }}
+      </li>
 
-        <div class="name">
-            {{player.name}}
-            {% if player.has_emperors_cup() -%}
-                {{crate::data::award::Award::EmperorsCup.emoji()}}
+      {% set heyas = player.heyas.as_ref().unwrap() %}
+      {% if heyas.len() > 0 || recruit_heyas.len() > 0 %}
+        <li class="heyas">
+          Heya:
+          {% for heya in heyas %}
+            <a href="{{ heya.url_path() }}">{{ heya.name }}</a>
+            (
+            {%- if player.id == heya.oyakata.id -%}
+              established
+            {%- else -%}
+              recruited
             {%- endif %}
-        </div>
-        <ul class="stats">
-            <li class="rank">
-                {%- match player.rank -%}
-                {%- when Some(rank) -%} Rank: {{rank|fmt("{:#}")}}
-                {%- when None -%} Unranked
-                {%- endmatch -%}
-            </li>
-            <li class="join-date">
-                Joined: {{player.join_date.format("%Y-%m-%d")}} via {{player.login_service_name()}}
-            </li>
+            {{ heya.recruit_date.unwrap().format("%Y-%m-%d") -}}
+            )
+          {% endfor %}
+          {% for heya in recruit_heyas %}
+            <form method="POST" action="{{ heya.url_path() }}">
+              <input
+                type="hidden"
+                name="add_player_id"
+                value="{{ player.id }}"
+              />
+              <button>Recruit to {{ heya.name }}</button>
+            </form>
+          {% endfor %}
+        </li>
+      {% endif %}
+    </ul>
+  </section>
 
-            {% set heyas = player.heyas.as_ref().unwrap() %}
-            {% if heyas.len() > 0 || recruit_heyas.len() > 0 %}
-                <li class="heyas">
-                    Heya:
-                    {% for heya in heyas %}
-                        <a href="{{heya.url_path()}}">{{heya.name}}</a>
-                        (
-                          {%- if player.id == heya.oyakata.id -%}
-                            established
-                          {%- else -%}
-                            recruited
-                          {%- endif %}
-                          {{heya.recruit_date.unwrap().format("%Y-%m-%d") -}}
-                        )
-                    {% endfor %}
-                    {% for heya in recruit_heyas %}
-                        <form method="POST" action="{{heya.url_path()}}">
-                            <input type="hidden" name="add_player_id" value="{{player.id}}">
-                            <button>Recruit to {{heya.name}}</button>
-                        </form>
-                    {% endfor %}
-                </li>
-            {% endif %}
-        </ul>
-    </section>
+  <section id="history">
+    <table class="basho-list">
+      <thead>
+        <tr>
+          <th>Basho</th>
+          <th>Rank</th>
+          <th colspan="5" class="pick">Picks</th>
+          <th class="numeric">Score</th>
+          <th><!-- basho ranking --></th>
+          <th><!-- awards --></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for basho in basho_scores -%}
+          <tr
+            {% if basho.basho_id.month == 1 %}class="first-of-year"{% endif %}
+          >
+            <td>
+              <a href="{{ basho.basho_id.url_path() }}"
+                >{{ basho.basho_id|fmt("{:#}") }}</a
+              >
+            </td>
 
-    <section id="history">
-        <table class="basho-list">
-            <thead>
-                <tr>
-                    <th>Basho</th>
-                    <th>Rank</th>
-                    <th colspan="5" class="pick">Picks</th>
-                    <th class="numeric">Score</th>
-                    <th><!-- basho ranking --></th>
-                    <th><!-- awards --></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for basho in basho_scores -%}
-                <tr {% if basho.basho_id.month == 1 %} class="first-of-year" {% endif %}>
-                    <td><a href="{{basho.basho_id.url_path()}}">{{basho.basho_id|fmt("{:#}")}}</a></td>
+            <td>
+              {%- match basho.rank -%}
+                {%- when Some with (rank) -%}
+                {{ rank }}
+                {%- when None -%}
+                Unranked
+              {%- endmatch -%}
+            </td>
 
-                    <td>
-                        {%- match basho.rank -%}
-                        {%- when Some with (rank) -%} {{rank}}
-                        {%- when None -%} Unranked
-                        {%- endmatch -%}
-                    </td>
+            {% for rikishi in basho.rikishi %}
+              <td class="pick">
+                {% match rikishi %}
+                  {% when Some with (r) %}
+                  {{ r.name }}
+                  <span class="win-loss">({{ r.wins }}-{{ r.losses }})</span>
+                  {% when None %}
+                {% endmatch %}
+              </td>
+            {% endfor %}
 
-                    {% for rikishi in basho.rikishi %}
-                    <td class="pick">
-                        {% match rikishi %}
-                        {% when Some with (r) %} {{r.name}} <span class="win-loss">({{r.wins}}-{{r.losses}})</span>
-                        {% when None %}
-                        {% endmatch %}
-                    </td>
-                    {% endfor %}
-
-                    <td class="numeric">
-                        {%- match basho.wins -%}
-                        {%- when Some with (wins) -%} {{wins}}
-                        {%- when None -%}
-                        {%- endmatch -%}
-                    </td>
-                    <td class="numeric">
-                        {%- match basho.place -%}
-                        {%- when Some with (place) -%} #{{place}}
-                        {%- when None -%}
-                        {%- endmatch -%}
-                    </td>
-                    <td>
-                        {% for award in basho.awards %}{{award.emoji()}}{% endfor %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </section>
-
+            <td class="numeric">
+              {%- match basho.wins -%}
+                {%- when Some with (wins) -%}
+                {{ wins }}
+                {%- when None -%}
+              {%- endmatch -%}
+            </td>
+            <td class="numeric">
+              {%- match basho.place -%}
+                {%- when Some with (place) -%}
+                #{{ place }}
+                {%- when None -%}
+              {%- endmatch -%}
+            </td>
+            <td>
+              {% for award in basho.awards %}{{ award.emoji() }}{% endfor %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
 {% endblock %}
