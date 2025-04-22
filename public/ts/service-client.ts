@@ -4,12 +4,47 @@ const appKey = (
   ) as HTMLMetaElement
 ).content;
 
-const registrationPromise: Promise<ServiceWorkerRegistration | undefined> =
-  navigator.serviceWorker?.register("/static/js/service-worker.js", {
-    scope: "/",
-    // this is not supported in FireFox yet, as of v111
-    // type: 'module'
-  }) ?? Promise.resolve(undefined);
+// Support for declarative web push notifications:
+// https://webkit.org/blog/16535/meet-declarative-web-push/#how-to-use-declarative-web-push
+declare global {
+  interface Window {
+    pushManager: PushManager | undefined;
+  }
+}
+
+const pushManager = initPushManager();
+
+async function initPushManager(): Promise<PushManager | undefined> {
+  if ("pushManager" in window) {
+    await unregisterServiceWorker();
+    return window.pushManager;
+  } else if ("serviceWorker" in navigator) {
+    const serviceWorker = await navigator.serviceWorker?.register(
+      "/static/js/service-worker.js",
+      {
+        scope: "/",
+        // this is not supported in FireFox yet, as of v111
+        // type: 'module'
+      },
+    );
+    return serviceWorker.pushManager;
+  } else {
+    return undefined;
+  }
+}
+
+async function unregisterServiceWorker() {
+  const serviceWorker = await navigator.serviceWorker?.getRegistration();
+  if (serviceWorker === undefined) {
+    console.debug("No existing service worker");
+    return;
+  }
+  if (await serviceWorker.unregister()) {
+    console.info("Unregistered existing service worker", serviceWorker);
+  } else {
+    console.warn("Failed to unregister existing service worker", serviceWorker);
+  }
+}
 
 function base64ToUint8Array(base64: string): Uint8Array {
   const bin = atob(base64.replaceAll("-", "+").replaceAll("_", "/"));
@@ -21,8 +56,8 @@ function base64ToUint8Array(base64: string): Uint8Array {
 }
 
 export async function subscribeToPushNotifications(): Promise<PushSubscription> {
-  const registration = await registrationPromise;
-  if (registration?.pushManager === undefined) {
+  const pm = await pushManager;
+  if (pm === undefined) {
     throw new Error("Push notifications are not supported in this browser.");
   }
 
@@ -34,7 +69,7 @@ export async function subscribeToPushNotifications(): Promise<PushSubscription> 
   }
 
   try {
-    return await registration.pushManager.subscribe({
+    return await pm.subscribe({
       userVisibleOnly: true,
       applicationServerKey: base64ToUint8Array(appKey),
     });
@@ -50,12 +85,12 @@ export async function subscribeToPushNotifications(): Promise<PushSubscription> 
 export type PushPermissionState = PermissionState | "unavailable";
 
 export async function pushPermissionState(): Promise<PushPermissionState> {
-  const registration = await registrationPromise;
-  if (registration?.pushManager === undefined) {
+  const pm = await pushManager;
+  if (pm === undefined) {
     return "unavailable";
   } else {
     // It seems that in Safari, these three methods of getting the permission state are sometimes divergent, so we'll take all three and return 'granted' if any of them say so; otherwise use navigator.permissions as the source of truth. https://developer.apple.com/forums/thread/731412
-    const pushPerm = await registration.pushManager.permissionState({
+    const pushPerm = await pm.permissionState({
       userVisibleOnly: true,
       applicationServerKey: base64ToUint8Array(appKey),
     });
@@ -80,8 +115,8 @@ export interface SubscriptionState {
 }
 
 export async function pushSubscriptionState(): Promise<null | SubscriptionState> {
-  const registration = await registrationPromise;
-  const subscription = await registration?.pushManager.getSubscription();
+  const pm = await pushManager;
+  const subscription = await pm?.getSubscription();
   if (subscription === null || subscription === undefined) {
     return null;
   }
