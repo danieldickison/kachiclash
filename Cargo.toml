@@ -52,6 +52,10 @@ version = "0.11.27"
 features = ["gzip", "json"]
 
 [dependencies.web-push]
-version = "0.10"
+version = "0.11.0"
 default-features = false
 features = ["hyper-client"]
+
+[patch.crates-io]
+web-push = { git = "https://github.com/danieldickison/rust-web-push.git", branch = "declarative-push" }
+# path = "../rust-web-push"

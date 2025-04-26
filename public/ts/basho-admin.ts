@@ -44,15 +44,6 @@ const bashoId = (
 ).content;
 
 document
-  .querySelector(".trigger-announcement")
-  ?.addEventListener("click", (event) => {
-    (event.target as HTMLButtonElement).disabled = true;
-    event.preventDefault();
-    const msg = prompt("Message:");
-    if (msg === null || msg === "") return;
-    void adminTrigger({ Announcement: msg });
-  });
-document
   .querySelector(".trigger-entries-open")
   ?.addEventListener("click", (event) => {
     (event.target as HTMLButtonElement).disabled = true;

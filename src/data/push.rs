@@ -6,8 +6,8 @@ use itertools::Itertools;
 use rusqlite::{types::FromSqlResult, Connection, Row, RowIndex};
 use url::Url;
 use web_push::{
-    ContentEncoding, HyperWebPushClient, PartialVapidSignatureBuilder, SubscriptionInfo,
-    VapidSignatureBuilder, WebPushClient, WebPushError, WebPushMessageBuilder, URL_SAFE_NO_PAD,
+    ContentEncoding, HyperWebPushClient, Notification, PartialVapidSignatureBuilder,
+    SubscriptionInfo, VapidSignatureBuilder, WebPushClient, WebPushError, WebPushMessageBuilder,
 };
 
 // Keep types in sync with push.ts
@@ -137,14 +137,14 @@ pub struct PushBuilder {
 impl PushBuilder {
     pub fn with_base64_private_key(base64: &str) -> Result<Self> {
         Ok(Self {
-            vapid: VapidSignatureBuilder::from_base64_no_sub(base64, URL_SAFE_NO_PAD)?,
+            vapid: VapidSignatureBuilder::from_base64_no_sub(base64)?,
             client: HyperWebPushClient::new(),
         })
     }
 
     pub async fn send(
         self,
-        payload: Payload,
+        payload: Notification<()>,
         ttl: Duration,
         subscriptions: &[Subscription],
         db: &DbConn,
@@ -158,7 +158,7 @@ impl PushBuilder {
                     Ok(url) => trace!(
                         "Sending push “{}—{}” to player {} on {}",
                         payload.title,
-                        payload.body,
+                        payload.body.as_ref().unwrap_or(&"".to_string()),
                         sub.player_id,
                         url.host_str().unwrap_or("<invalid host>")
                     ),
@@ -169,7 +169,7 @@ impl PushBuilder {
             let mut msg = WebPushMessageBuilder::new(&sub.info);
             msg.set_ttl(ttl.num_seconds() as u32);
 
-            let payload_json = serde_json::to_vec(&payload)?;
+            let payload_json = payload.to_payload()?;
             msg.set_payload(ContentEncoding::Aes128Gcm, &payload_json);
 
             let mut sig = self.vapid.clone().add_sub_info(&sub.info);
@@ -181,8 +181,8 @@ impl PushBuilder {
             match res {
                 Ok(_) => (),
                 Err(
-                    web_push::WebPushError::EndpointNotValid
-                    | web_push::WebPushError::EndpointNotFound,
+                    web_push::WebPushError::EndpointNotValid(_)
+                    | web_push::WebPushError::EndpointNotFound(_),
                 ) => invalid_subscriptions.push(sub.id),
                 Err(ref e) => {
                     warn!(
@@ -231,8 +231,8 @@ impl SendStats {
             match res {
                 Ok(_) => stats.success += 1,
                 Err(
-                    web_push::WebPushError::EndpointNotValid
-                    | web_push::WebPushError::EndpointNotFound,
+                    web_push::WebPushError::EndpointNotValid(_)
+                    | web_push::WebPushError::EndpointNotFound(_),
                 ) => stats.invalid += 1,
                 Err(_) => stats.fail += 1,
             };
@@ -339,41 +339,36 @@ impl PushType {
         }
     }
 
-    pub fn build_payload(&self, base_url: &Url, db: &Connection) -> Result<Payload> {
-        let make_url = |campaign: &str| -> String {
+    pub fn build_payload(&self, base_url: &Url, db: &Connection) -> Result<Notification<()>> {
+        fn make_notification(
+            base_url: &Url,
+            title: impl Into<String>,
+            body: impl Into<String>,
+            campaign: &str,
+        ) -> Notification<()> {
             let mut url = base_url.join("pwa").unwrap();
             url.query_pairs_mut()
                 .append_pair("utm_source", "web push")
                 .append_pair("utm_medium", "push")
                 .append_pair("utm_campaign", campaign);
-            url.to_string()
-        };
+            let mut notification = Notification::new(title.into(), url.to_string());
+            notification.body = Some(body.into());
+            notification
+        }
 
         let payload = match self {
-            PushType::Test => Payload {
-                title: "Test".to_owned(),
-                body: "It worked!".to_owned(),
-                url: make_url("test"),
-                data: PayloadData::Empty,
-            },
-            PushType::Announcement(msg) => Payload {
-                title: "Announcement".to_owned(),
-                body: msg.to_owned(),
-                url: make_url("announcement"),
-                data: PayloadData::Empty,
-            },
+            PushType::Test => make_notification(base_url, "Test", "It worked!", "test"),
+            PushType::Announcement(msg) => {
+                make_notification(base_url, "Announcement", msg, "announcement")
+            }
             PushType::EntriesOpen(basho_id) => {
-                let basho = BashoInfo::with_id(db, *basho_id)?
-                    .ok_or(rusqlite::Error::QueryReturnedNoRows)?;
-                Payload {
-                    title: "New Basho!".to_owned(),
-                    body: format!("Entries for {} are now open", basho_id),
-                    url: make_url("entries open"),
-                    data: PayloadData::EntriesOpen {
-                        basho_id: *basho_id,
-                        start_date: basho.start_date.timestamp(),
-                    },
-                }
+                BashoInfo::with_id(db, *basho_id)?.ok_or(rusqlite::Error::QueryReturnedNoRows)?;
+                make_notification(
+                    base_url,
+                    "New Basho!",
+                    format!("Entries for {} are now open", basho_id),
+                    "entries open",
+                )
             }
             PushType::BashoStartCountdown(basho_id) => {
                 let basho = BashoInfo::with_id(db, *basho_id)?
@@ -392,15 +387,7 @@ impl PushType {
                         duration.num_hours()
                     )
                 };
-                Payload {
-                    title: "Basho Reminder".to_owned(),
-                    body,
-                    url: make_url("basho_start_countdown"),
-                    data: PayloadData::BashoStartCountdown {
-                        basho_id: basho.id,
-                        start_date: basho.start_date.timestamp_millis(),
-                    },
-                }
+                make_notification(base_url, "Basho Reminder", body, "basho countdown")
             }
             PushType::KyujyoAlert(basho_id, rikishi_id) => {
                 let (rikishi_name, rank): (String, Rank) = db.query_row(
@@ -411,18 +398,18 @@ impl PushType {
                     params![basho_id, rikishi_id],
                     |row| Ok((row.get(0)?, row.get(1)?)),
                 )?;
-                Payload {
-                    title: "Kyujyo Alert!".to_owned(),
-                    body: format!(
+                make_notification(
+                    base_url,
+                    "Kyujyo Alert!",
+                    format!(
                         "{} ({}) has gone kyujyo. You should pick another rikishi.",
                         rikishi_name, rank
                     ),
-                    url: make_url("kyujyo alert"),
-                    data: PayloadData::Empty,
-                }
+                    "kyujyo alert",
+                )
             }
             PushType::DayResult(basho_id, player_id, day) => {
-                let (name, score, rank, leader_score) = db.query_row(
+                let (name, score, rank, leader_score): (String, u8, usize, u8) = db.query_row(
                     "
                     SELECT
                         player.name,
@@ -463,9 +450,10 @@ impl PushType {
                         })
                     })?
                     .collect::<rusqlite::Result<Vec<RikishiDayResult>>>()?;
-                Payload {
-                    title: format!("Day {} Results", day),
-                    body: format!(
+                make_notification(
+                    base_url,
+                    format!("Day {} Results", day),
+                    format!(
                         "{} now ranked #{}, {} points behind the leader. {}",
                         name,
                         rank,
@@ -483,22 +471,19 @@ impl PushType {
                             ))
                             .join(", ")
                     ),
-                    url: make_url("day result"),
-                    data: PayloadData::DayResult {
-                        basho_id: *basho_id,
-                        name,
-                        day: *day,
-                        rikishi,
-                        rank,
-                        score,
-                        leader_score,
-                    },
-                }
+                    "day result",
+                )
             }
             PushType::BashoResult(basho_id, player_id) => {
                 let next_basho_id = basho_id.next();
-                let (name, score, basho_rank, current_rank, next_rank, awards, leader_score) = db
-                    .query_row(
+                let (name, score, basho_rank, current_rank, next_rank, awards): (
+                    String,
+                    u8,
+                    usize,
+                    Option<Rank>,
+                    Rank,
+                    Vec<Award>,
+                ) = db.query_row(
                     "
                     SELECT
                         player.name,
@@ -510,12 +495,7 @@ impl PushType {
                             SELECT GROUP_CONCAT(type)
                             FROM award
                             WHERE player_id = :player_id AND basho_id = :basho_id
-                        ) AS awards,
-                        (
-                            SELECT MAX(wins)
-                            FROM basho_result
-                            WHERE basho_id = :basho_id
-                        ) AS leader_score
+                        ) AS awards
                     FROM player
                     JOIN basho_result AS br ON br.player_id = player.id
                     LEFT JOIN player_rank AS pr1
@@ -535,10 +515,9 @@ impl PushType {
                             row.get(0)?,
                             row.get(1)?,
                             row.get(2)?,
-                            row.get::<_, Option<Rank>>(3)?,
+                            row.get(3)?,
                             row.get(4)?,
                             Award::parse_list(row.get(5)?),
-                            row.get(6)?,
                         ))
                     },
                 )?;
@@ -547,13 +526,14 @@ impl PushType {
                 } else {
                     "demoted"
                 };
-                Payload {
-                    title: if basho_rank == 1 {
-                        "Congrats!".to_string()
+                make_notification(
+                    base_url,
+                    if basho_rank == 1 {
+                        "Congrats!"
                     } else {
-                        "Basho Results".to_string()
+                        "Basho Results"
                     },
-                    body: if basho_rank == 1 {
+                    if basho_rank == 1 {
                         format!("You won the {basho_id} Kachi Clash with a score of {score}! {awards} {has_have} been bestowed upon {name} and your new rank is {next_rank:#}.",
                             awards = awards.iter().join(""),
                             has_have = if awards.len() == 1 { "has" } else {"have"}
@@ -561,20 +541,11 @@ impl PushType {
                     } else {
                         format!("{name} finished {basho_id} ranked #{basho_rank} with a score of {score}. You have been {promoted} to {next_rank:#}.")
                     },
-                    url: make_url("basho result"),
-                    data: PayloadData::BashoResult {
-                        basho_id: *basho_id,
-                        name,
-                        basho_rank,
-                        score,
-                        leader_score,
-                        awards,
-                        current_rank,
-                        next_rank,
-                    },
-                }
+                    "basho result",
+                )
             }
         };
+
         Ok(payload)
     }
 }
@@ -677,7 +648,7 @@ pub async fn mass_notify_day_result(
             player_ids.len(),
             player_id,
             subscriptions.len(),
-            payload.body
+            payload.body.as_ref().unwrap_or(&"-".to_string())
         );
         let results = push_builder
             .clone()
@@ -735,7 +706,7 @@ pub async fn mass_notify_basho_result(
             player_ids.len(),
             player_id,
             subscriptions.len(),
-            payload.body
+            payload.body.as_ref().unwrap_or(&"-".to_string())
         );
         let results = push_builder
             .clone()
@@ -746,54 +717,6 @@ pub async fn mass_notify_basho_result(
         info!("{:?}", stats);
     }
     Ok(total_stats)
-}
-
-// Keep in sync with service-worker.ts
-
-#[derive(Debug, Serialize)]
-pub struct Payload {
-    title: String,
-    body: String,
-    url: String,
-    #[serde(flatten)]
-    data: PayloadData,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(tag = "type")]
-enum PayloadData {
-    Empty,
-
-    EntriesOpen {
-        basho_id: BashoId,
-        start_date: i64,
-    },
-
-    BashoStartCountdown {
-        basho_id: BashoId,
-        start_date: i64,
-    },
-
-    DayResult {
-        basho_id: BashoId,
-        name: String,
-        day: Day,
-        rikishi: Vec<RikishiDayResult>,
-        rank: u16,
-        score: u8,
-        leader_score: u8,
-    },
-
-    BashoResult {
-        basho_id: BashoId,
-        name: String,
-        basho_rank: u16,
-        score: u8,
-        leader_score: u8,
-        awards: Vec<Award>,
-        current_rank: Option<Rank>,
-        next_rank: Rank,
-    },
 }
 
 #[derive(Debug, Serialize)]
