@@ -24,7 +24,9 @@
 
   self.addEventListener("push", (e: any) => {
     const data = e.data.json();
-    const { title, body, navigate } = data;
+    const {
+      notification: { title, body, navigate },
+    } = data;
     console.debug("Received push notification with data", data);
     e.waitUntil(self.registration.showNotification(title, { body, navigate }));
   });
