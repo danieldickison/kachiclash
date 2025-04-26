@@ -57,4 +57,5 @@ default-features = false
 features = ["hyper-client"]
 
 [patch.crates-io]
-web-push = { path = "../rust-web-push" }
+web-push = { git = "https://github.com/danieldickison/rust-web-push.git", branch = "declarative-push" }
+# path = "../rust-web-push"

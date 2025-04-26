@@ -3187,6 +3187,7 @@ checksum = "943aab3fdaaa029a6e0271b35ea10b72b943135afe9bffca82384098ad0e06a6"
 [[package]]
 name = "web-push"
 version = "0.11.0"
+source = "git+https://github.com/danieldickison/rust-web-push.git?branch=declarative-push#f685dd1d9ef23efb678ee51d38d742efebc14688"
 dependencies = [
  "async-trait",
  "chrono",
