@@ -39,9 +39,8 @@
       >
       <textarea name="banzuke">
         {%- for rikishi in basho.banzuke -%}
-          {{ rikishi.rank }}
-          {{ rikishi.name }}
-          {%- if rikishi.is_kyujyo %}x{%- endif %}
+          {{ rikishi.rank }} {{ rikishi.name }}
+          {%- if rikishi.is_kyujyo %} x {%- endif %}
         {% endfor -%}
       </textarea
       >
