@@ -1,6 +1,9 @@
 use chrono::{DateTime, Utc};
+use derive_more::{Deref, Display, From};
+use juniper::{GraphQLObject, GraphQLScalar};
+use rusqlite::types::{FromSql, FromSqlError, FromSqlResult, ToSqlOutput, ValueRef};
 use rusqlite::{
-    Connection, Error as SqlError, ErrorCode, OptionalExtension, Result as SqlResult, Row,
+    Connection, Error as SqlError, ErrorCode, OptionalExtension, Result as SqlResult, Row, ToSql,
     Transaction,
 };
 
@@ -18,21 +21,62 @@ use std::ops::RangeInclusive;
 use std::sync::LazyLock;
 use url::Url;
 
-pub type PlayerId = i64;
+#[derive(
+    Copy,
+    Clone,
+    Debug,
+    Display,
+    Deref,
+    From,
+    PartialEq,
+    Eq,
+    GraphQLScalar,
+    Serialize,
+    Deserialize,
+    Hash,
+)]
+#[graphql(transparent)]
+#[serde(transparent)]
+pub struct PlayerId(i32);
+
+impl TryFrom<i64> for PlayerId {
+    type Error = rusqlite::Error;
+
+    fn try_from(value: i64) -> SqlResult<Self> {
+        Ok(PlayerId(value.try_into().map_err(|_| {
+            rusqlite::Error::IntegralValueOutOfRange(0, value)
+        })?))
+    }
+}
+
+impl ToSql for PlayerId {
+    fn to_sql(&self) -> SqlResult<ToSqlOutput> {
+        self.0.to_sql()
+    }
+}
+
+impl FromSql for PlayerId {
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
+        let id = value.as_i64()?;
+        id.try_into()
+            .map_err(|_| FromSqlError::OutOfRange(id))
+            .map(PlayerId)
+    }
+}
 
 pub const NAME_LENGTH: RangeInclusive<usize> = 3..=14;
 pub const NAME_REGEX: &str = "^[a-zA-Z][a-zA-Z0-9]*$";
 
 // Because askama makes it tricky to use a {% let player = foo.player %} and then an {% include "player_listing.html" %} to render a standardized player listing subtemplate, we set this up directly as an unescaped template that can be rendered into a parent template like {{foo.player.render().unwrap()|safe}}
-#[derive(Debug, Template)]
+#[derive(Debug, Template, GraphQLObject)]
 #[template(path = "player_listing.html")]
 pub struct Player {
     pub id: PlayerId,
     pub name: String,
     pub join_date: DateTime<Utc>,
-    pub emperors_cups: u8,
+    pub emperors_cups: i32,
     pub rank: Option<Rank>,
-    admin_level: u8,
+    admin_level: i32,
     discord_user_id: Option<String>,
     discord_avatar: Option<String>,
     discord_discriminator: Option<String>,
@@ -117,7 +161,7 @@ impl Player {
 
     pub fn from_row(row: &Row) -> SqlResult<Self> {
         Ok(Player {
-            id: row.get("id")?,
+            id: row.get::<_, i32>("id")?.into(),
             name: row.get("name")?,
             join_date: row.get("join_date")?,
             emperors_cups: row.get("emperors_cups")?,
@@ -254,7 +298,7 @@ pub fn player_id_with_external_user(
                     Ok(_) => break,
                 }
             }
-            let player_id = txn.last_insert_rowid();
+            let player_id = txn.last_insert_rowid().try_into()?;
             user_info.insert_into_db(&txn, now, player_id)?;
             txn.commit()?;
             Ok((player_id, true))

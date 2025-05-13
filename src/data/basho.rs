@@ -2,6 +2,7 @@ use chrono::naive::NaiveDateTime;
 use chrono::offset::Utc;
 use chrono::DateTime;
 use itertools::Itertools;
+use juniper::GraphQLObject;
 use result::ResultIteratorExt;
 use rusqlite::{params_from_iter, Connection, Result as SqlResult, Transaction};
 use serde::Deserialize;
@@ -15,15 +16,15 @@ use super::{
 };
 use crate::data::leaders::{assign_ord, Rankable};
 
-#[derive(Debug)]
+#[derive(Debug, GraphQLObject)]
 pub struct BashoInfo {
     pub id: BashoId,
     pub start_date: DateTime<Utc>,
     pub venue: String,
     pub external_link: Option<String>,
-    pub player_count: usize,
+    pub player_count: i32,
     pub winners: Vec<Player>,
-    pub winning_score: Option<u8>,
+    pub winning_score: Option<i32>,
 }
 
 const VERY_FIRST_BASHO: &str = "201901";
@@ -77,7 +78,7 @@ impl BashoInfo {
                                  start_date: row.get("start_date")?,
                                  venue: row.get("venue")?,
                                  external_link: row.get("external_link")?,
-                                 player_count: row.get::<_, u32>("player_count")? as usize,
+                                 player_count: row.get("player_count")?,
                                  winning_score: row.get("winning_score")?,
                                  winners: BashoInfo::fetch_basho_winners(db, id)?,
                              }))
@@ -117,7 +118,7 @@ impl BashoInfo {
                 start_date: row.get("start_date")?,
                 venue: row.get("venue")?,
                 external_link: row.get("external_link")?,
-                player_count: row.get::<_, u32>("player_count")? as usize,
+                player_count: row.get("player_count")?,
                 winning_score: row.get("winning_score")?,
                 winners: BashoInfo::fetch_basho_winners(db, basho_id)?,
             })
@@ -162,7 +163,7 @@ impl BashoInfo {
                 start_date: row.get("start_date")?,
                 venue: row.get("venue")?,
                 external_link: row.get("external_link")?,
-                player_count: row.get::<_, u32>("player_count")? as usize,
+                player_count: row.get("player_count")?,
                 winning_score: row.get("winning_score")?,
                 winners: winners.remove(&basho_id).unwrap_or_default(),
             })
@@ -533,7 +534,7 @@ impl BashoRikishiByRank {
     pub fn make_boundary() -> Self {
         Self {
             rank: "boundary".to_string(),
-            rank_group: RankGroup(u8::MAX),
+            rank_group: RankGroup(i32::MAX),
             east: None,
             west: None,
         }

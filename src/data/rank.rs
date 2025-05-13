@@ -1,8 +1,8 @@
+use juniper::{graphql_object, GraphQLEnum, GraphQLScalar};
 use rusqlite::types::{FromSql, FromSqlError, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::error::Error;
 use std::fmt;
-use std::ops::Deref;
 use std::str::FromStr;
 
 #[derive(Debug)]
@@ -59,7 +59,7 @@ impl fmt::Display for RankDivision {
     }
 }
 
-#[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Copy, Clone)]
+#[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Copy, Clone, GraphQLEnum)]
 pub enum RankName {
     Yokozuna,
     Ozeki,
@@ -147,7 +147,7 @@ impl FromStr for RankName {
     }
 }
 
-#[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Copy, Clone)]
+#[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Copy, Clone, GraphQLEnum)]
 pub enum RankSide {
     East,
     West,
@@ -196,8 +196,9 @@ impl ToSql for RankSide {
     }
 }
 
-#[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Copy, Clone, Hash)]
-pub struct RankGroup(pub(crate) u8);
+#[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Copy, Clone, Hash, GraphQLScalar)]
+#[graphql(transparent)]
+pub struct RankGroup(pub(crate) i32);
 
 impl RankGroup {
     pub fn for_rank(name: RankName, number: u16) -> Self {
@@ -223,14 +224,6 @@ impl RankGroup {
     }
 }
 
-impl Deref for RankGroup {
-    type Target = u8;
-
-    fn deref(&self) -> &u8 {
-        &self.0
-    }
-}
-
 impl fmt::Display for RankGroup {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.0.fmt(f)
@@ -247,6 +240,7 @@ pub struct Rank {
     pub side: RankSide,
 }
 
+#[graphql_object]
 impl Rank {
     pub fn top() -> Self {
         Self {
@@ -264,15 +258,27 @@ impl Rank {
         }
     }
 
-    pub fn group(self) -> RankGroup {
+    pub fn name(&self) -> RankName {
+        self.name
+    }
+
+    pub fn number(&self) -> i32 {
+        self.number.into()
+    }
+
+    pub fn side(&self) -> RankSide {
+        self.side
+    }
+
+    pub fn group(&self) -> RankGroup {
         RankGroup::for_rank(self.name, self.number)
     }
 
-    pub fn is_makuuchi(self) -> bool {
+    pub fn is_makuuchi(&self) -> bool {
         self.name <= RankName::Maegashira
     }
 
-    pub fn next_lower(self) -> Self {
+    pub fn next_lower(&self) -> Self {
         match self {
             // East-to-west increment:
             Self {

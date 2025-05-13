@@ -30,6 +30,14 @@ askama = "0.13.0"
 slug_intl = "1.0.0"
 hmac-sha256 = "1.1.8"
 base64 = "0.22.1"
+juniper = { version = "0.16.1", features = ["chrono"] }
+juniper_actix = "0.6.0"
+derive_more = { version = "2.0.1", features = [
+    "deref",
+    "display",
+    "from",
+    "from_str",
+] }
 
 [dependencies.tokio]
 version = "1.43.1"

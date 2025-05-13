@@ -177,6 +177,6 @@ trait IdentityExt {
 
 impl IdentityExt for Identity {
     fn player_id(&self) -> anyhow::Result<PlayerId> {
-        Ok(self.id()?.parse()?)
+        Ok(self.id()?.parse::<i32>()?.into())
     }
 }

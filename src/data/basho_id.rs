@@ -1,4 +1,5 @@
 use chrono::{DateTime, Datelike, FixedOffset, NaiveDate, Utc, Weekday};
+use juniper::GraphQLScalar;
 use rusqlite::types::{FromSql, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::convert::From;
@@ -8,7 +9,8 @@ use std::result::Result as StdResult;
 use std::str::FromStr;
 use std::sync::LazyLock;
 
-#[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Copy, Clone, Hash)]
+#[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Copy, Clone, Hash, GraphQLScalar)]
+#[graphql(with = impl_graphql_scalar)]
 pub struct BashoId {
     pub year: u16,
     pub month: u8,
@@ -94,6 +96,31 @@ impl BashoId {
             year,
             month: month as u8,
         }
+    }
+}
+
+mod impl_graphql_scalar {
+    use super::BashoId;
+    use juniper::{
+        InputValue, ParseScalarResult, ParseScalarValue, ScalarToken, ScalarValue, Value,
+    };
+
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<BashoId, String> {
+        match v {
+            InputValue::Scalar(s) => match s.as_int() {
+                Some(i) => Ok((i as i64).into()),
+                None => Err(format!("Expected Int value for BashoId but got {v}")),
+            },
+            _ => Err(format!("Expected Int value for BashoId but got {v}")),
+        }
+    }
+
+    pub(super) fn to_output<S: ScalarValue>(v: &BashoId) -> Value<S> {
+        Value::scalar(v.id().parse::<i32>().unwrap())
+    }
+
+    pub(super) fn parse_token<S: ScalarValue>(t: ScalarToken<'_>) -> ParseScalarResult<S> {
+        <i32 as ParseScalarValue<S>>::from_str(t)
     }
 }
 

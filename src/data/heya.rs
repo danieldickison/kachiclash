@@ -2,26 +2,27 @@ use std::ops::RangeInclusive;
 
 use chrono::{DateTime, Utc};
 use itertools::Itertools;
+use juniper::GraphQLObject;
 use rusqlite::{Connection, OptionalExtension, Result as SqlResult, Row};
 use slug_intl::slugify;
 
 use super::{BashoId, BashoInfo, DataError, Player, PlayerId, Result};
 
-pub const MEMBER_MAX: usize = 50;
+pub const MEMBER_MAX: i32 = 50;
 pub const JOIN_MAX: usize = 5;
 pub const HOST_MAX: usize = 3;
 pub const NAME_LENGTH: RangeInclusive<usize> = 3..=30;
 
-pub type HeyaId = i64;
+pub type HeyaId = i32;
 
-#[derive(Debug)]
+#[derive(Debug, GraphQLObject)]
 pub struct Heya {
     pub id: HeyaId,
     pub name: String,
     pub slug: String,
     pub oyakata: Player,
     pub create_date: DateTime<Utc>,
-    pub member_count: usize,
+    pub member_count: i32,
     pub members: Option<Vec<Member>>, // might not be populated in all cases
     pub recent_scores_bashos: Option<Vec<BashoId>>,
     pub recruit_date: Option<DateTime<Utc>>, // of the player for `for_player`
@@ -126,7 +127,8 @@ impl Heya {
                     let current_basho = BashoInfo::with_id(db, rank_for_basho)?;
                     let include_current_basho = current_basho.is_some();
 
-                    let members = Member::in_heya(db, heya.id, rank_for_basho, include_current_basho)?;
+                    let members =
+                        Member::in_heya(db, heya.id, rank_for_basho, include_current_basho)?;
                     heya.members = Some(members);
 
                     let mut bashos = rank_for_basho.range_for_banzuke().to_vec();
@@ -311,16 +313,16 @@ impl Heya {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, GraphQLObject)]
 pub struct Member {
     pub player: Player,
     pub is_oyakata: bool,
     pub is_self: bool,
     pub recruit_date: DateTime<Utc>,
-    pub recent_scores: Vec<Option<u8>>,
+    pub recent_scores: Vec<Option<i32>>,
 }
 
-const SCORE_SENTINAL_NO_ENTRY: u8 = u8::MAX;
+const SCORE_SENTINAL_NO_ENTRY: i32 = i32::MAX;
 
 impl Member {
     fn from_row(row: &Row) -> SqlResult<Self> {
@@ -334,14 +336,23 @@ impl Member {
                 .get::<_, String>("recent_scores")?
                 .split(",")
                 .map(|s| {
-                    let score = s.parse::<u8>().unwrap();
-                    if score == SCORE_SENTINAL_NO_ENTRY { None } else { Some(score) }
+                    let score = s.parse::<i32>().unwrap();
+                    if score == SCORE_SENTINAL_NO_ENTRY {
+                        None
+                    } else {
+                        Some(score)
+                    }
                 })
                 .collect(),
         })
     }
 
-    fn in_heya(db: &Connection, heya_id: HeyaId, rank_for_basho: BashoId, include_current_basho: bool) -> SqlResult<Vec<Self>> {
+    fn in_heya(
+        db: &Connection,
+        heya_id: HeyaId,
+        rank_for_basho: BashoId,
+        include_current_basho: bool,
+    ) -> SqlResult<Vec<Self>> {
         let basho_range = rank_for_basho.range_for_banzuke();
         let before_basho_operator = if include_current_basho { "<=" } else { "<" };
         Ok(db
@@ -385,6 +396,9 @@ impl Member {
     }
 
     pub fn recent_scores_total(&self) -> u16 {
-        self.recent_scores.iter().map(|s| s.unwrap_or(0) as u16).sum()
+        self.recent_scores
+            .iter()
+            .map(|s| s.unwrap_or(0) as u16)
+            .sum()
     }
 }

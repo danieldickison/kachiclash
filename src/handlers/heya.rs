@@ -106,13 +106,13 @@ pub async fn list(
 ) -> Result<impl Responder> {
     let db = state.db.lock().unwrap();
     let heyas = Heya::list_all(&db)?;
-    let player_id = identity.as_ref().and_then(|i| i.player_id().ok());
+    let player_id = identity
+        .as_ref()
+        .and_then(|i| i.player_id().ok())
+        .unwrap_or(PlayerId::from(-1));
     Ok(HeyaListTemplate {
         base: BaseTemplate::new(&db, identity.as_ref(), &state)?,
-        hosted: heyas
-            .iter()
-            .filter(|h| h.oyakata.id == player_id.unwrap_or(-1))
-            .count(),
+        hosted: heyas.iter().filter(|h| h.oyakata.id == player_id).count(),
         heyas,
     })
 }

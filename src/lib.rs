@@ -17,6 +17,7 @@ use envconfig::Envconfig;
 use std::path::PathBuf;
 use url::Url;
 
+mod api;
 mod data;
 mod external;
 mod handlers;
