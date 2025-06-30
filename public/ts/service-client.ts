@@ -57,7 +57,7 @@ function base64ToUint8Array(base64: string): Uint8Array {
 
 export async function subscribeToPushNotifications(): Promise<PushSubscription> {
   const pm = await pushManager;
-  if (pm === undefined) {
+  if (pm === undefined || !("Notification" in window)) {
     throw new Error("Push notifications are not supported in this browser.");
   }
 
@@ -86,7 +86,7 @@ export type PushPermissionState = PermissionState | "unavailable";
 
 export async function pushPermissionState(): Promise<PushPermissionState> {
   const pm = await pushManager;
-  if (pm === undefined) {
+  if (pm === undefined || !("Notification" in window)) {
     return "unavailable";
   } else {
     // It seems that in Safari, these three methods of getting the permission state are sometimes divergent, so we'll take all three and return 'granted' if any of them say so; otherwise use navigator.permissions as the source of truth. https://developer.apple.com/forums/thread/731412

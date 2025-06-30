@@ -45,16 +45,22 @@ testNotificationButton.addEventListener("click", (event) => {
 });
 
 async function refreshState(): Promise<void> {
-  refreshBusyState(true);
-  const permission = await pushPermissionState();
-  notifications.dataset.permissionState = permission;
-  subscriptionState =
-    permission === "granted" ? await pushSubscriptionState() : null;
-  for (const checkbox of typeCheckboxes) {
-    checkbox.checked =
-      subscriptionState?.opt_in.includes(checkbox.value) ?? false;
+  try {
+    refreshBusyState(true);
+    const permission = await pushPermissionState();
+    notifications.dataset.permissionState = permission;
+    subscriptionState =
+      permission === "granted" ? await pushSubscriptionState() : null;
+    for (const checkbox of typeCheckboxes) {
+      checkbox.checked =
+        subscriptionState?.opt_in.includes(checkbox.value) ?? false;
+    }
+  } catch (error) {
+    console.error(error);
+    showMessage(true, "Failed to refresh state");
+  } finally {
+    refreshBusyState(false);
   }
-  refreshBusyState(false);
 }
 
 function refreshBusyState(busy: boolean): void {
