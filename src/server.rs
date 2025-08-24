@@ -41,7 +41,7 @@ pub async fn run(app_state: &AppState) -> anyhow::Result<()> {
     let app_data = web::Data::new(app_state.clone());
     let year = actix_web::cookie::time::Duration::days(365);
 
-    info!("starting server at {}:{}", config.host, config.port);
+    info!("starting server at http://{}:{}", config.host, config.port);
     let server = HttpServer::new(move || {
         App::new()
             .app_data(web::Data::clone(&app_data))
