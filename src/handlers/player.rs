@@ -62,6 +62,6 @@ impl PlayerTemplate {
         self.base
             .player
             .as_ref()
-            .map_or(false, |p| p.id == self.player.id)
+            .is_some_and(|p| p.id == self.player.id)
     }
 }

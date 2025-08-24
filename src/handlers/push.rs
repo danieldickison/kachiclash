@@ -65,7 +65,7 @@ pub async fn trigger(
         let db = state.db.lock().unwrap();
         let current_or_next_basho = BashoInfo::current_or_next_basho_id(&db)?;
         let player = Player::with_id(&db, player_id, current_or_next_basho)?;
-        if !player.map_or(false, |p| p.is_admin()) {
+        if !player.is_some_and(|p| p.is_admin()) {
             return Err(HandlerError::MustBeLoggedIn);
         }
         payload = data.build_payload(&state.config.url(), &db)?;

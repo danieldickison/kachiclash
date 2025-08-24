@@ -191,7 +191,7 @@ impl FromStr for RankSide {
 }
 
 impl ToSql for RankSide {
-    fn to_sql(&self) -> rusqlite::Result<ToSqlOutput> {
+    fn to_sql(&self) -> rusqlite::Result<ToSqlOutput<'_>> {
         Ok(ToSqlOutput::from(self.to_string()))
     }
 }
@@ -347,7 +347,7 @@ impl FromSql for Rank {
 }
 
 impl ToSql for Rank {
-    fn to_sql(&self) -> rusqlite::Result<ToSqlOutput> {
+    fn to_sql(&self) -> rusqlite::Result<ToSqlOutput<'_>> {
         Ok(ToSqlOutput::from(self.to_string()))
     }
 }
@@ -381,7 +381,7 @@ impl FromStr for Rank {
             let name_str: &str;
             let num_str: &str;
             let side_str = &s[len - 1..];
-            if s.chars().nth(1).map_or(false, |c| c.is_ascii_lowercase()) {
+            if s.chars().nth(1).is_some_and(|c| c.is_ascii_lowercase()) {
                 // two-letter RankName
                 name_str = &s[..2];
                 num_str = &s[2..len - 1];

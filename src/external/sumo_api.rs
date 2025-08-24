@@ -86,7 +86,7 @@ impl BanzukeResponse {
             rikishi
                 .record
                 .get(day_idx)
-                .map_or(false, |res| res.result != BoutResult::None)
+                .is_some_and(|res| res.result != BoutResult::None)
         })
     }
 

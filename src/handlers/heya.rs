@@ -33,7 +33,7 @@ pub async fn page(
         m.is_self = player_id.is_some_and(|id| id == m.player.id);
     }
     Ok(HeyaTemplate {
-        is_oyakata: player_id.map_or(false, |pid| pid == heya.oyakata.id),
+        is_oyakata: player_id == Some(heya.oyakata.id),
         base,
         heya,
     })

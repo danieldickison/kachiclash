@@ -143,7 +143,7 @@ impl BashoPlayerResults {
                     warn!("total wins for player {} mismatch betwen basho_result {total} and live data {total_validation}", player.name)
                 }
                 BashoPlayerResults {
-                    is_self: player_id.map_or(false, |id| player.id == id),
+                    is_self: player_id == Some(player.id),
                     player: ResultPlayer::RankedPlayer(player, rank as usize),
                     rikishi_by_id: Arc::clone(&rikishi),
                     picks,

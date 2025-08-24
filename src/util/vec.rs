@@ -3,11 +3,11 @@ use core::mem;
 pub trait GroupRuns {
     type Item;
 
-    fn group_runs<B>(&self, by: B) -> GroupedRuns<Self::Item, B>
+    fn group_runs<B>(&self, by: B) -> GroupedRuns<'_, Self::Item, B>
     where
         B: FnMut(&Self::Item, &Self::Item) -> bool;
 
-    fn group_runs_mut<B>(&mut self, by: B) -> GroupedRunsMut<Self::Item, B>
+    fn group_runs_mut<B>(&mut self, by: B) -> GroupedRunsMut<'_, Self::Item, B>
     where
         B: FnMut(&Self::Item, &Self::Item) -> bool;
 }

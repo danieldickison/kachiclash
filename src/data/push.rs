@@ -521,7 +521,7 @@ impl PushType {
                         ))
                     },
                 )?;
-                let promoted = if current_rank.map_or(true, |c| next_rank <= c) {
+                let promoted = if current_rank.is_none_or(|c| next_rank <= c) {
                     "promoted"
                 } else {
                     "demoted"
