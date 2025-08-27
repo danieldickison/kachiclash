@@ -37,13 +37,14 @@
           >sumodb.sumogames.de</a
         ></span
       >
+      {# prettier-ignore-start #}
       <textarea name="banzuke">
         {%- for rikishi in basho.banzuke -%}
           {{ rikishi.rank }} {{ rikishi.name }}
           {%- if rikishi.is_kyujyo %} x {%- endif %}
         {% endfor -%}
-      </textarea
-      >
+      </textarea>
+      {# prettier-ignore-end #}
     </label>
 
     <label>
