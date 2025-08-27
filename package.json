@@ -11,7 +11,7 @@
   "author": "Daniel Dickison",
   "license": "ISC",
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^5.60.1",
+    "@typescript-eslint/eslint-plugin": "^8.41.0",
     "@typescript-eslint/parser": "^5.60.1",
     "eslint": "^8.43.0",
     "eslint-config-prettier": "^8.8.0",
