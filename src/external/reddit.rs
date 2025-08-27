@@ -6,7 +6,7 @@ use rusqlite::{Error, Transaction};
 
 use super::AuthProvider;
 use crate::data::PlayerId;
-use crate::external::UserInfo;
+use crate::external::{OAuthClient, UserInfo};
 use crate::Config;
 
 #[derive(Debug)]
@@ -26,18 +26,22 @@ impl AuthProvider for RedditAuthProvider {
         &["identity"]
     }
 
-    fn make_oauth_client(&self, config: &Config) -> BasicClient {
+    fn make_oauth_client(&self, config: &Config) -> OAuthClient {
         let mut redirect_url = config.url();
         redirect_url.set_path("login/reddit_redirect");
 
-        BasicClient::new(
-            ClientId::new(config.reddit_client_id.to_owned()),
-            Some(ClientSecret::new(config.reddit_client_secret.to_owned())),
-            AuthUrl::new("https://www.reddit.com/api/v1/authorize?duration=temporary".to_string())
+        BasicClient::new(ClientId::new(config.reddit_client_id.to_owned()))
+            .set_client_secret(ClientSecret::new(config.reddit_client_secret.to_owned()))
+            .set_auth_uri(
+                AuthUrl::new(
+                    "https://www.reddit.com/api/v1/authorize?duration=temporary".to_string(),
+                )
                 .unwrap(),
-            Some(TokenUrl::new("https://www.reddit.com/api/v1/access_token".to_string()).unwrap()),
-        )
-        .set_redirect_uri(RedirectUrl::from_url(redirect_url))
+            )
+            .set_token_uri(
+                TokenUrl::new("https://www.reddit.com/api/v1/access_token".to_string()).unwrap(),
+            )
+            .set_redirect_uri(RedirectUrl::from_url(redirect_url))
     }
 
     fn make_user_info_url(&self, user_id: &str) -> String {

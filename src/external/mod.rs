@@ -2,7 +2,10 @@ use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use oauth2::basic::{BasicClient, BasicTokenResponse};
-use oauth2::{AccessToken, AuthorizationCode, CsrfToken, RequestTokenError, Scope};
+use oauth2::{
+    AccessToken, AuthorizationCode, CsrfToken, EndpointNotSet, EndpointSet, RequestTokenError,
+    Scope,
+};
 use rusqlite::Transaction;
 use url::Url;
 
@@ -44,12 +47,15 @@ pub trait UserInfo {
     }
 }
 
+pub type OAuthClient =
+    BasicClient<EndpointSet, EndpointNotSet, EndpointNotSet, EndpointNotSet, EndpointSet>;
+
 #[async_trait]
 pub trait AuthProvider: Send + Sync + Debug {
     fn service_name(&self) -> &'static str;
     fn logged_in_user_info_url(&self) -> &'static str;
     fn oauth_scopes(&self) -> &'static [&'static str];
-    fn make_oauth_client(&self, config: &Config) -> BasicClient;
+    fn make_oauth_client(&self, config: &Config) -> OAuthClient;
     #[allow(dead_code)]
     fn make_user_info_url(&self, user_id: &str) -> String;
     async fn parse_user_info_response(
