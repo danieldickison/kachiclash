@@ -6,7 +6,7 @@ use rusqlite::{Error, Transaction};
 
 use super::AuthProvider;
 use crate::data::PlayerId;
-use crate::external::UserInfo;
+use crate::external::{OAuthClient, UserInfo};
 use crate::Config;
 
 #[derive(Debug)]
@@ -26,17 +26,19 @@ impl AuthProvider for GoogleAuthProvider {
         &["https://www.googleapis.com/auth/userinfo.profile"]
     }
 
-    fn make_oauth_client(&self, config: &Config) -> BasicClient {
+    fn make_oauth_client(&self, config: &Config) -> OAuthClient {
         let mut redirect_url = config.url();
         redirect_url.set_path("login/google_redirect");
 
-        BasicClient::new(
-            ClientId::new(config.google_client_id.to_owned()),
-            Some(ClientSecret::new(config.google_client_secret.to_owned())),
-            AuthUrl::new("https://accounts.google.com/o/oauth2/v2/auth".to_string()).unwrap(),
-            Some(TokenUrl::new("https://oauth2.googleapis.com/token".to_string()).unwrap()),
-        )
-        .set_redirect_uri(RedirectUrl::from_url(redirect_url))
+        BasicClient::new(ClientId::new(config.google_client_id.to_owned()))
+            .set_client_secret(ClientSecret::new(config.google_client_secret.to_owned()))
+            .set_auth_uri(
+                AuthUrl::new("https://accounts.google.com/o/oauth2/v2/auth".to_string()).unwrap(),
+            )
+            .set_token_uri(
+                TokenUrl::new("https://oauth2.googleapis.com/token".to_string()).unwrap(),
+            )
+            .set_redirect_uri(RedirectUrl::from_url(redirect_url))
     }
 
     fn make_user_info_url(&self, user_id: &str) -> String {

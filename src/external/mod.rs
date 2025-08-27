@@ -2,7 +2,11 @@ use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use oauth2::basic::{BasicClient, BasicTokenResponse};
-use oauth2::{AccessToken, AuthorizationCode, CsrfToken, RequestTokenError, Scope};
+use oauth2::{
+    AccessToken, AuthorizationCode, CsrfToken, EndpointNotSet, EndpointSet, RequestTokenError,
+    Scope,
+};
+use reqwest::redirect;
 use rusqlite::Transaction;
 use url::Url;
 
@@ -44,12 +48,15 @@ pub trait UserInfo {
     }
 }
 
+pub type OAuthClient =
+    BasicClient<EndpointSet, EndpointNotSet, EndpointNotSet, EndpointNotSet, EndpointSet>;
+
 #[async_trait]
 pub trait AuthProvider: Send + Sync + Debug {
     fn service_name(&self) -> &'static str;
     fn logged_in_user_info_url(&self) -> &'static str;
     fn oauth_scopes(&self) -> &'static [&'static str];
-    fn make_oauth_client(&self, config: &Config) -> BasicClient;
+    fn make_oauth_client(&self, config: &Config) -> OAuthClient;
     #[allow(dead_code)]
     fn make_user_info_url(&self, user_id: &str) -> String;
     async fn parse_user_info_response(
@@ -71,21 +78,17 @@ pub trait AuthProvider: Send + Sync + Debug {
         config: &Config,
         auth_code: AuthorizationCode,
     ) -> anyhow::Result<BasicTokenResponse> {
-        async fn http_client(
-            mut request: oauth2::HttpRequest,
-        ) -> Result<oauth2::HttpResponse, oauth2::reqwest::Error<reqwest::Error>> {
-            let user_agent = format!(
+        let http_client = reqwest::Client::builder()
+            .redirect(redirect::Policy::none())
+            .https_only(true)
+            .user_agent(format!(
                 "web:com.kachiclash:v{} (by /u/dand)",
                 env!("CARGO_PKG_VERSION")
-            );
-            request
-                .headers
-                .insert("User-Agent", user_agent.parse().unwrap());
-            oauth2::reqwest::async_http_client(request).await
-        }
+            ))
+            .build()?;
         self.make_oauth_client(config)
             .exchange_code(auth_code)
-            .request_async(http_client)
+            .request_async(&http_client)
             .await
             .map_err(|e| {
                 let msg = format!("oauth code exchange error: {}", e);
