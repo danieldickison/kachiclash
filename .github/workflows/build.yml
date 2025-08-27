@@ -1,4 +1,4 @@
-name: Rust Build
+name: Build
 
 on:
   push:
@@ -8,16 +8,41 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          cache: npm
+      - run: npm ci
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Rust Tests
+        run: cargo test --verbose --all-targets --locked
+      - name: TypeScript
+        run: npm run type:check
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          cache: npm
+      - run: npm ci
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Clippy
+        run: cargo clippy --verbose --no-deps --all-targets --locked
+      - name: Prettier
+        run: npm run format:check
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
+        with:
+          cache: npm
+      - run: npm ci
       - uses: actions-rust-lang/setup-rust-toolchain@v1
-      - name: Run tests
-        run: cargo test --verbose --all-targets --locked
-      - name: Clippy
-        run: cargo clippy --verbose --no-deps --all-targets --locked
       - name: Build
         run: cargo build --bin=server --release --locked --verbose
       - name: Upload build artifact
