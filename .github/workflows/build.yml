@@ -13,6 +13,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
+        with:
+          cache: npm
+      - run: npm ci
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Rust Tests
         run: cargo test --verbose --all-targets --locked
@@ -23,6 +26,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
+        with:
+          cache: npm
+      - run: npm ci
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Clippy
         run: cargo clippy --verbose --no-deps --all-targets --locked
@@ -33,6 +39,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
+        with:
+          cache: npm
+      - run: npm ci
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Build
         run: cargo build --bin=server --release --locked --verbose
