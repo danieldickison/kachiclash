@@ -8,7 +8,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,8 +16,20 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Run tests
         run: cargo test --verbose --all-targets --locked
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Clippy
         run: cargo clippy --verbose --no-deps --all-targets --locked
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Build
         run: cargo build --bin=server --release --locked --verbose
       - name: Upload build artifact
