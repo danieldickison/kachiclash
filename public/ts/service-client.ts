@@ -46,15 +46,6 @@ async function unregisterServiceWorker() {
   }
 }
 
-function base64ToUint8Array(base64: string): Uint8Array {
-  const bin = atob(base64.replaceAll("-", "+").replaceAll("_", "/"));
-  const arr = new Uint8Array(bin.length);
-  for (let i = 0; i < arr.length; i++) {
-    arr[i] = bin.charCodeAt(i);
-  }
-  return arr;
-}
-
 export async function subscribeToPushNotifications(): Promise<PushSubscription> {
   const pm = await pushManager;
   if (pm === undefined || !("Notification" in window)) {
@@ -71,7 +62,7 @@ export async function subscribeToPushNotifications(): Promise<PushSubscription> 
   try {
     return await pm.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: base64ToUint8Array(appKey),
+      applicationServerKey: appKey,
     });
   } catch (e: unknown) {
     throw new Error(
@@ -90,7 +81,7 @@ export async function pushPermissionState(): Promise<PushPermissionState> {
     // It seems that in Safari, these three methods of getting the permission state are sometimes divergent, so we'll take all three and return 'granted' if any of them say so; otherwise use navigator.permissions as the source of truth. https://developer.apple.com/forums/thread/731412
     const pushPerm = await pm.permissionState({
       userVisibleOnly: true,
-      applicationServerKey: base64ToUint8Array(appKey),
+      applicationServerKey: appKey,
     });
     const notifPerm = Notification.permission;
     const queryPerm = (

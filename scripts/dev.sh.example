@@ -11,7 +11,8 @@ export REDDIT_CLIENT_SECRET=
 export GOOGLE_CLIENT_ID=
 export GOOGLE_CLIENT_SECRET=
 
-# Generate VAPID keys with `npx web-push generate-vapid-keys`
+# Generate VAPID keys as with `npx web-push generate-vapid-keys`
+# These must be base64url format (unpadded and with url-safe chars)
 export VAPID_PUBLIC_KEY=
 export VAPID_PRIVATE_KEY=
 
