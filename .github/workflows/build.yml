@@ -18,7 +18,7 @@ jobs:
       - run: npm ci
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Rust Tests
-        run: cargo test --verbose --all-targets --locked
+        run: cargo test --all-targets --locked ${{ runner.debug && '--verbose' || '' }}
       - name: TypeScript
         run: npm run type:check
   lint:
@@ -31,7 +31,7 @@ jobs:
       - run: npm ci
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Clippy
-        run: cargo clippy --verbose --no-deps --all-targets --locked
+        run: cargo clippy --no-deps --all-targets --locked ${{ runner.debug && '--verbose' || '' }}
       - name: Prettier
         run: npm run format:check
   build:
@@ -44,7 +44,7 @@ jobs:
       - run: npm ci
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Build
-        run: cargo build --bin=server --release --locked --verbose
+        run: cargo build --bin=server --release --locked ${{ runner.debug && '--verbose' || '' }}
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
