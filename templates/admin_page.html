@@ -10,44 +10,32 @@
 {% endblock %}
 
 {% block main %}
-<section>
-  <h2>Webhook</h2>
-  <form
-    id="register-webhook"
-    action="/webhook/register"
-    method="POST"
-  >
-    <button>Register Webhook</button>
-  </form>
-  <form
-    id="delete-webhook"
-    action="/webhook/delete"
-    method="POST"
-  >
-    <button>Delete Webhook</button>
-  </form>
-  <form
-    id="test-webhook"
-    action="/webhook/test"
-    method="POST"
-  >
-    <select name="type">
-      <option value="newBasho">newBasho</option>
-      <option value="newMatches">newMatches</option>
-      <option value="matchResults">matchResults</option>
-      <option value="endBasho">endBasho</option>
-    </select>
-    <button>Test Webhook</button>
-  </form>
-</section>
-<section>
-  <h2>Push Notifications</h2>
-  <form id="push-announcement">
-    <label for="message">Message:</label>
-    <input type="text" name="message" placeholder="Message" required />
-    <label for="delay">Delay:</label>
-    <input type="number" name="delay" value="0" min="0" required />
-    <button name="submit">Send Notification</button>
-  </form>
-</section>
+  <section>
+    <h2>Webhook</h2>
+    <form id="register-webhook" action="/webhook/register" method="POST">
+      <button>Register Webhook</button>
+    </form>
+    <form id="delete-webhook" action="/webhook/delete" method="POST">
+      <button>Delete Webhook</button>
+    </form>
+    <form id="test-webhook" action="/webhook/test" method="POST">
+      <select name="type">
+        <option value="newBasho">newBasho</option>
+        <option value="newMatches">newMatches</option>
+        <option value="matchResults">matchResults</option>
+        <option value="endBasho">endBasho</option>
+      </select>
+      <button>Test Webhook</button>
+    </form>
+  </section>
+  <section>
+    <h2>Push Notifications</h2>
+    <form id="push-announcement">
+      <label for="message">Message:</label>
+      <input type="text" name="message" placeholder="Message" required />
+      <label for="delay">Delay:</label>
+      <input type="number" name="delay" value="0" min="0" required />
+      <button name="submit">Send Notification</button>
+    </form>
+  </section>
 {% endblock %}
