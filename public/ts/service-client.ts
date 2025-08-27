@@ -73,11 +73,9 @@ export async function subscribeToPushNotifications(): Promise<PushSubscription> 
       userVisibleOnly: true,
       applicationServerKey: base64ToUint8Array(appKey),
     });
-  } catch (e: any) {
+  } catch (e: unknown) {
     throw new Error(
-      `Could not enable push notifications. Please check your browser settings.\n\n${
-        e.toString() as string
-      }`,
+      `Could not enable push notifications. Please check your browser settings.\n\n${(e as object).toString()}`,
     );
   }
 }

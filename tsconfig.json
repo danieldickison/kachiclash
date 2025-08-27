@@ -5,6 +5,6 @@
     "sourceMap": true,
     "strict": true
   },
-  "include": ["public/**/*.ts"],
+  "include": ["public/**/*.ts", "eslint.config.js"],
   "exclude": ["node_modules", "**/*.spec.ts"]
 }

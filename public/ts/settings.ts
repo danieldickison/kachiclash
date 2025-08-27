@@ -33,7 +33,7 @@ form.addEventListener("submit", (event) => {
   event.preventDefault();
   void save();
 });
-form.addEventListener("input", (_event) => {
+form.addEventListener("input", () => {
   showMessage(false, "");
   edited = true;
   refreshBusyState(false);
@@ -100,8 +100,8 @@ async function save(): Promise<void> {
       const body = await resp.text();
       throw new Error(body);
     }
-  } catch (error: any) {
-    showMessage(true, error.toString());
+  } catch (error: unknown) {
+    showMessage(true, (error as object).toString());
   } finally {
     edited = false;
     await refreshState();
