@@ -367,7 +367,20 @@ version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9a4e46abb203e00ef226442d452769233142bbfdd79c3941e84c8e61c4112543"
 dependencies = [
- "askama_derive",
+ "askama_derive 0.13.0",
+ "itoa",
+ "percent-encoding",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "askama"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f75363874b771be265f4ffe307ca705ef6f3baa19011c149da8674a87f1b75c4"
+dependencies = [
+ "askama_derive 0.14.0",
  "itoa",
  "percent-encoding",
  "serde",
@@ -380,7 +393,7 @@ version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "54398906821fd32c728135f7b351f0c7494ab95ae421d41b6f5a020e158f28a6"
 dependencies = [
- "askama_parser",
+ "askama_parser 0.13.0",
  "basic-toml",
  "memchr",
  "proc-macro2",
@@ -388,6 +401,20 @@ dependencies = [
  "rustc-hash",
  "serde",
  "serde_derive",
+ "syn 2.0.91",
+]
+
+[[package]]
+name = "askama_derive"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "129397200fe83088e8a68407a8e2b1f826cf0086b21ccdb866a722c8bcd3a94f"
+dependencies = [
+ "askama_parser 0.14.0",
+ "memchr",
+ "proc-macro2",
+ "quote",
+ "rustc-hash",
  "syn 2.0.91",
 ]
 
@@ -404,14 +431,25 @@ dependencies = [
 ]
 
 [[package]]
-name = "askama_web"
-version = "0.13.0"
+name = "askama_parser"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b939333ab32b63d49be3a84492eefacff005ed369ac331e1597d1839e3c62f11"
+checksum = "d6ab5630b3d5eaf232620167977f95eb51f3432fc76852328774afbd242d4358"
+dependencies = [
+ "memchr",
+ "winnow",
+]
+
+[[package]]
+name = "askama_web"
+version = "0.14.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "50dcd7d2caaff31b91ef5d112ed10416344e23a33db9e7eea7ba695d2a97a88a"
 dependencies = [
  "actix-web",
- "askama",
+ "askama 0.14.0",
  "askama_web_derive",
+ "bytes",
 ]
 
 [[package]]
@@ -588,9 +626,9 @@ checksum = "1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b"
 
 [[package]]
 name = "bytes"
-version = "1.9.0"
+version = "1.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "325918d6fe32f23b19878fe4b34794ae41fc19ddbe53b10571a4874d44ffd39b"
+checksum = "d71b6127be86fdcfddb610f7182ac57211d4b18a3e9c82eb2d17662f2227ad6a"
 
 [[package]]
 name = "bytestring"
@@ -1695,7 +1733,7 @@ dependencies = [
  "actix-session",
  "actix-web",
  "anyhow",
- "askama",
+ "askama 0.13.0",
  "askama_web",
  "async-trait",
  "base64 0.22.1",
