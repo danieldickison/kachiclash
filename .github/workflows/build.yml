@@ -1,4 +1,4 @@
-name: Rust Build
+name: Build
 
 on:
   push:
@@ -14,8 +14,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
-      - name: Run tests
+      - name: Rust Tests
         run: cargo test --verbose --all-targets --locked
+      - name: TypeScript
+        run: npm run type:check
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -24,6 +26,8 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Clippy
         run: cargo clippy --verbose --no-deps --all-targets --locked
+      - name: Prettier
+        run: npm run format:check
   build:
     runs-on: ubuntu-latest
     steps:
