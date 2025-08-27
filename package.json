@@ -16,7 +16,7 @@
     "eslint": "^8.43.0",
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-import": "^2.27.5",
-    "eslint-plugin-n": "^15.7.0",
+    "eslint-plugin-n": "^17.21.3",
     "eslint-plugin-promise": "^6.1.1",
     "prettier": "^3.5.3",
     "prettier-plugin-jinja-template": "^2.0.0",
