@@ -39,12 +39,14 @@ pub async fn run(app_state: &AppState) -> anyhow::Result<()> {
         static_ttl = 3600;
     }
     let app_data = web::Data::new(app_state.clone());
+    let graphql_schema = web::Data::new(handlers::graphql::init_schema(app_state));
     let year = actix_web::cookie::time::Duration::days(365);
 
     info!("starting server at http://{}:{}", config.host, config.port);
     let server = HttpServer::new(move || {
         App::new()
             .app_data(web::Data::clone(&app_data))
+            .app_data(web::Data::clone(&graphql_schema))
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
             .wrap(IdentityMiddleware::builder().build())
@@ -73,6 +75,13 @@ pub async fn run(app_state: &AppState) -> anyhow::Result<()> {
                             .add(("Service-Worker-Allowed", "/")),
                     )
                     .service(Files::new("/", &config.static_path).prefer_utf8(true)),
+            )
+            .service(
+                web::scope("/api").service(
+                    web::resource("/graphql")
+                        .route(web::post().to(handlers::graphql::graphql_handler))
+                        .route(web::get().to(handlers::graphql::graphql_playground)),
+                ),
             )
             .service(handlers::index::index)
             .service(handlers::index::pwa)

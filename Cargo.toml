@@ -30,6 +30,8 @@ askama = "0.14.0"
 slug_intl = "1.0.0"
 hmac-sha256 = "1.1.12"
 base64 = "0.22.1"
+async-graphql = { version = "7.0", features = ["chrono"] }
+async-graphql-actix-web = "7.0"
 
 [dependencies.tokio]
 version = "1.43.1"
