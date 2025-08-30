@@ -11,6 +11,7 @@ use std::fmt::{Display, Formatter};
 
 pub mod admin;
 pub mod basho;
+pub mod graphql;
 pub mod heya;
 pub mod index;
 pub mod login;

@@ -17,8 +17,9 @@ use envconfig::Envconfig;
 use std::path::PathBuf;
 use url::Url;
 
-mod data;
+pub mod data;
 mod external;
+pub mod graphql;
 mod handlers;
 mod server;
 mod util;

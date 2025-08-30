@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kachiclash GraphQL API Demo</title>
+    <style>
+      body {
+        font-family: "Helvetica Neue", sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        line-height: 1.6;
+      }
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+        text-align: center;
+      }
+      .query-section {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        overflow: hidden;
+      }
+      .query-header {
+        background: #343a40;
+        color: white;
+        padding: 15px;
+        margin: 0;
+        cursor: pointer;
+        user-select: none;
+      }
+      .query-header:hover {
+        background: #495057;
+      }
+      .query-content {
+        padding: 20px;
+      }
+      .query-content.hidden {
+        display: none;
+      }
+      textarea {
+        width: 100%;
+        height: 150px;
+        font-family: "Courier New", monospace;
+        font-size: 14px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        padding: 10px;
+        resize: vertical;
+      }
+      .variables-input {
+        width: 100%;
+        height: 80px;
+        font-family: "Courier New", monospace;
+        font-size: 14px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        padding: 10px;
+        margin-top: 10px;
+      }
+      button {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        margin-top: 10px;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+      button:disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+      }
+      .result {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 15px;
+        margin-top: 15px;
+        white-space: pre-wrap;
+        font-family: "Courier New", monospace;
+        font-size: 14px;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+      .error {
+        background: #f8d7da;
+        border-color: #f5c6cb;
+        color: #721c24;
+      }
+      .success {
+        background: #d4edda;
+        border-color: #c3e6cb;
+        color: #155724;
+      }
+      .endpoint-config {
+        background: #fff3cd;
+        border: 1px solid #ffeeba;
+        color: #856404;
+        padding: 15px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+      }
+      .endpoint-input {
+        width: 300px;
+        padding: 5px;
+        margin-left: 10px;
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin: 20px 0;
+      }
+      .stat-card {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 15px;
+        text-align: center;
+      }
+      .stat-number {
+        font-size: 2em;
+        font-weight: bold;
+        color: #007bff;
+      }
+      .stat-label {
+        color: #6c757d;
+        font-size: 0.9em;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>🎌 Kachiclash GraphQL API Demo</h1>
+      <p>
+        Interactive demonstration of the read-only GraphQL API for accessing
+        game data
+      </p>
+    </div>
+
+    <div class="endpoint-config">
+      <strong>GraphQL Endpoint:</strong>
+      <input
+        type="text"
+        id="endpoint"
+        class="endpoint-input"
+        value="http://localhost:8080/api/graphql"
+      />
+      <button onclick="updateEndpoint()">Update</button>
+      <p>
+        <small
+          >Make sure the Kachiclash server is running before testing the
+          queries.</small
+        >
+      </p>
+    </div>
+
+    <div class="stats" id="stats" style="display: none">
+      <div class="stat-card">
+        <div class="stat-number" id="basho-count">-</div>
+        <div class="stat-label">Total Bashos</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="player-count">-</div>
+        <div class="stat-label">Total Players</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="champion-count">-</div>
+        <div class="stat-label">Champions</div>
+      </div>
+    </div>
+
+    <div class="query-section">
+      <h3 class="query-header" onclick="toggleSection('bashos')">
+        📅 Get All Bashos
+      </h3>
+      <div class="query-content" id="bashos-content">
+        <p>Retrieve all tournament/basho information.</p>
+        <textarea id="bashos-query" readonly>
+query GetBashos {
+  bashos {
+    id
+    startDate
+    venue
+    playerCount
+    winningScore
+    hasStarted
+  }
+}
+            </textarea
+        >
+        <button onclick="executeQuery('bashos')">Execute Query</button>
+        <div id="bashos-result" class="result" style="display: none"></div>
+      </div>
+    </div>
+
+    <div class="query-section">
+      <h3 class="query-header" onclick="toggleSection('specific-basho')">
+        🎯 Get Specific Basho
+      </h3>
+      <div class="query-content hidden" id="specific-basho-content">
+        <p>Get detailed information for a specific basho by ID.</p>
+        <textarea id="specific-basho-query" readonly>
+query GetBasho($id: String!) {
+  basho(id: $id) {
+    id
+    startDate
+    venue
+    externalLink
+    playerCount
+    winningScore
+    hasStarted
+  }
+}
+            </textarea
+        >
+        <label>Variables (JSON):</label>
+        <textarea
+          id="specific-basho-variables"
+          class="variables-input"
+          placeholder='{"id": "202401"}'
+        >
+{"id": "202401"}</textarea
+        >
+        <button onclick="executeQuery('specific-basho')">Execute Query</button>
+        <div
+          id="specific-basho-result"
+          class="result"
+          style="display: none"
+        ></div>
+      </div>
+    </div>
+
+    <div class="query-section">
+      <h3 class="query-header" onclick="toggleSection('players')">
+        👥 Get All Players
+      </h3>
+      <div class="query-content hidden" id="players-content">
+        <p>Retrieve all player information.</p>
+        <textarea id="players-query" readonly>
+query GetPlayers {
+  players {
+    id
+    name
+    joinDate
+    emperorsCups
+    rank
+    hasEmperorsCup
+    urlPath
+  }
+}
+            </textarea
+        >
+        <button onclick="executeQuery('players')">Execute Query</button>
+        <div id="players-result" class="result" style="display: none"></div>
+      </div>
+    </div>
+
+    <div class="query-section">
+      <h3 class="query-header" onclick="toggleSection('champions')">
+        🏆 Get Champion Players
+      </h3>
+      <div class="query-content hidden" id="champions-content">
+        <p>Get players who have won Emperor's Cups.</p>
+        <textarea id="champions-query" readonly>
+query GetChampions {
+  players(filter: { hasEmperorsCup: true }) {
+    id
+    name
+    emperorsCups
+    joinDate
+    rank
+  }
+}
+            </textarea
+        >
+        <button onclick="executeQuery('champions')">Execute Query</button>
+        <div id="champions-result" class="result" style="display: none"></div>
+      </div>
+    </div>
+
+    <div class="query-section">
+      <h3 class="query-header" onclick="toggleSection('player-by-name')">
+        🔍 Get Player by Name
+      </h3>
+      <div class="query-content hidden" id="player-by-name-content">
+        <p>Find a specific player by their name.</p>
+        <textarea id="player-by-name-query" readonly>
+query GetPlayerByName($name: String!) {
+  playerByName(name: $name) {
+    id
+    name
+    joinDate
+    emperorsCups
+    rank
+    hasEmperorsCup
+  }
+}
+            </textarea
+        >
+        <label>Variables (JSON):</label>
+        <textarea
+          id="player-by-name-variables"
+          class="variables-input"
+          placeholder='{"name": "PlayerName"}'
+        >
+{"name": "testplayer"}</textarea
+        >
+        <button onclick="executeQuery('player-by-name')">Execute Query</button>
+        <div
+          id="player-by-name-result"
+          class="result"
+          style="display: none"
+        ></div>
+      </div>
+    </div>
+
+    <div class="query-section">
+      <h3 class="query-header" onclick="toggleSection('player-scores')">
+        📊 Get Player Scores
+      </h3>
+      <div class="query-content hidden" id="player-scores-content">
+        <p>Get player performance for a specific basho.</p>
+        <textarea id="player-scores-query" readonly>
+query GetPlayerScores($bashoId: String!, $playerId: Int) {
+  playerScores(bashoId: $bashoId, playerId: $playerId) {
+    player {
+      id
+      name
+      emperorsCups
+    }
+    basho {
+      id
+      venue
+      startDate
+    }
+    rank
+    wins
+    place
+    awards {
+      awardType
+      name
+    }
+  }
+}
+            </textarea
+        >
+        <label>Variables (JSON):</label>
+        <textarea
+          id="player-scores-variables"
+          class="variables-input"
+          placeholder='{"bashoId": "202401"}'
+        >
+{"bashoId": "202401"}</textarea
+        >
+        <button onclick="executeQuery('player-scores')">Execute Query</button>
+        <div
+          id="player-scores-result"
+          class="result"
+          style="display: none"
+        ></div>
+      </div>
+    </div>
+
+    <div class="query-section">
+      <h3 class="query-header" onclick="toggleSection('leaderboard')">
+        🏅 Get Leaderboard
+      </h3>
+      <div class="query-content hidden" id="leaderboard-content">
+        <p>Get current or specific basho leaderboard.</p>
+        <textarea id="leaderboard-query" readonly>
+query GetLeaderboard($bashoId: String) {
+  leaderboard(bashoId: $bashoId) {
+    rank
+    score
+    player {
+      name
+      emperorsCups
+      rank
+    }
+  }
+}
+            </textarea
+        >
+        <label>Variables (JSON) - leave empty for current basho:</label>
+        <textarea
+          id="leaderboard-variables"
+          class="variables-input"
+          placeholder='{"bashoId": "202401"}'
+          style="height: 60px"
+        >
+{}</textarea
+        >
+        <button onclick="executeQuery('leaderboard')">Execute Query</button>
+        <div id="leaderboard-result" class="result" style="display: none"></div>
+      </div>
+    </div>
+
+    <div class="query-section">
+      <h3 class="query-header" onclick="toggleSection('rikishi')">
+        🤼 Get Basho Rikishi
+      </h3>
+      <div class="query-content hidden" id="rikishi-content">
+        <p>Get wrestlers participating in a specific basho.</p>
+        <textarea id="rikishi-query" readonly>
+query GetBashoRikishi($bashoId: String!) {
+  bashoRikishi(bashoId: $bashoId) {
+    id
+    name
+    rank
+    wins
+    losses
+    results
+    picks
+    isKyujyo
+  }
+}
+            </textarea
+        >
+        <label>Variables (JSON):</label>
+        <textarea
+          id="rikishi-variables"
+          class="variables-input"
+          placeholder='{"bashoId": "202401"}'
+        >
+{"bashoId": "202401"}</textarea
+        >
+        <button onclick="executeQuery('rikishi')">Execute Query</button>
+        <div id="rikishi-result" class="result" style="display: none"></div>
+      </div>
+    </div>
+
+    <script>
+      let currentEndpoint = "http://localhost:8080/api/graphql";
+
+      function toggleSection(sectionId) {
+        const content = document.getElementById(sectionId + "-content");
+        content.classList.toggle("hidden");
+      }
+
+      function updateEndpoint() {
+        currentEndpoint = document.getElementById("endpoint").value;
+      }
+
+      async function executeQuery(sectionId) {
+        const queryTextarea = document.getElementById(sectionId + "-query");
+        const variablesTextarea = document.getElementById(
+          sectionId + "-variables",
+        );
+        const resultDiv = document.getElementById(sectionId + "-result");
+        const button = event.target;
+
+        if (!queryTextarea) return;
+
+        const query = queryTextarea.value;
+        let variables = {};
+
+        // Parse variables if they exist
+        if (variablesTextarea) {
+          try {
+            const variablesText = variablesTextarea.value.trim();
+            if (variablesText) {
+              variables = JSON.parse(variablesText);
+            }
+          } catch (error) {
+            showResult(
+              resultDiv,
+              `Invalid JSON in variables: ${error.message}`,
+              true,
+            );
+            return;
+          }
+        }
+
+        // Show loading state
+        button.disabled = true;
+        button.textContent = "Executing...";
+        resultDiv.style.display = "block";
+        resultDiv.className = "result";
+        resultDiv.textContent = "Loading...";
+
+        try {
+          const response = await fetch(currentEndpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              query: query,
+              variables: variables,
+            }),
+          });
+
+          const result = await response.json();
+
+          if (result.errors) {
+            showResult(
+              resultDiv,
+              `GraphQL Errors:\n${JSON.stringify(result.errors, null, 2)}`,
+              true,
+            );
+          } else {
+            showResult(resultDiv, JSON.stringify(result.data, null, 2), false);
+            updateStats(result.data);
+          }
+        } catch (error) {
+          showResult(resultDiv, `Network Error: ${error.message}`, true);
+        } finally {
+          button.disabled = false;
+          button.textContent = "Execute Query";
+        }
+      }
+
+      function showResult(resultDiv, content, isError) {
+        resultDiv.style.display = "block";
+        resultDiv.className = isError ? "result error" : "result success";
+        resultDiv.textContent = content;
+      }
+
+      function updateStats(data) {
+        const statsDiv = document.getElementById("stats");
+
+        if (data.bashos) {
+          document.getElementById("basho-count").textContent =
+            data.bashos.length;
+          statsDiv.style.display = "grid";
+        }
+
+        if (data.players) {
+          document.getElementById("player-count").textContent =
+            data.players.length;
+          const champions = data.players.filter((p) => p.hasEmperorsCup);
+          document.getElementById("champion-count").textContent =
+            champions.length;
+          statsDiv.style.display = "grid";
+        }
+      }
+
+      // Auto-load basic stats on page load
+      window.addEventListener("load", function () {
+        // Open the first section by default
+        toggleSection("bashos");
+
+        // Try to load basic stats
+        setTimeout(() => {
+          const bashosButton = document.querySelector("#bashos-content button");
+          if (bashosButton) {
+            bashosButton.click();
+          }
+        }, 500);
+      });
+    </script>
+  </body>
+</html>
