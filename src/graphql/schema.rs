@@ -401,11 +401,7 @@ fn convert_basho_rikishi(rikishi: DataBashoRikishi) -> Rikishi {
         id: rikishi.id,
         name: rikishi.name,
         rank: rikishi.rank.to_string(),
-        results: rikishi
-            .results
-            .iter()
-            .map(|&r| r.map(|b| if b { "W".to_string() } else { "L".to_string() }))
-            .collect(),
+        results: rikishi.results.to_vec(),
         wins: rikishi.wins,
         losses: rikishi.losses,
         picks: rikishi.picks,

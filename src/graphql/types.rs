@@ -40,7 +40,7 @@ pub struct Basho {
     pub has_started: bool,
 }
 
-/// A rikishi (sumo wrestler)
+/// A rikishi (sumo wrestler) with records for a particular basho
 #[derive(SimpleObject)]
 pub struct Rikishi {
     /// Unique rikishi ID
@@ -49,15 +49,15 @@ pub struct Rikishi {
     pub name: String,
     /// Rank in the tournament
     pub rank: String,
-    /// Daily results (W/L/K for win/loss/kyujo)
-    pub results: Vec<Option<String>>,
+    /// Daily results (true=win, false=loss, null=kyujyo or fusen loss)
+    pub results: Vec<Option<bool>>,
     /// Total wins
     pub wins: u8,
     /// Total losses
     pub losses: u8,
     /// Number of picks by players
     pub picks: u16,
-    /// Whether this rikishi is kyujo (absent)
+    /// Whether this rikishi is kyujo (absent) at the start of the basho
     pub is_kyujyo: bool,
 }
 
