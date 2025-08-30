@@ -80,7 +80,11 @@ pub async fn run(app_state: &AppState) -> anyhow::Result<()> {
                 web::scope("/api").service(
                     web::resource("/graphql")
                         .route(web::post().to(handlers::graphql::graphql_handler))
-                        .route(web::get().to(handlers::graphql::graphql_playground)),
+                        .route(web::get().to(handlers::graphql::graphql_playground))
+                        .route(
+                            web::method(actix_web::http::Method::OPTIONS)
+                                .to(handlers::graphql::graphql_preflight),
+                        ),
                 ),
             )
             .service(handlers::index::index)
