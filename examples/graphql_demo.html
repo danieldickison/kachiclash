@@ -166,7 +166,7 @@
       </p>
     </div>
 
-    <div class="stats" id="stats" style="display: none;">
+    <div class="stats" id="stats" style="display: none">
       <div class="stat-card">
         <div class="stat-number" id="basho-count">-</div>
         <div class="stat-label">Total Bashos</div>
@@ -201,7 +201,7 @@ query GetBashos {
             </textarea
         >
         <button onclick="executeQuery('bashos')">Execute Query</button>
-        <div id="bashos-result" class="result" style="display: none;"></div>
+        <div id="bashos-result" class="result" style="display: none"></div>
       </div>
     </div>
 
@@ -237,7 +237,7 @@ query GetBasho($id: String!) {
         <div
           id="specific-basho-result"
           class="result"
-          style="display: none;"
+          style="display: none"
         ></div>
       </div>
     </div>
@@ -263,7 +263,7 @@ query GetPlayers {
             </textarea
         >
         <button onclick="executeQuery('players')">Execute Query</button>
-        <div id="players-result" class="result" style="display: none;"></div>
+        <div id="players-result" class="result" style="display: none"></div>
       </div>
     </div>
 
@@ -286,7 +286,7 @@ query GetChampions {
             </textarea
         >
         <button onclick="executeQuery('champions')">Execute Query</button>
-        <div id="champions-result" class="result" style="display: none;"></div>
+        <div id="champions-result" class="result" style="display: none"></div>
       </div>
     </div>
 
@@ -321,7 +321,7 @@ query GetPlayerByName($name: String!) {
         <div
           id="player-by-name-result"
           class="result"
-          style="display: none;"
+          style="display: none"
         ></div>
       </div>
     </div>
@@ -368,7 +368,7 @@ query GetPlayerScores($bashoId: String!, $playerId: Int) {
         <div
           id="player-scores-result"
           class="result"
-          style="display: none;"
+          style="display: none"
         ></div>
       </div>
     </div>
@@ -398,16 +398,12 @@ query GetLeaderboard($bashoId: String) {
           id="leaderboard-variables"
           class="variables-input"
           placeholder='{"bashoId": "202401"}'
-          style="height: 60px;"
+          style="height: 60px"
         >
 {}</textarea
         >
         <button onclick="executeQuery('leaderboard')">Execute Query</button>
-        <div
-          id="leaderboard-result"
-          class="result"
-          style="display: none;"
-        ></div>
+        <div id="leaderboard-result" class="result" style="display: none"></div>
       </div>
     </div>
 
@@ -441,7 +437,7 @@ query GetBashoRikishi($bashoId: String!) {
 {"bashoId": "202401"}</textarea
         >
         <button onclick="executeQuery('rikishi')">Execute Query</button>
-        <div id="rikishi-result" class="result" style="display: none;"></div>
+        <div id="rikishi-result" class="result" style="display: none"></div>
       </div>
     </div>
 
