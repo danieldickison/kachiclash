@@ -17,7 +17,7 @@ Kachiclash now includes a read-only GraphQL API for accessing game data includin
 ### API Features
 
 - **Players**: Get player information, rankings, and Emperor's Cup winners
-- **Bashos**: Access tournament data, venues, dates, and participation stats  
+- **Bashos**: Access tournament data, venues, dates, and participation stats
 - **Scores**: Retrieve player performance and picks for specific bashos
 - **Rikishi**: View wrestler data including records and pick popularity
 - **Leaderboards**: Get current standings and historical rankings

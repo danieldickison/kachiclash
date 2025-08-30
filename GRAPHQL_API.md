@@ -5,6 +5,7 @@ This document describes the read-only GraphQL API for accessing Kachiclash game 
 ## Endpoint
 
 The GraphQL API is available at:
+
 - **Endpoint**: `/api/graphql`
 - **Playground**: `/api/graphql` (GET request for development/testing)
 
@@ -15,63 +16,67 @@ The API provides access to the following main types:
 ### Core Types
 
 #### Player
+
 Represents a player in the game.
 
 ```graphql
 type Player {
-  id: Int!                    # Unique player ID
-  name: String!               # Player's display name
-  joinDate: DateTime!         # When the player joined
-  emperorsCups: Int!          # Number of Emperor's Cups won
-  rank: String                # Current rank (if any)
-  hasEmperorsCup: Boolean!    # Whether player has won an Emperor's Cup
-  urlPath: String!            # URL path for player profile
+  id: Int! # Unique player ID
+  name: String! # Player's display name
+  joinDate: DateTime! # When the player joined
+  emperorsCups: Int! # Number of Emperor's Cups won
+  rank: String # Current rank (if any)
+  hasEmperorsCup: Boolean! # Whether player has won an Emperor's Cup
+  urlPath: String! # URL path for player profile
 }
 ```
 
 #### Basho
+
 Represents a tournament/basho.
 
 ```graphql
 type Basho {
-  id: String!                 # Basho ID (e.g., "202401" for January 2024)
-  startDate: DateTime!        # When the basho starts
-  venue: String!              # Venue name
-  externalLink: String        # External link (if available)
-  playerCount: Int!           # Number of participating players
-  winningScore: Int           # Winning score
-  hasStarted: Boolean!        # Whether the basho has started
+  id: String! # Basho ID (e.g., "202401" for January 2024)
+  startDate: DateTime! # When the basho starts
+  venue: String! # Venue name
+  externalLink: String # External link (if available)
+  playerCount: Int! # Number of participating players
+  winningScore: Int # Winning score
+  hasStarted: Boolean! # Whether the basho has started
 }
 ```
 
 #### Rikishi
+
 Represents a sumo wrestler.
 
 ```graphql
 type Rikishi {
-  id: Int!                    # Unique rikishi ID
-  name: String!               # Wrestling name
-  rank: String!               # Rank in the tournament
-  results: [String]!          # Daily results (W/L strings)
-  wins: Int!                  # Total wins
-  losses: Int!                # Total losses
-  picks: Int!                 # Number of picks by players
-  isKyujyo: Boolean!          # Whether this rikishi is absent
+  id: Int! # Unique rikishi ID
+  name: String! # Wrestling name
+  rank: String! # Rank in the tournament
+  results: [String]! # Daily results (W/L strings)
+  wins: Int! # Total wins
+  losses: Int! # Total losses
+  picks: Int! # Number of picks by players
+  isKyujyo: Boolean! # Whether this rikishi is absent
 }
 ```
 
 #### PlayerScore
+
 Represents a player's performance in a specific basho.
 
 ```graphql
 type PlayerScore {
-  player: Player!             # The player
-  basho: Basho!               # The basho
-  rank: String                # Player's rank before this basho
+  player: Player! # The player
+  basho: Basho! # The basho
+  rank: String # Player's rank before this basho
   rikishi: [PlayerBashoRikishi] # Picked rikishi with their performance
-  wins: Int                   # Total wins achieved
-  place: Int                  # Final ranking/place
-  awards: [Award]!            # Awards earned
+  wins: Int # Total wins achieved
+  place: Int # Final ranking/place
+  awards: [Award]! # Awards earned
 }
 ```
 
@@ -109,6 +114,7 @@ query GetBasho($id: String!) {
 ```
 
 **Variables:**
+
 ```json
 {
   "id": "202401"
@@ -145,6 +151,7 @@ query GetPlayersWithFilters($filter: PlayerFilter) {
 ```
 
 **Variables (get only players with Emperor's Cups):**
+
 ```json
 {
   "filter": {
@@ -170,6 +177,7 @@ query GetPlayerByName($name: String!) {
 ```
 
 **Variables:**
+
 ```json
 {
   "name": "YourPlayerName"
@@ -208,6 +216,7 @@ query GetPlayerScores($bashoId: String!, $playerId: Int) {
 ```
 
 **Variables (get all player scores for a basho):**
+
 ```json
 {
   "bashoId": "202401"
@@ -215,6 +224,7 @@ query GetPlayerScores($bashoId: String!, $playerId: Int) {
 ```
 
 **Variables (get specific player's score):**
+
 ```json
 {
   "bashoId": "202401",
@@ -240,6 +250,7 @@ query GetBashoRikishi($bashoId: String!) {
 ```
 
 **Variables:**
+
 ```json
 {
   "bashoId": "202401"
@@ -264,11 +275,13 @@ query GetLeaderboard($bashoId: String) {
 ```
 
 **Variables (current basho leaderboard):**
+
 ```json
 {}
 ```
 
 **Variables (specific basho leaderboard):**
+
 ```json
 {
   "bashoId": "202401"
@@ -278,27 +291,30 @@ query GetLeaderboard($bashoId: String) {
 ## Input Types
 
 ### BashoFilter
+
 ```graphql
 input BashoFilter {
-  id: String                  # Filter by specific basho ID
-  completedOnly: Boolean      # Only include completed bashos
-  limit: Int                  # Limit number of results
+  id: String # Filter by specific basho ID
+  completedOnly: Boolean # Only include completed bashos
+  limit: Int # Limit number of results
 }
 ```
 
 ### PlayerFilter
+
 ```graphql
 input PlayerFilter {
-  name: String                # Filter by player name
-  id: Int                     # Filter by player ID
-  hasEmperorsCup: Boolean     # Only include players with Emperor's Cups
-  limit: Int                  # Limit number of results
+  name: String # Filter by player name
+  id: Int # Filter by player ID
+  hasEmperorsCup: Boolean # Only include players with Emperor's Cups
+  limit: Int # Limit number of results
 }
 ```
 
 ## Common Use Cases
 
 ### 1. Game Dashboard
+
 Get current basho information and leaderboard:
 
 ```graphql
@@ -322,6 +338,7 @@ query GameDashboard {
 ```
 
 ### 2. Player Profile
+
 Get comprehensive player information:
 
 ```graphql
@@ -339,6 +356,7 @@ query PlayerProfile($playerName: String!) {
 ```
 
 ### 3. Basho Results
+
 Get detailed results for a completed basho:
 
 ```graphql
@@ -365,18 +383,20 @@ query BashoResults($bashoId: String!) {
 ## Error Handling
 
 The API returns standard GraphQL errors for:
+
 - Invalid basho ID format
 - Player not found
 - Basho not found
 - Database connection issues
 
 Example error response:
+
 ```json
 {
   "errors": [
     {
       "message": "Invalid basho ID format",
-      "locations": [{"line": 2, "column": 3}],
+      "locations": [{ "line": 2, "column": 3 }],
       "path": ["basho"]
     }
   ],
@@ -387,6 +407,7 @@ Example error response:
 ## Development
 
 ### Running the Server
+
 ```bash
 cargo run --bin kachiclash
 ```
@@ -394,7 +415,9 @@ cargo run --bin kachiclash
 The GraphQL playground will be available at `http://localhost:8080/api/graphql` (adjust port as needed).
 
 ### GraphQL Playground
+
 The GraphQL playground provides:
+
 - Interactive query editor
 - Schema documentation
 - Query validation

@@ -7,7 +7,7 @@ The Kachiclash GraphQL API provides comprehensive, read-only access to all game 
 ## ✅ Implementation Status: COMPLETE
 
 - ✅ Full GraphQL schema implemented
-- ✅ All query resolvers functional  
+- ✅ All query resolvers functional
 - ✅ Type-safe Rust implementation
 - ✅ Integrated with existing Actix-web server
 - ✅ Documentation and examples provided
@@ -16,15 +16,18 @@ The Kachiclash GraphQL API provides comprehensive, read-only access to all game 
 ## 🚀 Quick Start
 
 ### 1. Start the Server
+
 ```bash
 cd kachiclash
 cargo run
 ```
 
 ### 2. Access GraphQL Playground
+
 Open your browser to: `http://localhost:8080/api/graphql`
 
 ### 3. Try Your First Query
+
 ```graphql
 query {
   players(filter: { limit: 5 }) {
@@ -38,6 +41,7 @@ query {
 ## 📊 API Capabilities
 
 ### Core Data Access
+
 - **Players**: Complete player profiles, rankings, and achievements
 - **Tournaments**: Basho data with dates, venues, and participation stats
 - **Performance**: Player picks and scores for each tournament
@@ -45,6 +49,7 @@ query {
 - **Leaderboards**: Real-time and historical rankings
 
 ### Query Features
+
 - **Flexible Filtering**: Filter by various criteria (Emperor's Cups, dates, etc.)
 - **Nested Relationships**: Access related data in single queries
 - **Pagination**: Limit results for performance
@@ -54,6 +59,7 @@ query {
 ## 🏗️ Schema Architecture
 
 ### Types Overview
+
 ```
 QueryRoot
 ├── players(filter: PlayerFilter): [Player!]!
@@ -67,6 +73,7 @@ QueryRoot
 ```
 
 ### Key Data Types
+
 - **Player**: User profiles with statistics and rankings
 - **Basho**: Tournament information and metadata
 - **Rikishi**: Wrestler data with performance records
@@ -76,6 +83,7 @@ QueryRoot
 ## 📝 Example Queries
 
 ### Get Current Champions
+
 ```graphql
 query GetChampions {
   players(filter: { hasEmperorsCup: true }) {
@@ -89,6 +97,7 @@ query GetChampions {
 ```
 
 ### Tournament Results
+
 ```graphql
 query TournamentResults($bashoId: String!) {
   basho(id: $bashoId) {
@@ -98,7 +107,7 @@ query TournamentResults($bashoId: String!) {
     playerCount
     winningScore
   }
-  
+
   playerScores(bashoId: $bashoId) {
     player {
       name
@@ -118,6 +127,7 @@ query TournamentResults($bashoId: String!) {
 ```
 
 ### Current Leaderboard
+
 ```graphql
 query CurrentLeaderboard {
   leaderboard {
@@ -133,6 +143,7 @@ query CurrentLeaderboard {
 ```
 
 ### Popular Wrestlers
+
 ```graphql
 query PopularWrestlers($bashoId: String!) {
   bashoRikishi(bashoId: $bashoId) {
@@ -149,14 +160,16 @@ query PopularWrestlers($bashoId: String!) {
 ## 🛠️ Technical Implementation
 
 ### Technology Stack
+
 - **async-graphql**: Modern Rust GraphQL framework
 - **Actix-web**: High-performance HTTP server
 - **SQLite**: Existing database (no changes required)
 - **Chrono**: DateTime handling with GraphQL support
 
 ### Architecture Benefits
+
 - **Type Safety**: Compile-time verification of all queries
-- **Performance**: Direct database access with connection pooling  
+- **Performance**: Direct database access with connection pooling
 - **Scalability**: Async/await throughout the stack
 - **Maintainability**: Leverages existing data access layer
 - **Zero Downtime**: Non-breaking addition to existing API
@@ -164,12 +177,14 @@ query PopularWrestlers($bashoId: String!) {
 ## 📚 Documentation & Resources
 
 ### Complete Documentation
+
 - **[GRAPHQL_API.md](GRAPHQL_API.md)**: Full API reference with all queries
 - **[GRAPHQL_IMPLEMENTATION.md](GRAPHQL_IMPLEMENTATION.md)**: Technical implementation details
 - **[examples/graphql_demo.html](examples/graphql_demo.html)**: Interactive browser demo
 - **[examples/graphql_client.js](examples/graphql_client.js)**: Node.js client example
 
 ### Development Tools
+
 - **GraphQL Playground**: Built-in query IDE at `/api/graphql`
 - **Schema Introspection**: Full type discovery for tooling
 - **Validation Script**: `cargo run --example validate_schema`
@@ -177,11 +192,12 @@ query PopularWrestlers($bashoId: String!) {
 ## 🔧 Integration Examples
 
 ### Frontend Integration
+
 ```javascript
 // Modern fetch API
-const response = await fetch('/api/graphql', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+const response = await fetch("/api/graphql", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
     query: `
       query GetLeaderboard {
@@ -191,14 +207,15 @@ const response = await fetch('/api/graphql', {
           player { name emperorsCups }
         }
       }
-    `
-  })
+    `,
+  }),
 });
 
 const { data } = await response.json();
 ```
 
 ### Mobile App Integration
+
 ```dart
 // Flutter/GraphQL integration
 final QueryResult result = await client.query(
@@ -219,6 +236,7 @@ final QueryResult result = await client.query(
 ```
 
 ### Dashboard Applications
+
 ```python
 # Python with requests
 import requests
@@ -249,12 +267,14 @@ data = response.json()['data']
 ## 🌍 Use Cases
 
 ### Internal Applications
+
 - **Admin Dashboards**: Real-time tournament monitoring
-- **Mobile Apps**: Player profiles and leaderboards  
+- **Mobile Apps**: Player profiles and leaderboards
 - **Analytics**: Historical performance analysis
 - **Reporting**: Automated tournament summaries
 
 ### External Integrations
+
 - **Third-party Apps**: Community tools and utilities
 - **Data Analysis**: Research and statistics projects
 - **Visualizations**: Charts and infographics
@@ -263,12 +283,13 @@ data = response.json()['data']
 ## 🚦 Error Handling
 
 ### Standard GraphQL Errors
+
 ```json
 {
   "errors": [
     {
       "message": "Invalid basho ID format",
-      "locations": [{"line": 2, "column": 3}],
+      "locations": [{ "line": 2, "column": 3 }],
       "path": ["basho"]
     }
   ],
@@ -277,6 +298,7 @@ data = response.json()['data']
 ```
 
 ### Common Error Types
+
 - **Invalid basho ID format**: Malformed tournament identifiers
 - **Player not found**: Nonexistent player ID or name
 - **Database connection issues**: Temporary availability problems
@@ -285,12 +307,14 @@ data = response.json()['data']
 ## 📈 Performance Characteristics
 
 ### Query Performance
+
 - **Simple queries**: < 10ms response time
 - **Complex nested queries**: < 100ms response time
 - **Large result sets**: Automatic pagination recommended
 - **Database optimization**: Leverages existing indexes
 
 ### Scalability Features
+
 - **Connection pooling**: Reuses database connections
 - **Async processing**: Non-blocking I/O throughout
 - **Memory efficient**: Streaming results where possible
@@ -299,6 +323,7 @@ data = response.json()['data']
 ## 🔮 Future Enhancements
 
 ### Potential Features
+
 - **Real-time Subscriptions**: Live updates during tournaments
 - **Advanced Analytics**: Complex aggregation queries
 - **Admin Mutations**: Authenticated write operations
@@ -307,25 +332,29 @@ data = response.json()['data']
 - **Monitoring**: Query performance analytics
 
 ### API Evolution
+
 - **Versioning Strategy**: Backward compatibility maintained
-- **Schema Extensions**: New fields added non-disruptively  
+- **Schema Extensions**: New fields added non-disruptively
 - **Deprecation Process**: Gradual migration for breaking changes
 
 ## 🎯 Best Practices
 
 ### Query Optimization
+
 - Use filters to limit result sets
 - Request only needed fields
 - Consider pagination for large datasets
 - Batch related queries when possible
 
 ### Error Handling
+
 - Always check for GraphQL errors
 - Implement retry logic for network issues
 - Validate input parameters client-side
 - Log errors for debugging
 
 ### Security Considerations
+
 - API is read-only by design
 - No authentication currently required
 - Rate limiting recommended for production
@@ -336,9 +365,10 @@ data = response.json()['data']
 The Kachiclash GraphQL API successfully provides a modern, type-safe, and performant interface to all game data. With comprehensive documentation, examples, and validation tools, it's ready for immediate use by developers building applications, dashboards, and integrations.
 
 **Key Achievements:**
+
 - ✅ Complete GraphQL schema covering all game data
 - ✅ Type-safe Rust implementation with zero runtime type errors
-- ✅ Seamless integration with existing application architecture  
+- ✅ Seamless integration with existing application architecture
 - ✅ Comprehensive documentation and working examples
 - ✅ Ready for production use with room for future enhancements
 
