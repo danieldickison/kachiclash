@@ -205,6 +205,20 @@ impl Player {
         }
     }
 
+    pub fn get_linked_auth_providers(&self) -> Vec<(&'static str, &'static str)> {
+        let mut providers = Vec::new();
+        if self.discord_user_id.is_some() {
+            providers.push(("discord", "Discord"));
+        }
+        if self.google_picture.is_some() {
+            providers.push(("google", "Google"));
+        }
+        if self.reddit_icon.is_some() {
+            providers.push(("reddit", "Reddit"));
+        }
+        providers
+    }
+
     //     pub async fn update_image(&self, _db: &mut Connection) -> Result<()> {
     //         let _auth = self.login_service_provider()?;
     //

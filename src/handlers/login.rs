@@ -10,6 +10,7 @@ use actix_web::{get, http, web, HttpMessage, HttpRequest};
 use actix_web::{HttpResponse, Responder};
 
 use askama::Template;
+use serde::Serialize;
 
 use super::{BaseTemplate, HandlerError, Result};
 use crate::data::player;
@@ -23,6 +24,17 @@ use crate::{AppState, Config};
 #[template(path = "login.html")]
 struct LoginTemplate {
     base: BaseTemplate,
+}
+
+#[derive(Serialize)]
+pub struct AuthProviderInfo {
+    pub name: String,
+    pub display_name: String,
+}
+
+#[derive(Serialize)]
+pub struct LookupResponse {
+    pub providers: Vec<AuthProviderInfo>,
 }
 
 #[get("")]
@@ -160,6 +172,49 @@ async fn oauth_redirect(
             // session.purge();
             Err(HandlerError::CSRFError)
         }
+    }
+}
+
+#[derive(serde::Deserialize)]
+pub struct UsernameQuery {
+    username: String,
+}
+
+#[get("/lookup")]
+pub async fn lookup(
+    state: web::Data<AppState>,
+    query: web::Query<UsernameQuery>,
+) -> Result<impl Responder> {
+    let db = state.db.lock().unwrap();
+
+    // Get current or next basho for rank lookup (doesn't matter much for this lookup)
+    let current_basho = crate::data::BashoInfo::current_or_next_basho_id(&db)?;
+
+    match player::Player::with_name(&db, query.username.clone(), current_basho) {
+        Ok(Some(player)) => {
+            let linked_providers = player.get_linked_auth_providers();
+
+            if linked_providers.is_empty() {
+                return Err(HandlerError::Failure(anyhow::anyhow!(
+                    "Player has no linked auth providers"
+                )));
+            }
+
+            let providers = linked_providers
+                .into_iter()
+                .map(|(name, display_name)| AuthProviderInfo {
+                    name: name.to_string(),
+                    display_name: display_name.to_string(),
+                })
+                .collect();
+
+            Ok(HttpResponse::Ok().json(LookupResponse { providers }))
+        }
+        Ok(None) => Err(HandlerError::NotFound(format!(
+            "Player '{}' not found",
+            query.username
+        ))),
+        Err(e) => Err(HandlerError::DatabaseError(e.into())),
     }
 }
 

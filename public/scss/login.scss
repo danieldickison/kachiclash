@@ -1,14 +1,255 @@
 #p-login {
+  #username-lookup {
+    margin: 2rem 5rem 1rem 5rem;
+    padding: 1.5rem;
+    background: var(--color-subtle);
+    border: solid 1px var(--color-border);
+    border-radius: 0.5rem;
+
+    h2 {
+      margin-top: 0;
+      margin-bottom: 0.5rem;
+      font-size: 1.3rem;
+    }
+
+    > p {
+      margin: 0.5rem 0 1rem 0;
+      color: var(--color-fg-muted);
+      font-size: 0.95rem;
+    }
+
+    #lookup-form {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+
+      input {
+        padding: 0.75rem;
+        font-size: 1rem;
+        border: solid 1px var(--color-border);
+        border-radius: 0.25rem;
+        background: var(--color-bg);
+        color: var(--color-fg);
+
+        &:focus {
+          outline: none;
+          border-color: var(--color-navy);
+          box-shadow: 0 0 0 2px rgba(0, 0, 100, 0.1);
+        }
+
+        &::placeholder {
+          color: var(--color-fg-muted);
+        }
+      }
+
+      button {
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        font-weight: 600;
+        background: var(--color-navy);
+        color: var(--color-fg-inv);
+        border: none;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        transition: opacity 0.2s;
+
+        &:hover:not(:disabled) {
+          opacity: 0.9;
+        }
+
+        &:active:not(:disabled) {
+          opacity: 0.8;
+        }
+
+        &:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+      }
+    }
+
+    .error-message {
+      padding: 0.75rem;
+      background: rgba(220, 53, 69, 0.1);
+      color: #c82333;
+      border: solid 1px rgba(220, 53, 69, 0.3);
+      border-radius: 0.25rem;
+      margin-top: 0.75rem;
+      font-size: 0.95rem;
+    }
+
+    #lookup-result {
+      padding: 1rem;
+      background: rgba(40, 167, 69, 0.05);
+      border: solid 1px rgba(40, 167, 69, 0.3);
+      border-radius: 0.25rem;
+      margin-top: 1rem;
+
+      > p {
+        margin: 0 0 0.75rem 0;
+        font-weight: 600;
+        color: var(--color-fg);
+      }
+
+      #single-provider {
+        p {
+          margin: 0;
+          color: var(--color-fg);
+          font-size: 0.95rem;
+        }
+      }
+
+      #multiple-providers {
+        #providers-list {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+
+          .provider-login {
+            display: block;
+            padding: 0.75rem 1rem;
+            background: var(--color-navy);
+            color: var(--color-fg-inv);
+            text-decoration: none;
+            border-radius: 0.25rem;
+            text-align: center;
+            font-weight: 600;
+            transition: opacity 0.2s;
+
+            &:hover {
+              opacity: 0.9;
+            }
+
+            &:active {
+              opacity: 0.8;
+            }
+
+            &.discord-login {
+              background: #5865f2;
+
+              &:hover {
+                background: #4752c4;
+              }
+            }
+
+            &.google-login {
+              background: #4285f4;
+
+              &:hover {
+                background: #1967d2;
+              }
+            }
+
+            &.reddit-login {
+              background: #ff4500;
+
+              &:hover {
+                background: #cc3700;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  #divider {
+    text-align: center;
+    margin: 2rem 5rem;
+    position: relative;
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: var(--color-border);
+    }
+
+    > span {
+      position: relative;
+      background: var(--color-bg);
+      padding: 0 1rem;
+      color: var(--color-fg-muted);
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+  }
+
   #external-providers {
+    margin: 1rem 5rem 2rem 5rem;
+
+    > p {
+      text-align: center;
+      color: var(--color-fg-muted);
+      font-size: 0.95rem;
+      margin: 0 0 1rem 0;
+    }
+
     > a {
-      font-size: 2rem;
-      padding: 0.5rem;
+      font-size: 1rem;
+      padding: 0.75rem;
       background: var(--color-navy);
       color: var(--color-fg-inv);
-      border: solid 1px var(--color-border);
+      border: none;
       display: block;
-      margin: 1rem 5rem;
+      margin: 0.75rem 0;
       text-align: center;
+      text-decoration: none;
+      border-radius: 0.25rem;
+      font-weight: 600;
+      transition: opacity 0.2s;
+
+      &:hover {
+        opacity: 0.9;
+      }
+
+      &:active {
+        opacity: 0.8;
+      }
+
+      &.discord-signup {
+        background: #5865f2;
+
+        &:hover {
+          background: #4752c4;
+        }
+      }
+
+      &.google-signup {
+        background: #4285f4;
+
+        &:hover {
+          background: #1967d2;
+        }
+      }
+
+      &.reddit-signup {
+        background: #ff4500;
+
+        &:hover {
+          background: #cc3700;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  #p-login {
+    #username-lookup {
+      margin: 1rem 1rem;
+    }
+
+    #divider {
+      margin: 1.5rem 0;
+    }
+
+    #external-providers {
+      margin: 1rem;
     }
   }
 }
