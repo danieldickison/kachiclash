@@ -5,6 +5,7 @@
 
 {% block head %}
   <link rel="stylesheet" href="/static/css/login.css" />
+  <script type="module" src="/static/js/login.js"></script>
 {% endblock %}
 
 {% block main %}
@@ -43,99 +44,4 @@
     <a class="google-signup" href="/login/google">Sign up with Google</a>
     <a class="reddit-signup" href="/login/reddit">Sign up with Reddit</a>
   </section>
-
-  <script>
-    const lookupForm = document.getElementById('lookup-form');
-    const usernameInput = document.getElementById('username-input');
-    const lookupError = document.getElementById('lookup-error');
-    const lookupResult = document.getElementById('lookup-result');
-    const singleProvider = document.getElementById('single-provider');
-    const multipleProviders = document.getElementById('multiple-providers');
-    const singleProviderName = document.getElementById('single-provider-name');
-    const providersList = document.getElementById('providers-list');
-
-    const providerUrls = {
-      'discord': '/login/discord',
-      'google': '/login/google',
-      'reddit': '/login/reddit',
-    };
-
-    const providerDisplayNames = {
-      'discord': 'Discord',
-      'google': 'Google',
-      'reddit': 'Reddit',
-    };
-
-    lookupForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const username = usernameInput.value.trim();
-      if (!username) {
-        return;
-      }
-
-      // Reset UI
-      lookupError.style.display = 'none';
-      lookupResult.style.display = 'none';
-      singleProvider.style.display = 'none';
-      multipleProviders.style.display = 'none';
-      providersList.innerHTML = '';
-
-      try {
-        const response = await fetch(`/login/lookup?username=${encodeURIComponent(username)}`);
-
-        if (!response.ok) {
-          lookupError.textContent = 'Username not found. Please check the spelling or create a new account.';
-          lookupError.style.display = 'block';
-          return;
-        }
-
-        const data = await response.json();
-        const providers = data.providers || [];
-
-        if (providers.length === 0) {
-          lookupError.textContent = 'Unable to determine login provider. Please try again.';
-          lookupError.style.display = 'block';
-          return;
-        }
-
-        if (providers.length === 1) {
-          // Single provider: auto-redirect
-          const provider = providers[0];
-          const url = providerUrls[provider.name];
-          if (url) {
-            singleProviderName.textContent = provider.display_name;
-            singleProvider.style.display = 'block';
-            lookupResult.style.display = 'block';
-            // Redirect after a brief delay so user sees the message
-            setTimeout(() => {
-              window.location.href = url;
-            }, 500);
-          } else {
-            lookupError.textContent = 'Unknown login provider. Please try again.';
-            lookupError.style.display = 'block';
-          }
-        } else {
-          // Multiple providers: show list
-          multipleProviders.style.display = 'block';
-          lookupResult.style.display = 'block';
-
-          providers.forEach((provider) => {
-            const url = providerUrls[provider.name];
-            if (url) {
-              const link = document.createElement('a');
-              link.href = url;
-              link.className = `provider-login ${provider.name}-login`;
-              link.textContent = `Login with ${provider.display_name}`;
-              providersList.appendChild(link);
-            }
-          });
-        }
-      } catch (error) {
-        console.error('Lookup error:', error);
-        lookupError.textContent = 'An error occurred while looking up your account. Please try again.';
-        lookupError.style.display = 'block';
-      }
-    });
-  </script>
 {% endblock %}
