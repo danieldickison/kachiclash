@@ -12,19 +12,19 @@
   "author": "Daniel Dickison",
   "license": "ISC",
   "devDependencies": {
-    "@eslint/js": "^9.34.0",
-    "@typescript-eslint/eslint-plugin": "^8.41.0",
-    "@typescript-eslint/parser": "^8.41.0",
-    "eslint": "^9.34.0",
+    "@eslint/js": "^9.39.1",
+    "@typescript-eslint/eslint-plugin": "^8.48.0",
+    "@typescript-eslint/parser": "^8.48.0",
+    "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-n": "^17.21.3",
+    "eslint-plugin-n": "^17.23.1",
     "eslint-plugin-promise": "^7.2.1",
     "prettier": "^3.6.2",
     "prettier-plugin-jinja-template": "^2.1.0",
-    "sass": "^1.91.0",
-    "typescript": "^5.9.2",
-    "typescript-eslint": "^8.41.0",
+    "sass": "^1.94.2",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.48.0",
     "web-push": "^3.6.7"
   }
 }
