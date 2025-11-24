@@ -215,7 +215,7 @@ pub async fn lookup(
             "Player '{}' not found",
             query.username
         ))),
-        Err(e) => Err(HandlerError::DatabaseError(e.into())),
+        Err(e) => Err(HandlerError::DatabaseError(e)),
     }
 }
 

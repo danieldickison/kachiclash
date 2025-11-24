@@ -89,6 +89,7 @@ pub enum DataError {
     DatabaseError(rusqlite::Error),
     WebPushError(web_push::WebPushError),
     JsonError(serde_json::Error),
+    #[allow(dead_code)]
     UnknownLoginProvider,
 }
 
