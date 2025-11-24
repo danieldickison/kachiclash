@@ -185,6 +185,13 @@ pub async fn lookup(
     state: web::Data<AppState>,
     query: web::Query<UsernameQuery>,
 ) -> Result<impl Responder> {
+    // Validate username format before querying database
+    if !player::Player::name_is_valid(&query.username) {
+        return Err(HandlerError::NotFound(
+            "Invalid username format".to_string(),
+        ));
+    }
+
     let db = state.db.lock().unwrap();
 
     // Get current or next basho for rank lookup (doesn't matter much for this lookup)

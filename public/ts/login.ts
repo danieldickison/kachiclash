@@ -50,9 +50,15 @@ lookupForm.addEventListener("submit", async (e) => {
     );
 
     if (!response.ok) {
-      showError(
-        "Username not found. Please check the spelling or create a new account.",
-      );
+      if (response.status === 404) {
+        showError(
+          "Username not found. Please check the spelling or create a new account.",
+        );
+      } else {
+        showError(
+          "An error occurred while looking up your account. Please try again.",
+        );
+      }
       resetButton();
       return;
     }
@@ -106,6 +112,18 @@ function handleSingleProvider(provider: AuthProviderInfo): void {
   }, 500);
 }
 
+function getProviderClassName(displayName: string): string {
+  const name = displayName.toLowerCase();
+  if (name === "discord") {
+    return "discord-login";
+  } else if (name === "google") {
+    return "google-login";
+  } else if (name === "reddit") {
+    return "reddit-login";
+  }
+  return "";
+}
+
 function handleMultipleProviders(providers: AuthProviderInfo[]): void {
   multipleProviders.style.display = "block";
   lookupResult.style.display = "block";
@@ -114,6 +132,11 @@ function handleMultipleProviders(providers: AuthProviderInfo[]): void {
     if (provider.login_url) {
       const link = document.createElement("a");
       link.href = provider.login_url;
+      link.className = "provider-login";
+      const providerClass = getProviderClassName(provider.display_name);
+      if (providerClass) {
+        link.classList.add(providerClass);
+      }
       link.textContent = `Login with ${provider.display_name}`;
       providersList.appendChild(link);
     }

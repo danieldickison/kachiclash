@@ -23,6 +23,19 @@
       flex-direction: column;
       gap: 0.75rem;
 
+      label {
+        // Screen reader only - hide visually but keep for accessibility
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border-width: 0;
+      }
+
       input {
         padding: 0.75rem;
         font-size: 1rem;
