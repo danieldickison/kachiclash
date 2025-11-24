@@ -28,8 +28,8 @@ struct LoginTemplate {
 
 #[derive(Serialize)]
 pub struct AuthProviderInfo {
-    pub name: String,
     pub display_name: String,
+    pub login_url: String,
 }
 
 #[derive(Serialize)]
@@ -200,11 +200,23 @@ pub async fn lookup(
                 )));
             }
 
+            let provider_urls: std::collections::HashMap<&str, &str> = [
+                ("discord", "/login/discord"),
+                ("google", "/login/google"),
+                ("reddit", "/login/reddit"),
+            ]
+            .iter()
+            .copied()
+            .collect();
+
             let providers = linked_providers
                 .into_iter()
                 .map(|(name, display_name)| AuthProviderInfo {
-                    name: name.to_string(),
                     display_name: display_name.to_string(),
+                    login_url: provider_urls
+                        .get(name)
+                        .map(|url| url.to_string())
+                        .unwrap_or_default(),
                 })
                 .collect();
 
