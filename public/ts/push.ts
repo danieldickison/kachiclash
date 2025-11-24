@@ -43,7 +43,7 @@ export async function adminTrigger(pushType: PushType): Promise<void> {
   alertSendStats(await res.json());
 }
 
-export function alertSendStats(res: any): void {
+export function alertSendStats(res: unknown): void {
   const stats = res as SendStats;
   console.debug("push send stats", stats);
   alert(`Notified ${stats.players} players with devices:
