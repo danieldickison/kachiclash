@@ -192,31 +192,15 @@ pub async fn lookup(
 
     match player::Player::with_name(&db, query.username.clone(), current_basho) {
         Ok(Some(player)) => {
-            let linked_providers = player.get_linked_auth_providers();
-
-            if linked_providers.is_empty() {
-                return Err(HandlerError::Failure(anyhow::anyhow!(
-                    "Player has no linked auth providers"
-                )));
-            }
-
-            let provider_urls: std::collections::HashMap<&str, &str> = [
-                ("discord", "/login/discord"),
-                ("google", "/login/google"),
-                ("reddit", "/login/reddit"),
-            ]
-            .iter()
-            .copied()
-            .collect();
+            let linked_providers = player
+                .get_linked_auth_providers()
+                .map_err(|err| HandlerError::DatabaseError(err.into()))?;
 
             let providers = linked_providers
                 .into_iter()
-                .map(|(name, display_name)| AuthProviderInfo {
+                .map(|(login_url, display_name)| AuthProviderInfo {
                     display_name: display_name.to_string(),
-                    login_url: provider_urls
-                        .get(name)
-                        .map(|url| url.to_string())
-                        .unwrap_or_default(),
+                    login_url: login_url.to_string(),
                 })
                 .collect();
 

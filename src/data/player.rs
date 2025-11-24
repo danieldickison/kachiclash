@@ -6,9 +6,6 @@ use rusqlite::{
 
 use super::{Award, BashoId, Heya, Rank, Result};
 use crate::data::DataError;
-use crate::external::discord::DiscordAuthProvider;
-use crate::external::google::GoogleAuthProvider;
-use crate::external::reddit::RedditAuthProvider;
 use crate::external::{discord, AuthProvider, ImageSize, UserInfo};
 use askama::Template;
 use rand::random;
@@ -195,28 +192,37 @@ impl Player {
 
     fn login_service_provider(&self) -> Result<Box<dyn AuthProvider>> {
         if self.discord_user_id.is_some() {
-            Ok(Box::new(DiscordAuthProvider))
+            Ok(Box::new(crate::external::discord::DiscordAuthProvider))
         } else if self.google_picture.is_some() {
-            Ok(Box::new(GoogleAuthProvider))
+            Ok(Box::new(crate::external::google::GoogleAuthProvider))
         } else if self.reddit_icon.is_some() {
-            Ok(Box::new(RedditAuthProvider))
+            Ok(Box::new(crate::external::reddit::RedditAuthProvider))
         } else {
             Err(DataError::UnknownLoginProvider)
         }
     }
 
-    pub fn get_linked_auth_providers(&self) -> Vec<(&'static str, &'static str)> {
+    pub fn get_linked_auth_providers(&self) -> Result<Vec<(&'static str, &'static str)>> {
         let mut providers = Vec::new();
+
         if self.discord_user_id.is_some() {
-            providers.push(("discord", "Discord"));
+            let provider = crate::external::discord::DiscordAuthProvider;
+            providers.push((provider.login_url(), provider.display_name()));
         }
         if self.google_picture.is_some() {
-            providers.push(("google", "Google"));
+            let provider = crate::external::google::GoogleAuthProvider;
+            providers.push((provider.login_url(), provider.display_name()));
         }
         if self.reddit_icon.is_some() {
-            providers.push(("reddit", "Reddit"));
+            let provider = crate::external::reddit::RedditAuthProvider;
+            providers.push((provider.login_url(), provider.display_name()));
         }
-        providers
+
+        if providers.is_empty() {
+            Err(DataError::UnknownLoginProvider)
+        } else {
+            Ok(providers)
+        }
     }
 
     //     pub async fn update_image(&self, _db: &mut Connection) -> Result<()> {

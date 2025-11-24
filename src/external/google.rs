@@ -18,6 +18,14 @@ impl AuthProvider for GoogleAuthProvider {
         "Google"
     }
 
+    fn display_name(&self) -> &'static str {
+        "Google"
+    }
+
+    fn login_url(&self) -> &'static str {
+        "/login/google"
+    }
+
     fn logged_in_user_info_url(&self) -> &'static str {
         "https://www.googleapis.com/userinfo/v2/me"
     }
