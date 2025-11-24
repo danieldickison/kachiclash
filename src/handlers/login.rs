@@ -192,15 +192,20 @@ pub async fn lookup(
 
     match player::Player::with_name(&db, query.username.clone(), current_basho) {
         Ok(Some(player)) => {
-            let linked_providers = player
-                .get_linked_auth_providers()
-                .map_err(|err| HandlerError::DatabaseError(err.into()))?;
+            let linked_providers = player.linked_auth_providers();
+
+            if linked_providers.is_empty() {
+                return Err(HandlerError::NotFound(format!(
+                    "Player '{}' has no linked auth providers",
+                    query.username
+                )));
+            }
 
             let providers = linked_providers
-                .into_iter()
-                .map(|(login_url, display_name)| AuthProviderInfo {
-                    display_name: display_name.to_string(),
-                    login_url: login_url.to_string(),
+                .iter()
+                .map(|provider| AuthProviderInfo {
+                    display_name: provider.service_name().to_string(),
+                    login_url: provider.login_url().to_string(),
                 })
                 .collect();
 

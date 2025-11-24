@@ -18,10 +18,6 @@ impl AuthProvider for RedditAuthProvider {
         "Reddit"
     }
 
-    fn display_name(&self) -> &'static str {
-        "Reddit"
-    }
-
     fn login_url(&self) -> &'static str {
         "/login/reddit"
     }

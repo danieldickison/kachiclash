@@ -5,7 +5,6 @@ use rusqlite::{
 };
 
 use super::{Award, BashoId, Heya, Rank, Result};
-use crate::data::DataError;
 use crate::external::{discord, AuthProvider, ImageSize, UserInfo};
 use askama::Template;
 use rand::random;
@@ -186,43 +185,26 @@ impl Player {
     }
 
     pub fn login_service_name(&self) -> &'static str {
-        self.login_service_provider()
-            .map_or("unknown", |p| p.service_name())
+        self.linked_auth_providers()
+            .first()
+            .map(|p| p.service_name())
+            .unwrap_or("unknown")
     }
 
-    fn login_service_provider(&self) -> Result<Box<dyn AuthProvider>> {
-        if self.discord_user_id.is_some() {
-            Ok(Box::new(crate::external::discord::DiscordAuthProvider))
-        } else if self.google_picture.is_some() {
-            Ok(Box::new(crate::external::google::GoogleAuthProvider))
-        } else if self.reddit_icon.is_some() {
-            Ok(Box::new(crate::external::reddit::RedditAuthProvider))
-        } else {
-            Err(DataError::UnknownLoginProvider)
-        }
-    }
-
-    pub fn get_linked_auth_providers(&self) -> Result<Vec<(&'static str, &'static str)>> {
-        let mut providers = Vec::new();
+    pub fn linked_auth_providers(&self) -> Vec<Box<dyn AuthProvider>> {
+        let mut providers: Vec<Box<dyn AuthProvider>> = Vec::new();
 
         if self.discord_user_id.is_some() {
-            let provider = crate::external::discord::DiscordAuthProvider;
-            providers.push((provider.login_url(), provider.display_name()));
+            providers.push(Box::new(crate::external::discord::DiscordAuthProvider));
         }
         if self.google_picture.is_some() {
-            let provider = crate::external::google::GoogleAuthProvider;
-            providers.push((provider.login_url(), provider.display_name()));
+            providers.push(Box::new(crate::external::google::GoogleAuthProvider));
         }
         if self.reddit_icon.is_some() {
-            let provider = crate::external::reddit::RedditAuthProvider;
-            providers.push((provider.login_url(), provider.display_name()));
+            providers.push(Box::new(crate::external::reddit::RedditAuthProvider));
         }
 
-        if providers.is_empty() {
-            Err(DataError::UnknownLoginProvider)
-        } else {
-            Ok(providers)
-        }
+        providers
     }
 
     //     pub async fn update_image(&self, _db: &mut Connection) -> Result<()> {

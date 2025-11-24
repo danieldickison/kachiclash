@@ -54,7 +54,6 @@ pub type OAuthClient =
 #[async_trait]
 pub trait AuthProvider: Send + Sync + Debug {
     fn service_name(&self) -> &'static str;
-    fn display_name(&self) -> &'static str;
     fn login_url(&self) -> &'static str;
     fn logged_in_user_info_url(&self) -> &'static str;
     fn oauth_scopes(&self) -> &'static [&'static str];

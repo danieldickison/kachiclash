@@ -23,10 +23,6 @@ impl AuthProvider for DiscordAuthProvider {
         "Discord"
     }
 
-    fn display_name(&self) -> &'static str {
-        "Discord"
-    }
-
     fn login_url(&self) -> &'static str {
         "/login/discord"
     }
