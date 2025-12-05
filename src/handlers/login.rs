@@ -191,13 +191,20 @@ pub async fn lookup(
         ));
     }
 
-    let db = state.db.lock().unwrap();
+    // Minimize lock scope - only hold it for database operations
+    let player = {
+        let db = state.db.lock().unwrap();
 
-    // Get current or next basho for rank lookup (doesn't matter much for this lookup)
-    let current_basho = crate::data::BashoInfo::current_or_next_basho_id(&db)?;
+        // Get current or next basho for rank lookup (doesn't matter much for this lookup)
+        let current_basho = crate::data::BashoInfo::current_or_next_basho_id(&db)?;
 
-    match player::Player::with_name(&db, query.username.clone(), current_basho) {
-        Ok(Some(player)) => {
+        // Query for the player and immediately return the result
+        player::Player::with_name(&db, query.username.clone(), current_basho)?
+    }; // Lock is dropped here
+
+    // Process the player data without holding the lock
+    match player {
+        Some(player) => {
             let linked_providers = player.linked_auth_providers();
 
             if linked_providers.is_empty() {
@@ -216,11 +223,10 @@ pub async fn lookup(
 
             Ok(HttpResponse::Ok().json(LookupResponse { providers }))
         }
-        Ok(None) => Err(HandlerError::NotFound(format!(
+        None => Err(HandlerError::NotFound(format!(
             "Player '{}' not found",
             query.username
         ))),
-        Err(e) => Err(HandlerError::DatabaseError(e)),
     }
 }
 
