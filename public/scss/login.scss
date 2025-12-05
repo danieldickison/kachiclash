@@ -1,10 +1,11 @@
 #p-login {
   #username-lookup {
-    margin: 2rem 5rem 1rem 5rem;
+    margin: 2rem auto 1rem auto;
     padding: 1.5rem;
     background: var(--color-subtle);
     border: solid 1px var(--color-border);
     border-radius: 0.5rem;
+    max-width: 320px;
 
     h2 {
       margin-top: 0;
@@ -99,102 +100,100 @@
         color: var(--color-fg);
       }
 
-      #single-provider {
-        p {
-          margin: 0;
-          color: var(--color-fg);
-          font-size: 0.95rem;
-        }
-      }
-
       #multiple-providers {
-        #providers-list {
-          display: flex;
-          flex-direction: column;
-          gap: 0.5rem;
+        > p {
+          margin: 0 0 0.75rem 0;
+          font-weight: 600;
+          color: var(--color-fg);
+        }
 
-          .provider-login {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0.75rem 1rem;
-            text-decoration: none;
-            border-radius: 0.25rem;
-            font-weight: 500;
-            font-family:
-              -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-              "Helvetica Neue", Arial, sans-serif;
-            transition: all 0.2s ease;
-            min-height: 44px;
-            font-size: 0.875rem;
-            position: relative;
+        .provider-login {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0.75rem 1rem;
+          text-decoration: none;
+          border-radius: 0.25rem;
+          font-weight: 500;
+          font-family:
+            -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+            "Helvetica Neue", Arial, sans-serif;
+          transition: all 0.2s ease;
+          min-height: 44px;
+          font-size: 0.875rem;
+          position: relative;
+          width: 100%;
+          margin-bottom: 0.5rem;
+
+          &:last-child {
+            margin-bottom: 0;
+          }
+
+          .provider-logo {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+            position: absolute;
+            left: 1rem;
+          }
+
+          span {
+            flex: 1;
+            text-align: center;
+          }
+
+          &.discord-login {
+            background: #5865f2;
+            color: #ffffff;
+            border: 1px solid transparent;
+
+            &:hover {
+              background: #4752c4;
+            }
+
+            &:active {
+              background: #3c45a5;
+            }
 
             .provider-logo {
-              width: 18px;
-              height: 18px;
-              flex-shrink: 0;
-              position: absolute;
-              left: 1rem;
+              filter: brightness(0) invert(1);
+            }
+          }
+
+          &.google-login {
+            background: #ffffff;
+            color: #3c4043;
+            border: 1px solid #dadce0;
+            font-family:
+              "Roboto",
+              -apple-system,
+              BlinkMacSystemFont,
+              "Segoe UI",
+              "Helvetica Neue",
+              Arial,
+              sans-serif;
+
+            &:hover {
+              background: #f8f9fa;
+              border-color: #d2d3d4;
             }
 
-            span {
-              flex: 1;
-              text-align: center;
+            &:active {
+              background: #f1f3f4;
+            }
+          }
+
+          &.reddit-login {
+            background: #ff4500;
+            color: #ffffff;
+            border: 1px solid transparent;
+
+            &:hover {
+              background: #e03d00;
             }
 
-            &.discord-login {
-              background: #5865f2;
-              color: #ffffff;
-              border: 1px solid transparent;
-
-              &:hover {
-                background: #4752c4;
-              }
-
-              &:active {
-                background: #3c45a5;
-              }
-
-              .provider-logo {
-                filter: brightness(0) invert(1);
-              }
-            }
-
-            &.google-login {
-              background: #ffffff;
-              color: #3c4043;
-              border: 1px solid #dadce0;
-              font-family:
-                "Roboto",
-                -apple-system,
-                BlinkMacSystemFont,
-                "Segoe UI",
-                "Helvetica Neue",
-                Arial,
-                sans-serif;
-
-              &:hover {
-                background: #f8f9fa;
-                border-color: #d2d3d4;
-              }
-
-              &:active {
-                background: #f1f3f4;
-              }
-            }
-
-            &.reddit-login {
-              background: #ff4500;
-              color: #ffffff;
-              border: 1px solid transparent;
-
-              &:hover {
-                background: #e03d00;
-              }
-
-              &:active {
-                background: #cc3700;
-              }
+            &:active {
+              background: #cc3700;
             }
           }
         }
@@ -204,8 +203,9 @@
 
   #divider {
     text-align: center;
-    margin: 2rem 5rem;
+    margin: 2rem auto;
     position: relative;
+    max-width: 320px;
 
     &::before {
       content: "";
@@ -229,7 +229,8 @@
   }
 
   #external-providers {
-    margin: 1rem 5rem 2rem 5rem;
+    margin: 1rem auto 2rem auto;
+    max-width: 320px;
 
     > p {
       text-align: center;
@@ -254,7 +255,7 @@
         Arial, sans-serif;
       transition: all 0.2s ease;
       min-height: 44px;
-      max-width: 320px;
+      width: 100%;
       position: relative;
 
       .provider-logo {
@@ -339,15 +340,18 @@
 @media (max-width: 768px) {
   #p-login {
     #username-lookup {
-      margin: 1rem 1rem;
+      margin: 1rem auto;
+      max-width: calc(100% - 2rem);
     }
 
     #divider {
-      margin: 1.5rem 0;
+      margin: 1.5rem auto;
+      max-width: calc(100% - 2rem);
     }
 
     #external-providers {
-      margin: 1rem;
+      margin: 1rem auto;
+      max-width: calc(100% - 2rem);
     }
   }
 }

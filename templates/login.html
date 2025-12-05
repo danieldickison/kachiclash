@@ -25,12 +25,20 @@
     </form>
     <div id="lookup-error" class="error-message" style="display: none;"></div>
     <div id="lookup-result" style="display: none;">
-      <div id="single-provider" style="display: none;">
-        <p>Redirecting to <strong id="single-provider-name"></strong>...</p>
-      </div>
       <div id="multiple-providers" style="display: none;">
-        <p>Choose a login method:</p>
-        <div id="providers-list"></div>
+        <p>Login with your linked account:</p>
+        <a class="provider-login discord-login" id="discord-login-btn" href="/login/discord" style="display: none;">
+          <img src="/static/img/social/discord.svg" alt="Discord logo" class="provider-logo">
+          <span>Continue with Discord</span>
+        </a>
+        <a class="provider-login google-login" id="google-login-btn" href="/login/google" style="display: none;">
+          <img src="/static/img/social/google.svg" alt="Google logo" class="provider-logo">
+          <span>Continue with Google</span>
+        </a>
+        <a class="provider-login reddit-login" id="reddit-login-btn" href="/login/reddit" style="display: none;">
+          <img src="/static/img/social/reddit.svg" alt="Reddit logo" class="provider-logo">
+          <span>Continue with Reddit</span>
+        </a>
       </div>
     </div>
   </section>

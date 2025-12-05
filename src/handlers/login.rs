@@ -28,8 +28,7 @@ struct LoginTemplate {
 
 #[derive(Serialize)]
 pub struct AuthProviderInfo {
-    pub display_name: String,
-    pub login_url: String,
+    pub provider_name: String,
 }
 
 #[derive(Serialize)]
@@ -211,8 +210,7 @@ pub async fn lookup(
             let providers = linked_providers
                 .iter()
                 .map(|provider| AuthProviderInfo {
-                    display_name: provider.service_name().to_string(),
-                    login_url: provider.login_url().to_string(),
+                    provider_name: provider.service_name().to_string(),
                 })
                 .collect();
 

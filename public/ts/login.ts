@@ -1,6 +1,5 @@
 interface AuthProviderInfo {
-  display_name: string;
-  login_url: string;
+  provider_name: string;
 }
 
 interface LookupResponse {
@@ -16,16 +15,18 @@ const lookupButton = lookupForm.querySelector(
 ) as HTMLButtonElement;
 const lookupError = document.getElementById("lookup-error") as HTMLElement;
 const lookupResult = document.getElementById("lookup-result") as HTMLElement;
-const singleProvider = document.getElementById(
-  "single-provider",
-) as HTMLElement;
 const multipleProviders = document.getElementById(
   "multiple-providers",
 ) as HTMLElement;
-const singleProviderName = document.getElementById(
-  "single-provider-name",
-) as HTMLElement;
-const providersList = document.getElementById("providers-list") as HTMLElement;
+const discordLoginBtn = document.getElementById(
+  "discord-login-btn",
+) as HTMLAnchorElement;
+const googleLoginBtn = document.getElementById(
+  "google-login-btn",
+) as HTMLAnchorElement;
+const redditLoginBtn = document.getElementById(
+  "reddit-login-btn",
+) as HTMLAnchorElement;
 
 lookupForm.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -38,9 +39,11 @@ lookupForm.addEventListener("submit", async (e) => {
   // Reset UI
   lookupError.style.display = "none";
   lookupResult.style.display = "none";
-  singleProvider.style.display = "none";
   multipleProviders.style.display = "none";
-  providersList.innerHTML = "";
+  // Hide all provider buttons
+  discordLoginBtn.style.display = "none";
+  googleLoginBtn.style.display = "none";
+  redditLoginBtn.style.display = "none";
   lookupButton.disabled = true;
   lookupButton.textContent = "Looking up...";
 
@@ -72,11 +75,7 @@ lookupForm.addEventListener("submit", async (e) => {
       return;
     }
 
-    if (providers.length === 1) {
-      handleSingleProvider(providers[0]);
-    } else {
-      handleMultipleProviders(providers);
-    }
+    handleMultipleProviders(providers);
   } catch (error) {
     console.error("Lookup error:", error);
     showError(
@@ -96,76 +95,20 @@ function resetButton(): void {
   lookupButton.textContent = "Login";
 }
 
-function handleSingleProvider(provider: AuthProviderInfo): void {
-  if (!provider.login_url) {
-    showError("Unable to determine login provider. Please try again.");
-    resetButton();
-    return;
-  }
-
-  singleProviderName.textContent = provider.display_name;
-  singleProvider.style.display = "block";
-  lookupResult.style.display = "block";
-  // Redirect after a brief delay so user sees the message
-  setTimeout(() => {
-    window.location.href = provider.login_url;
-  }, 500);
-}
-
-function getProviderClassName(displayName: string): string {
-  const name = displayName.toLowerCase();
-  if (name === "discord") {
-    return "discord-login";
-  } else if (name === "google") {
-    return "google-login";
-  } else if (name === "reddit") {
-    return "reddit-login";
-  }
-  return "";
-}
-
-function getProviderLogo(displayName: string): string {
-  const name = displayName.toLowerCase();
-  if (name === "discord") {
-    return "/static/img/social/discord.svg";
-  } else if (name === "google") {
-    return "/static/img/social/google.svg";
-  } else if (name === "reddit") {
-    return "/static/img/social/reddit.svg";
-  }
-  return "";
-}
-
 function handleMultipleProviders(providers: AuthProviderInfo[]): void {
   multipleProviders.style.display = "block";
   lookupResult.style.display = "block";
 
+  // Show the appropriate provider buttons based on what's available
   providers.forEach((provider) => {
-    if (provider.login_url) {
-      const link = document.createElement("a");
-      link.href = provider.login_url;
-      link.className = "provider-login";
-      const providerClass = getProviderClassName(provider.display_name);
-      if (providerClass) {
-        link.classList.add(providerClass);
-      }
+    const name = provider.provider_name.toLowerCase();
 
-      // Create logo image
-      const logoSrc = getProviderLogo(provider.display_name);
-      if (logoSrc) {
-        const logo = document.createElement("img");
-        logo.src = logoSrc;
-        logo.alt = `${provider.display_name} logo`;
-        logo.className = "provider-logo";
-        link.appendChild(logo);
-      }
-
-      // Create text span
-      const textSpan = document.createElement("span");
-      textSpan.textContent = `Continue with ${provider.display_name}`;
-      link.appendChild(textSpan);
-
-      providersList.appendChild(link);
+    if (name === "discord") {
+      discordLoginBtn.style.display = "flex";
+    } else if (name === "google") {
+      googleLoginBtn.style.display = "flex";
+    } else if (name === "reddit") {
+      redditLoginBtn.style.display = "flex";
     }
   });
 
