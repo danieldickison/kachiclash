@@ -124,6 +124,18 @@ function getProviderClassName(displayName: string): string {
   return "";
 }
 
+function getProviderLogo(displayName: string): string {
+  const name = displayName.toLowerCase();
+  if (name === "discord") {
+    return "/static/img/social/discord.svg";
+  } else if (name === "google") {
+    return "/static/img/social/google.svg";
+  } else if (name === "reddit") {
+    return "/static/img/social/reddit.svg";
+  }
+  return "";
+}
+
 function handleMultipleProviders(providers: AuthProviderInfo[]): void {
   multipleProviders.style.display = "block";
   lookupResult.style.display = "block";
@@ -137,7 +149,22 @@ function handleMultipleProviders(providers: AuthProviderInfo[]): void {
       if (providerClass) {
         link.classList.add(providerClass);
       }
-      link.textContent = `Login with ${provider.display_name}`;
+
+      // Create logo image
+      const logoSrc = getProviderLogo(provider.display_name);
+      if (logoSrc) {
+        const logo = document.createElement("img");
+        logo.src = logoSrc;
+        logo.alt = `${provider.display_name} logo`;
+        logo.className = "provider-logo";
+        link.appendChild(logo);
+      }
+
+      // Create text span
+      const textSpan = document.createElement("span");
+      textSpan.textContent = `Continue with ${provider.display_name}`;
+      link.appendChild(textSpan);
+
       providersList.appendChild(link);
     }
   });
