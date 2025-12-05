@@ -82,7 +82,7 @@ impl Player {
                 SELECT *
                 FROM player_info AS p
                 LEFT JOIN player_rank AS pr ON pr.player_id = p.id AND pr.before_basho_id = ?
-                WHERE p.name = ?
+                WHERE p.name = ? COLLATE NOCASE
             ",
             params![rank_for_basho, name],
             |row| Player::from_row_with_heyas(db, row),
