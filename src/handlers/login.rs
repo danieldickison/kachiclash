@@ -10,6 +10,7 @@ use actix_web::{get, http, web, HttpMessage, HttpRequest};
 use actix_web::{HttpResponse, Responder};
 
 use askama::Template;
+use serde::Serialize;
 
 use super::{BaseTemplate, HandlerError, Result};
 use crate::data::player;
@@ -23,6 +24,16 @@ use crate::{AppState, Config};
 #[template(path = "login.html")]
 struct LoginTemplate {
     base: BaseTemplate,
+}
+
+#[derive(Serialize)]
+pub struct AuthProviderInfo {
+    pub provider_name: String,
+}
+
+#[derive(Serialize)]
+pub struct LookupResponse {
+    pub providers: Vec<AuthProviderInfo>,
 }
 
 #[get("")]
@@ -160,6 +171,62 @@ async fn oauth_redirect(
             // session.purge();
             Err(HandlerError::CSRFError)
         }
+    }
+}
+
+#[derive(serde::Deserialize)]
+pub struct UsernameQuery {
+    username: String,
+}
+
+#[get("/lookup")]
+pub async fn lookup(
+    state: web::Data<AppState>,
+    query: web::Query<UsernameQuery>,
+) -> Result<impl Responder> {
+    // Validate username format before querying database
+    if !player::Player::name_is_valid(&query.username) {
+        return Err(HandlerError::NotFound(
+            "Invalid username format".to_string(),
+        ));
+    }
+
+    // Minimize lock scope - only hold it for database operations
+    let player = {
+        let db = state.db.lock().unwrap();
+
+        // Get current or next basho for rank lookup (doesn't matter much for this lookup)
+        let current_basho = crate::data::BashoInfo::current_or_next_basho_id(&db)?;
+
+        // Query for the player and immediately return the result
+        player::Player::with_name(&db, query.username.clone(), current_basho)?
+    }; // Lock is dropped here
+
+    // Process the player data without holding the lock
+    match player {
+        Some(player) => {
+            let linked_providers = player.linked_auth_providers();
+
+            if linked_providers.is_empty() {
+                return Err(HandlerError::NotFound(format!(
+                    "Player '{}' has no linked auth providers",
+                    query.username
+                )));
+            }
+
+            let providers = linked_providers
+                .iter()
+                .map(|provider| AuthProviderInfo {
+                    provider_name: provider.service_name().to_string(),
+                })
+                .collect();
+
+            Ok(HttpResponse::Ok().json(LookupResponse { providers }))
+        }
+        None => Err(HandlerError::NotFound(format!(
+            "Player '{}' not found",
+            query.username
+        ))),
     }
 }
 

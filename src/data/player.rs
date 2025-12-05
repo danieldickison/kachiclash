@@ -5,10 +5,6 @@ use rusqlite::{
 };
 
 use super::{Award, BashoId, Heya, Rank, Result};
-use crate::data::DataError;
-use crate::external::discord::DiscordAuthProvider;
-use crate::external::google::GoogleAuthProvider;
-use crate::external::reddit::RedditAuthProvider;
 use crate::external::{discord, AuthProvider, ImageSize, UserInfo};
 use askama::Template;
 use rand::random;
@@ -86,7 +82,7 @@ impl Player {
                 SELECT *
                 FROM player_info AS p
                 LEFT JOIN player_rank AS pr ON pr.player_id = p.id AND pr.before_basho_id = ?
-                WHERE p.name = ?
+                WHERE p.name = ? COLLATE NOCASE
             ",
             params![rank_for_basho, name],
             |row| Player::from_row_with_heyas(db, row),
@@ -189,20 +185,26 @@ impl Player {
     }
 
     pub fn login_service_name(&self) -> &'static str {
-        self.login_service_provider()
-            .map_or("unknown", |p| p.service_name())
+        self.linked_auth_providers()
+            .first()
+            .map(|p| p.service_name())
+            .unwrap_or("unknown")
     }
 
-    fn login_service_provider(&self) -> Result<Box<dyn AuthProvider>> {
+    pub fn linked_auth_providers(&self) -> Vec<Box<dyn AuthProvider>> {
+        let mut providers: Vec<Box<dyn AuthProvider>> = Vec::new();
+
         if self.discord_user_id.is_some() {
-            Ok(Box::new(DiscordAuthProvider))
-        } else if self.google_picture.is_some() {
-            Ok(Box::new(GoogleAuthProvider))
-        } else if self.reddit_icon.is_some() {
-            Ok(Box::new(RedditAuthProvider))
-        } else {
-            Err(DataError::UnknownLoginProvider)
+            providers.push(Box::new(crate::external::discord::DiscordAuthProvider));
         }
+        if self.google_picture.is_some() {
+            providers.push(Box::new(crate::external::google::GoogleAuthProvider));
+        }
+        if self.reddit_icon.is_some() {
+            providers.push(Box::new(crate::external::reddit::RedditAuthProvider));
+        }
+
+        providers
     }
 
     //     pub async fn update_image(&self, _db: &mut Connection) -> Result<()> {

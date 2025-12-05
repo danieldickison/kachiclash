@@ -5,12 +5,100 @@
 
 {% block head %}
   <link rel="stylesheet" href="/static/css/login.css" />
+  <script type="module" src="/static/js/login.js"></script>
 {% endblock %}
 
 {% block main %}
+  <section id="username-lookup">
+    <h2>Already have an account?</h2>
+
+    <form id="lookup-form">
+      <label for="username-input">Username</label>
+      <input
+        type="text"
+        id="username-input"
+        name="username"
+        placeholder="Enter your username"
+        required
+      />
+      <button type="submit">Login</button>
+    </form>
+    <div id="lookup-error" class="error-message" style="display: none;"></div>
+    <div id="lookup-result" style="display: none;">
+      <div id="multiple-providers" style="display: none;">
+        <p>Login with your linked account:</p>
+        <a
+          class="provider-login discord-login"
+          id="discord-login-btn"
+          href="/login/discord"
+          style="display: none;"
+        >
+          <img
+            src="/static/img/social/discord.svg"
+            alt="Discord logo"
+            class="provider-logo"
+          />
+          <span>Continue with Discord</span>
+        </a>
+        <a
+          class="provider-login google-login"
+          id="google-login-btn"
+          href="/login/google"
+          style="display: none;"
+        >
+          <img
+            src="/static/img/social/google.svg"
+            alt="Google logo"
+            class="provider-logo"
+          />
+          <span>Continue with Google</span>
+        </a>
+        <a
+          class="provider-login reddit-login"
+          id="reddit-login-btn"
+          href="/login/reddit"
+          style="display: none;"
+        >
+          <img
+            src="/static/img/social/reddit.svg"
+            alt="Reddit logo"
+            class="provider-logo"
+          />
+          <span>Continue with Reddit</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <div id="divider">
+    <span>or</span>
+  </div>
+
   <section id="external-providers">
-    <a class="discord-login" href="/login/discord">Login with Discord</a>
-    <a class="google-login" href="/login/google">Login with Google</a>
-    <a class="reddit-login" href="/login/reddit">Login with Reddit</a>
+    <p>Create a new account:</p>
+    <a class="discord-signup" href="/login/discord">
+      <img
+        src="/static/img/social/discord.svg"
+        alt="Discord logo"
+        class="provider-logo"
+      />
+      <span>Continue with Discord</span>
+    </a>
+    <a class="google-signup" href="/login/google">
+      <img
+        src="/static/img/social/google.svg"
+        alt="Google logo"
+        class="provider-logo"
+      />
+      <span>Continue with Google</span>
+    </a>
+    <a class="reddit-signup" href="/login/reddit">
+      <img
+        src="/static/img/social/reddit.svg"
+        alt="Reddit logo"
+        class="provider-logo"
+      />
+      <span>Continue with Reddit</span>
+    </a>
   </section>
 {% endblock %}
