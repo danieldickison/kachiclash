@@ -40,7 +40,7 @@ version = "0.11.0"
 features = ["cookie-session"]
 
 [dependencies.askama_web]
-version = "0.14.6"
+version = "0.15.0"
 features = ["actix-web-4"]
 
 [dependencies.rusqlite]
