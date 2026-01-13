@@ -90,17 +90,17 @@
             <td class="rank">{{ leader.ord }}</td>
             <td class="player">{{ leader.player.render().unwrap()|safe }}</td>
             <td class="num border-left">
-              {% call numeric_stat(leader.ranks.min) %}
+              {% call numeric_stat(leader.ranks.min) %}{% endcall %}
             </td>
-            <td class="num">{% call numeric_stat(leader.ranks.max) %}</td>
-            <td class="num">{% call numeric_stat(leader.ranks.mean) %}</td>
+            <td class="num">{% call numeric_stat(leader.ranks.max) %}{% endcall %}</td>
+            <td class="num">{% call numeric_stat(leader.ranks.mean) %}{% endcall %}</td>
             <td class="num border-left">
-              {% call numeric_stat(leader.wins.max) %}
+              {% call numeric_stat(leader.wins.max) %}{% endcall %}
             </td>
-            <td class="num">{% call numeric_stat(leader.wins.min) %}</td>
-            <td class="num">{% call numeric_stat(leader.wins.mean) %}</td>
+            <td class="num">{% call numeric_stat(leader.wins.min) %}{% endcall %}</td>
+            <td class="num">{% call numeric_stat(leader.wins.mean) %}{% endcall %}</td>
             <td class="num sort-key">
-              {% call numeric_stat(leader.wins.total) %}
+              {% call numeric_stat(leader.wins.total) %}{% endcall %}
             </td>
           </tr>
         {% endfor %}
