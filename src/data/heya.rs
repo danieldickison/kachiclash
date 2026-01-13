@@ -126,7 +126,8 @@ impl Heya {
                     let current_basho = BashoInfo::with_id(db, rank_for_basho)?;
                     let include_current_basho = current_basho.is_some();
 
-                    let members = Member::in_heya(db, heya.id, rank_for_basho, include_current_basho)?;
+                    let members =
+                        Member::in_heya(db, heya.id, rank_for_basho, include_current_basho)?;
                     heya.members = Some(members);
 
                     let mut bashos = rank_for_basho.range_for_banzuke().to_vec();
@@ -335,13 +336,22 @@ impl Member {
                 .split(",")
                 .map(|s| {
                     let score = s.parse::<u8>().unwrap();
-                    if score == SCORE_SENTINAL_NO_ENTRY { None } else { Some(score) }
+                    if score == SCORE_SENTINAL_NO_ENTRY {
+                        None
+                    } else {
+                        Some(score)
+                    }
                 })
                 .collect(),
         })
     }
 
-    fn in_heya(db: &Connection, heya_id: HeyaId, rank_for_basho: BashoId, include_current_basho: bool) -> SqlResult<Vec<Self>> {
+    fn in_heya(
+        db: &Connection,
+        heya_id: HeyaId,
+        rank_for_basho: BashoId,
+        include_current_basho: bool,
+    ) -> SqlResult<Vec<Self>> {
         let basho_range = rank_for_basho.range_for_banzuke();
         let before_basho_operator = if include_current_basho { "<=" } else { "<" };
         Ok(db
@@ -385,6 +395,9 @@ impl Member {
     }
 
     pub fn recent_scores_total(&self) -> u16 {
-        self.recent_scores.iter().map(|s| s.unwrap_or(0) as u16).sum()
+        self.recent_scores
+            .iter()
+            .map(|s| s.unwrap_or(0) as u16)
+            .sum()
     }
 }
