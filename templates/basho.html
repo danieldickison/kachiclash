@@ -178,7 +178,8 @@
         <div class="header west pick-count">Picks</div>
 
         {% for rr in rikishi_by_rank -%}
-          {% let row_style = format!("grid-row: {}", _loop_item.index + 2) %}
+          {% let loop_index = loop.index0 %}
+          {% let row_style = format!("grid-row: {}", loop_index + 2) %}
           {% if rr.rank == "boundary" %}
             <div style="{{ row_style }}" class="boundary"></div>
           {% else %}
@@ -186,9 +187,9 @@
               style="{{ row_style }}"
               class="rank-group-{{ rr.rank_group }} bg"
             ></div>
-            {%- call rikishi_results(rr.east) -%}
+            {%- call rikishi_results(rr.east) -%}{%- endcall -%}
             <div style="{{ row_style }}" class="rank">{{ rr.rank }}</div>
-            {%- call rikishi_results(rr.west) -%}
+            {%- call rikishi_results(rr.west) -%}{%- endcall -%}
           {% endif %}
         {% endfor -%}
       </div>
@@ -251,9 +252,10 @@
         <div class="header score total">Total</div>
 
         {% for leader in leaders -%}
-          {# inside of `let` we access the loop context as `_loop_item` and its index is 0-based #}
-          {% let row_style = format!("grid-row: {}", _loop_item.index + 3) %}
-          {% let row_classes %}
+          {# loop.index0 is 0-based in askama #}
+          {% let loop_index = loop.index0 %}
+          {% let row_style = format!("grid-row: {}", loop_index + 3) %}
+          {% decl row_classes %}
           {% match leader.player -%}
             {%- when ResultPlayer::Max -%}
             {% let row_classes = "min-max" %}
