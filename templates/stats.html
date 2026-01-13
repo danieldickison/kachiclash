@@ -92,13 +92,21 @@
             <td class="num border-left">
               {% call numeric_stat(leader.ranks.min) %}{% endcall %}
             </td>
-            <td class="num">{% call numeric_stat(leader.ranks.max) %}{% endcall %}</td>
-            <td class="num">{% call numeric_stat(leader.ranks.mean) %}{% endcall %}</td>
+            <td class="num">
+              {% call numeric_stat(leader.ranks.max) %}{% endcall %}
+            </td>
+            <td class="num">
+              {% call numeric_stat(leader.ranks.mean) %}{% endcall %}
+            </td>
             <td class="num border-left">
               {% call numeric_stat(leader.wins.max) %}{% endcall %}
             </td>
-            <td class="num">{% call numeric_stat(leader.wins.min) %}{% endcall %}</td>
-            <td class="num">{% call numeric_stat(leader.wins.mean) %}{% endcall %}</td>
+            <td class="num">
+              {% call numeric_stat(leader.wins.min) %}{% endcall %}
+            </td>
+            <td class="num">
+              {% call numeric_stat(leader.wins.mean) %}{% endcall %}
+            </td>
             <td class="num sort-key">
               {% call numeric_stat(leader.wins.total) %}{% endcall %}
             </td>
