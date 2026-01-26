@@ -28,7 +28,7 @@ anyhow = "1.0"
 num_cpus = "1.17"
 askama = "0.15.1"
 slug_intl = "1.0.0"
-hmac-sha256 = "1.1.12"
+hmac-sha256 = "1.1.13"
 base64 = "0.22.1"
 
 [dependencies.tokio]
@@ -40,7 +40,7 @@ version = "0.11.0"
 features = ["cookie-session"]
 
 [dependencies.askama_web]
-version = "0.15.0"
+version = "0.15.1"
 features = ["actix-web-4"]
 
 [dependencies.rusqlite]
