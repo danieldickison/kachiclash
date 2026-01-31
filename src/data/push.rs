@@ -71,7 +71,7 @@ impl Subscription {
         )?;
         for id in sub_ids {
             println!("Removing push subscription {}", id);
-            if let Err(e) = stmt.execute(params![id]) {
+            if let Err(e) = stmt.execute(params![id.cast_signed()]) {
                 warn!("Failed to delete subscription {}: {}", id, e);
             }
         }
@@ -87,7 +87,7 @@ impl Subscription {
                 .map_err(|e| rusqlite::types::FromSqlError::Other(e.into()))
         }
         Ok(Self {
-            id: row.get_unwrap("id"),
+            id: row.get_unwrap::<_, isize>("id").cast_unsigned(),
             player_id: row.get_unwrap("player_id"),
             info: parse_json(row, "info_json")?,
             opt_in: parse_json(row, "opt_in_json")?,
@@ -409,7 +409,7 @@ impl PushType {
                 )
             }
             PushType::DayResult(basho_id, player_id, day) => {
-                let (name, score, rank, leader_score): (String, u8, usize, u8) = db.query_row(
+                let (name, score, rank, leader_score): (String, u8, isize, u8) = db.query_row(
                     "
                     SELECT
                         player.name,
@@ -479,7 +479,7 @@ impl PushType {
                 let (name, score, basho_rank, current_rank, next_rank, awards): (
                     String,
                     u8,
-                    usize,
+                    isize,
                     Option<Rank>,
                     Rank,
                     Vec<Award>,

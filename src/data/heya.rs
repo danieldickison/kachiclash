@@ -55,7 +55,7 @@ impl Heya {
                 create_date: row.get("create_date")?,
                 oyakata: Player::from_row(row)?,
                 members: None,
-                member_count: row.get("member_count")?,
+                member_count: row.get::<_, isize>("member_count")?.cast_unsigned(),
                 recent_scores_bashos: None,
                 recruit_date: None,
             })
@@ -113,7 +113,7 @@ impl Heya {
                         create_date: row.get("create_date")?,
                         oyakata: Player::from_row(row)?,
                         members: None,
-                        member_count: row.get("member_count")?,
+                        member_count: row.get::<_, isize>("member_count")?.cast_unsigned(),
                         recent_scores_bashos: None,
                         recruit_date: None,
                     })
@@ -174,7 +174,7 @@ impl Heya {
                 create_date: row.get("create_date")?,
                 oyakata: Player::from_row(row)?,
                 members: None,
-                member_count: row.get("member_count")?,
+                member_count: row.get::<_, isize>("member_count")?.cast_unsigned(),
                 recent_scores_bashos: None,
                 recruit_date: Some(row.get("recruit_date")?),
             })
