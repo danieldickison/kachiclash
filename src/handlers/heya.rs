@@ -4,7 +4,7 @@ use askama::Template;
 use askama_web::WebTemplate;
 use rusqlite::Connection;
 
-use crate::data::heya::{HOST_MAX, JOIN_MAX};
+use crate::data::heya::{HOST_MAX, JOIN_MAX, MEMBER_MAX};
 use crate::data::{Heya, PlayerId};
 use crate::handlers::{HandlerError, IdentityExt};
 use crate::AppState;

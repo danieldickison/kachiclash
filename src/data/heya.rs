@@ -8,8 +8,8 @@ use slug_intl::slugify;
 use super::{BashoId, BashoInfo, DataError, Player, PlayerId, Result};
 
 pub const MEMBER_MAX: usize = 50;
-pub const JOIN_MAX: usize = 5;
-pub const HOST_MAX: usize = 3;
+pub const JOIN_MAX: usize = 10;
+pub const HOST_MAX: usize = 5;
 pub const NAME_LENGTH: RangeInclusive<usize> = 3..=30;
 
 pub type HeyaId = i64;
