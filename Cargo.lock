@@ -408,9 +408,9 @@ dependencies = [
 
 [[package]]
 name = "askama_web"
-version = "0.15.0"
+version = "0.15.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c0d6576f8e59513752a3e2673ca602fb403be7d0d0aacba5cd8b219838ab58fe"
+checksum = "5911a65ac3916ef133167a855d52978f9fbf54680a093e0ef29e20b7e94a4523"
 dependencies = [
  "actix-web",
  "askama",
@@ -615,9 +615,9 @@ checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
 
 [[package]]
 name = "chrono"
-version = "0.4.42"
+version = "0.4.43"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "145052bdd345b87320e369255277e3fb5152762ad123a901ef5c262dd38fe8d2"
+checksum = "fac4744fb15ae8337dc853fee7fb3f4e48c0fbaa23d0afe49c447b4fab126118"
 dependencies = [
  "iana-time-zone",
  "js-sys",
@@ -1350,9 +1350,9 @@ checksum = "d1a4e188bd5d537801721276d1771f1cea235cd94961ddb2828eb76e16688356"
 
 [[package]]
 name = "hmac-sha256"
-version = "1.1.12"
+version = "1.1.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad6880c8d4a9ebf39c6e8b77007ce223f646a4d21ce29d99f70cb16420545425"
+checksum = "d0f0ae375a85536cac3a243e3a9cda80a47910348abdea7e2c22f8ec556d586d"
 dependencies = [
  "digest",
 ]
