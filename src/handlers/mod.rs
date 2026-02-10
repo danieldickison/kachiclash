@@ -30,7 +30,7 @@ pub enum HandlerError {
     NotFound(String),
     MustBeLoggedIn,
     ExternalServiceError,
-    DatabaseError(DataError),
+    DataError(DataError),
     CSRFError,
     Failure(anyhow::Error),
     ActixError(actix_web::Error),
@@ -44,7 +44,7 @@ impl Display for HandlerError {
             HandlerError::NotFound(thing) => write!(f, "{} not found", thing),
             HandlerError::MustBeLoggedIn => write!(f, "Must be logged in"),
             HandlerError::ExternalServiceError => write!(f, "External service error"),
-            HandlerError::DatabaseError(_) => write!(f, "Database error"),
+            HandlerError::DataError(e) => write!(f, "{e}"),
             HandlerError::CSRFError => write!(f, "CRSF error"),
             HandlerError::Failure(_) => write!(f, "Unexpected failure"),
             HandlerError::ActixError(e) => e.fmt(f),
@@ -65,9 +65,12 @@ impl error::ResponseError for HandlerError {
         match self {
             HandlerError::NotFound(_) => HttpResponse::NotFound(),
             HandlerError::ExternalServiceError
-            | HandlerError::DatabaseError(_)
+            | HandlerError::DataError(
+                DataError::DatabaseError(_) | DataError::JsonError(_) | DataError::WebPushError(_),
+            )
             | HandlerError::Failure(_)
             | HandlerError::ActixError(_) => HttpResponse::InternalServerError(),
+            HandlerError::DataError(_) => HttpResponse::BadRequest(),
             HandlerError::CSRFError | HandlerError::MustBeLoggedIn => HttpResponse::Forbidden(),
         }
         .content_type("text/plain")
@@ -82,14 +85,14 @@ impl From<DataError> for HandlerError {
                 debug!("{err:?}");
                 HandlerError::NotFound("heya".to_string())
             }
-            _ => Self::DatabaseError(err),
+            _ => Self::DataError(err),
         }
     }
 }
 
 impl From<rusqlite::Error> for HandlerError {
     fn from(err: rusqlite::Error) -> Self {
-        Self::DatabaseError(DataError::from(err))
+        Self::DataError(DataError::from(err))
     }
 }
 

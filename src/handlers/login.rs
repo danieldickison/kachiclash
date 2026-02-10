@@ -148,7 +148,7 @@ async fn oauth_redirect(
                 player::player_id_with_external_user(&mut state.db.lock().unwrap(), user_info)
                     .map_err(|err| {
                         warn!("error creating player for {:?} login: {:?}", provider, err);
-                        HandlerError::DatabaseError(err.into())
+                        HandlerError::DataError(err.into())
                     })?;
 
             debug!("logged in as player {}, is_new: {}", player_id, is_new);
