@@ -1,6 +1,6 @@
 use chrono::naive::NaiveDateTime;
 use chrono::offset::Utc;
-use chrono::DateTime;
+use chrono::{DateTime, TimeDelta};
 use itertools::Itertools;
 use result::ResultIteratorExt;
 use rusqlite::{params_from_iter, Connection, Result as SqlResult, Transaction};
@@ -27,6 +27,7 @@ pub struct BashoInfo {
 }
 
 const VERY_FIRST_BASHO: &str = "201901";
+const SAVE_PICKS_GRACE_PERIOD_MINUTES: i64 = 5;
 
 impl BashoInfo {
     /// Returns the current basho id if one is in session; otherwise returns the next basho after that last completed one.
@@ -239,7 +240,8 @@ pub fn save_player_picks(
         params![basho_id],
         |row| row.get(0),
     )?;
-    if start_date < Utc::now() {
+    let grace_period = TimeDelta::minutes(SAVE_PICKS_GRACE_PERIOD_MINUTES);
+    if start_date + grace_period < Utc::now() {
         return Err(DataError::BashoHasStarted);
     }
 
