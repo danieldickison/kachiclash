@@ -28,7 +28,7 @@ anyhow = "1.0"
 num_cpus = "1.17"
 askama = "0.15.4"
 slug_intl = "1.0.0"
-hmac-sha256 = "1.1.13"
+hmac-sha256 = "1.1.14"
 base64 = "0.22.1"
 
 [dependencies.tokio]
