@@ -26,13 +26,13 @@ rand = "0.10"
 oauth2 = "5.0"
 anyhow = "1.0"
 num_cpus = "1.17"
-askama = "0.15.4"
+askama = "0.15.5"
 slug_intl = "1.0.0"
 hmac-sha256 = "1.1.14"
 base64 = "0.22.1"
 
 [dependencies.tokio]
-version = "1.49.0"
+version = "1.50.0"
 features = ["full"]
 
 [dependencies.actix-session]
@@ -40,7 +40,7 @@ version = "0.11.0"
 features = ["cookie-session"]
 
 [dependencies.askama_web]
-version = "0.15.1"
+version = "0.15.2"
 features = ["actix-web-4"]
 
 [dependencies.rusqlite]
