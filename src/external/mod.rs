@@ -6,6 +6,7 @@ use oauth2::{
     AccessToken, AuthorizationCode, CsrfToken, EndpointNotSet, EndpointSet, RequestTokenError,
     Scope,
 };
+use oauth2_reqwest::ReqwestClient;
 use reqwest::redirect;
 use rusqlite::Transaction;
 use url::Url;
@@ -78,14 +79,16 @@ pub trait AuthProvider: Send + Sync + Debug {
         config: &Config,
         auth_code: AuthorizationCode,
     ) -> anyhow::Result<BasicTokenResponse> {
-        let http_client = reqwest::Client::builder()
-            .redirect(redirect::Policy::none())
-            .https_only(true)
-            .user_agent(format!(
-                "web:com.kachiclash:v{} (by /u/dand)",
-                env!("CARGO_PKG_VERSION")
-            ))
-            .build()?;
+        let http_client = ReqwestClient::from(
+            reqwest::Client::builder()
+                .redirect(redirect::Policy::none())
+                .https_only(true)
+                .user_agent(format!(
+                    "web:com.kachiclash:v{} (by /u/dand)",
+                    env!("CARGO_PKG_VERSION")
+                ))
+                .build()?,
+        );
         self.make_oauth_client(config)
             .exchange_code(auth_code)
             .request_async(&http_client)
