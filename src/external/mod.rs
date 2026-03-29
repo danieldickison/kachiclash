@@ -81,13 +81,13 @@ pub trait AuthProvider: Send + Sync + Debug {
     ) -> anyhow::Result<BasicTokenResponse> {
         let http_client = ReqwestClient::from(
             reqwest::Client::builder()
-            .redirect(redirect::Policy::none())
-            .https_only(true)
-            .user_agent(format!(
-                "web:com.kachiclash:v{} (by /u/dand)",
-                env!("CARGO_PKG_VERSION")
-            ))
-            .build()?,
+                .redirect(redirect::Policy::none())
+                .https_only(true)
+                .user_agent(format!(
+                    "web:com.kachiclash:v{} (by /u/dand)",
+                    env!("CARGO_PKG_VERSION")
+                ))
+                .build()?,
         );
         self.make_oauth_client(config)
             .exchange_code(auth_code)
