@@ -27,13 +27,13 @@ oauth2 = { version = "5.0", default-features = false }
 oauth2-reqwest = "0.1.0-alpha.3"
 anyhow = "1.0"
 num_cpus = "1.17"
-askama = "0.15.5"
+askama = "0.15.6"
 slug_intl = "1.0.0"
 hmac-sha256 = "1.1.14"
 base64 = "0.22.1"
 
 [dependencies.tokio]
-version = "1.50.0"
+version = "1.51.0"
 features = ["full"]
 
 [dependencies.actix-session]
