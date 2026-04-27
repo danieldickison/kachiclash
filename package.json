@@ -13,15 +13,15 @@
   "license": "ISC",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@typescript-eslint/eslint-plugin": "^8.58.2",
-    "@typescript-eslint/parser": "^8.58.2",
-    "eslint": "^10.2.0",
+    "@typescript-eslint/eslint-plugin": "^8.59.1",
+    "@typescript-eslint/parser": "^8.59.1",
+    "eslint": "^10.2.1",
     "eslint-config-prettier": "^10.1.8",
-    "prettier": "^3.8.2",
+    "prettier": "^3.8.3",
     "prettier-plugin-jinja-template": "^2.1.0",
     "sass": "^1.99.0",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.58.2",
+    "typescript-eslint": "^8.59.1",
     "web-push": "^3.6.7"
   }
 }
