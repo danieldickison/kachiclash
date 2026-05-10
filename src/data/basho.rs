@@ -27,7 +27,7 @@ pub struct BashoInfo {
 }
 
 const VERY_FIRST_BASHO: &str = "201901";
-const SAVE_PICKS_GRACE_PERIOD_MINUTES: i64 = 5;
+const SAVE_PICKS_GRACE_PERIOD_MINUTES: i64 = 15;
 
 impl BashoInfo {
     /// Returns the current basho id if one is in session; otherwise returns the next basho after that last completed one.
