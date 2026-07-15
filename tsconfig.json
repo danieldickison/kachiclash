@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "outDir": "public/js",
+    "rootDir": "public/ts",
     "target": "ES2021",
     "sourceMap": true,
     "strict": true
