@@ -8,16 +8,18 @@ use super::{Award, BashoId, Heya, Rank, Result};
 use crate::external::{discord, AuthProvider, ImageSize, UserInfo};
 use askama::Template;
 use rand::random;
-use regex::{Regex, RegexBuilder};
+use regex::{regex, Regex};
 use std::collections::HashMap;
 use std::ops::RangeInclusive;
-use std::sync::LazyLock;
 use url::Url;
 
 pub type PlayerId = i64;
 
 pub const NAME_LENGTH: RangeInclusive<usize> = 3..=14;
-pub const NAME_REGEX: &str = "^[a-zA-Z][a-zA-Z0-9]*$";
+
+pub fn name_regex() -> &'static Regex {
+    regex!(r"^[a-zA-Z][a-zA-Z0-9]*$")
+}
 
 // Because askama makes it tricky to use a {% let player = foo.player %} and then an {% include "player_listing.html" %} to render a standardized player listing subtemplate, we set this up directly as an unescaped template that can be rendered into a parent template like {{foo.player.render().unwrap()|safe}}
 #[derive(Debug, Template)]
@@ -39,10 +41,7 @@ pub struct Player {
 
 impl Player {
     pub fn name_is_valid(name: &str) -> bool {
-        static RE: LazyLock<Regex> =
-            LazyLock::new(|| RegexBuilder::new(NAME_REGEX).build().unwrap());
-
-        NAME_LENGTH.contains(&name.len()) && RE.is_match(name)
+        NAME_LENGTH.contains(&name.len()) && name_regex().is_match(name)
     }
 
     pub fn set_name(txn: &Transaction, player_id: PlayerId, name: &str) -> Result<()> {

@@ -54,14 +54,12 @@ pub fn make_conn(path: &Path) -> DbConn {
 
 #[cfg(debug_assertions)]
 fn db_trace(event: TraceEvent) {
-    use regex::Regex;
-    use std::sync::LazyLock;
-    static RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\s+").unwrap());
+    use regex::regex;
 
     if let TraceEvent::Profile(stmt, duration) = event {
         trace!(
             "sqlite: {} ({:.3}s)",
-            RE.replace_all(&stmt.sql(), " "),
+            regex!(r"\s+").replace_all(&stmt.sql(), " "),
             duration.as_secs_f32()
         );
     }
