@@ -30,7 +30,7 @@ num_cpus = "1.17"
 askama = "0.16.0"
 slug_intl = "1.0.0"
 hmac-sha256 = "1.1.14"
-base64 = "0.22.1"
+base64 = "0.23.1"
 
 [dependencies.tokio]
 version = "1.50.0"
