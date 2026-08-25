@@ -29,15 +29,11 @@ pub async fn run(app_state: &AppState) -> anyhow::Result<()> {
         .try_into()
         .expect("session key should be 64 utf8 bytes");
     let db_mutex = app_state.db.clone();
-    let workers;
-    let static_ttl;
-    if is_dev {
-        workers = 2;
-        static_ttl = 60;
+    let (workers, static_ttl) = if is_dev {
+        (2, 60)
     } else {
-        workers = max(num_cpus::get(), 4);
-        static_ttl = 3600;
-    }
+        (max(num_cpus::get(), 4), 3600)
+    };
     let app_data = web::Data::new(app_state.clone());
     let year = actix_web::cookie::time::Duration::days(365);
 
