@@ -5,6 +5,7 @@ set -e
 KC_HOME=${KC_HOME:-/home/kachiclash}
 PUBLIC=$KC_HOME/public
 SERVER=$KC_HOME/server
+ENTER_PICKS=$KC_HOME/enter-picks
 SERVICE=kachiclash
 
 while [[ $# -gt 0 ]]; do
@@ -34,7 +35,7 @@ if [ -n "$GH_RUN_ID" ]; then
     cd var/build-output
 else
     echo "Building locally"
-    cargo build --bin=server --release --locked
+    cargo build --bin=server --bin=enter-picks --release --locked
 fi
 
 sudo rsync -rv --checksum public/ $PUBLIC
@@ -45,6 +46,10 @@ sudo install -vb \
     -o kachiclash -g nogroup -m 0555 \
     target/release/server \
     $SERVER
+sudo install -vb \
+    -o kachiclash -g nogroup -m 0555 \
+    target/release/enter-picks \
+    $ENTER_PICKS
 
 sudo systemctl restart $SERVICE
 

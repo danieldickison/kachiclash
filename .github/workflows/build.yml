@@ -44,12 +44,13 @@ jobs:
       - run: npm ci
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Build
-        run: cargo build --bin=server --release --locked ${{ runner.debug && '--verbose' || '' }}
+        run: cargo build --bin=server --bin=enter-picks --release --locked ${{ runner.debug && '--verbose' || '' }}
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: build-output
           path: |
             target/release/server
+            target/release/enter-picks
             public/
           if-no-files-found: error
