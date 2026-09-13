@@ -245,6 +245,34 @@ pub fn save_player_picks(
         return Err(DataError::BashoHasStarted);
     }
 
+    replace_player_picks(&txn, player_id, basho_id, picks)?;
+    txn.commit()?;
+
+    Ok(())
+}
+
+/// Replaces a player's picks without enforcing the pick deadline, for
+/// administrative use only (see the `enter-picks` binary). Picks are still
+/// validated to come from distinct rank groups.
+pub fn force_save_player_picks(
+    db: &mut Connection,
+    player_id: PlayerId,
+    basho_id: BashoId,
+    picks: [Option<RikishiId>; 5],
+) -> Result<()> {
+    let txn = db.transaction()?;
+    replace_player_picks(&txn, player_id, basho_id, picks)?;
+    txn.commit()?;
+
+    Ok(())
+}
+
+fn replace_player_picks(
+    txn: &Transaction,
+    player_id: PlayerId,
+    basho_id: BashoId,
+    picks: [Option<RikishiId>; 5],
+) -> Result<()> {
     let rank_groups: Vec<RankGroup> = txn
         .prepare(
             "
@@ -287,7 +315,6 @@ pub fn save_player_picks(
             params![player_id, basho_id, rikishi_id],
         )?;
     }
-    txn.commit()?;
 
     Ok(())
 }

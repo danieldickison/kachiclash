@@ -18,10 +18,13 @@ use std::path::PathBuf;
 use url::Url;
 
 mod data;
+pub mod enter_picks;
 mod external;
 mod handlers;
 mod server;
 mod util;
+
+pub const DEFAULT_DB_PATH: &str = "var/kachiclash.sqlite";
 
 #[derive(Envconfig, Clone, Debug)]
 pub struct Config {
