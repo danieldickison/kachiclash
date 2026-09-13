@@ -60,6 +60,12 @@ pub fn run() -> anyhow::Result<()> {
 
     let basho = BashoInfo::with_id(&db, args.basho_id)?
         .ok_or_else(|| anyhow!("no basho {} in the database", args.basho_id.id()))?;
+    if !basho.winners.is_empty() {
+        bail!(
+            "basho {} is already finalized; changing picks now would leave basho_result, awards, and player ranks stale",
+            basho.id.id()
+        );
+    }
     let player = Player::with_name(&db, args.player_name.clone(), basho.id)?
         .ok_or_else(|| anyhow!("no player named {}", args.player_name))?;
     let picks = lookup_picks(&db, basho.id, &args.rikishi)?;
