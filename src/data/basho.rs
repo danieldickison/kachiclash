@@ -253,7 +253,8 @@ pub fn save_player_picks(
 
 /// Replaces a player's picks without enforcing the pick deadline, for
 /// administrative use only (see the `enter-picks` binary). Picks are still
-/// validated to come from distinct rank groups.
+/// validated to come from distinct rank groups, and the basho results are
+/// recomputed so the standings reflect the new picks immediately.
 pub fn force_save_player_picks(
     db: &mut Connection,
     player_id: PlayerId,
@@ -262,6 +263,7 @@ pub fn force_save_player_picks(
 ) -> Result<()> {
     let txn = db.transaction()?;
     replace_player_picks(&txn, player_id, basho_id, picks)?;
+    upsert_basho_results(&txn, basho_id, false)?;
     txn.commit()?;
 
     Ok(())

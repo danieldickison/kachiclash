@@ -82,7 +82,7 @@ pub fn run() -> anyhow::Result<()> {
     force_save_player_picks(&mut db, player.id, basho.id, pick_ids)?;
 
     println!(
-        "Saved picks for {} in basho {}.",
+        "Saved picks for {} in basho {} and recomputed the basho results.",
         player.name,
         basho.id.id()
     );
@@ -300,11 +300,6 @@ fn print_summary(basho: &BashoInfo, player: &Player, picks: &[Pick; 5], existing
         println!("    group {}:  {}", index + 1, pick);
     }
     println!();
-
-    if basho.has_started() {
-        println!("  Note: scores are recalculated when the next torikumi is imported.");
-        println!();
-    }
 }
 
 fn confirm() -> anyhow::Result<bool> {
