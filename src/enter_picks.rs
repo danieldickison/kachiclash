@@ -37,7 +37,7 @@ Example:
 
 pub fn run() -> anyhow::Result<()> {
     if std::env::var_os("RUST_LOG").is_none() {
-        std::env::set_var("RUST_LOG", "warn");
+        std::env::set_var("RUST_LOG", "warn,kachiclash=info");
     }
     pretty_env_logger::init();
 
