@@ -21,6 +21,12 @@ pub struct IndexTemplate {
     hero_img_src: String,
 }
 
+#[derive(Template, WebTemplate)]
+#[template(path = "privacy.html")]
+pub struct PrivacyTemplate {
+    base: BaseTemplate,
+}
+
 impl IndexTemplate {
     fn leaders_by_rank(&self) -> Vec<(Rank, usize, u32, &[PlayerRanking])> {
         self.leaders
@@ -72,6 +78,17 @@ pub async fn index(
         prev_basho,
         next_basho_id,
         hero_img_src: state.config.hero_img_src.to_owned(),
+    })
+}
+
+#[route("/privacy", method = "GET", method = "HEAD")]
+pub async fn privacy(
+    state: web::Data<AppState>,
+    identity: Option<Identity>,
+) -> Result<PrivacyTemplate> {
+    let db = state.db.lock().unwrap();
+    Ok(PrivacyTemplate {
+        base: BaseTemplate::new(&db, identity.as_ref(), &state)?,
     })
 }
 

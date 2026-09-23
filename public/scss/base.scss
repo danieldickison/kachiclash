@@ -140,6 +140,14 @@ button {
   cursor: pointer;
 }
 
+article {
+    background: var(--color-light-yellow-bg);
+
+    > header {
+        padding: var(--section-padding);
+    }
+}
+
 section {
   padding: var(--section-padding);
   margin: 2rem 0;

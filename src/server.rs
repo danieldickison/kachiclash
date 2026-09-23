@@ -71,6 +71,7 @@ pub async fn run(app_state: &AppState) -> anyhow::Result<()> {
                     .service(Files::new("/", &config.static_path).prefer_utf8(true)),
             )
             .service(handlers::index::index)
+            .service(handlers::index::privacy)
             .service(handlers::index::pwa)
             .service(handlers::login::logout)
             .service(
