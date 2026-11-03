@@ -45,7 +45,7 @@ version = "0.16.0"
 features = ["actix-web-4"]
 
 [dependencies.rusqlite]
-version = "0.40.1"
+version = "0.41.1"
 features = ["bundled", "chrono", "trace"]
 
 [dependencies.reqwest]
